@@ -19,6 +19,7 @@ import {
   runListIncludedJson,
   runStatsJson
 } from "./runner/LgLocator";
+import { ControlPanelView } from "./views/ControlPanelView";
 
 
 let virtualProvider: VirtualDocProvider;
@@ -36,9 +37,11 @@ export function activate(context: vscode.ExtensionContext) {
 
   // 2) Дерево включённых путей
   includedTree = new IncludedTree();
-  context.subscriptions.push(
-    vscode.window.registerTreeDataProvider("lg.included", includedTree)
-  );
+  context.subscriptions.push(vscode.window.registerTreeDataProvider("lg.included", includedTree));
+
+  // 2.1) Панель управления как webview view
+  const control = new ControlPanelView(context, virtualProvider, includedTree);
+  context.subscriptions.push(vscode.window.registerWebviewViewProvider("lg.control", control, { webviewOptions: { retainContextWhenHidden: true } }));
 
   // 3) Команды
   context.subscriptions.push(

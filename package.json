@@ -20,6 +20,15 @@
     "workspaceContains:lg-cfg/config.yaml"
   ],
   "contributes": {
+    "viewsContainers": {
+      "activitybar": [
+        {
+          "id": "lg",
+          "title": "Listing Generator",
+          "icon": "media/lg.svg"
+        }
+      ]
+    },
     "commands": [
       { "command": "lg.generateListing", "title": "LG: Generate Listing (Section)" },
       { "command": "lg.generateContext", "title": "LG: Generate Context (Template)" },
@@ -30,10 +39,15 @@
       { "command": "lg.reRunLast", "title": "LG: Re-run Last" }
     ],
     "views": {
-      "explorer": [
+      "lg": [
+        {
+          "type": "webview",
+          "id": "lg.control",
+          "name": "LG — Control Panel"
+        },
         {
           "id": "lg.included",
-          "name": "Listing Generator — Included Files"
+          "name": "Included Files"
         }
       ]
     },
