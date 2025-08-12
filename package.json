@@ -1,0 +1,118 @@
+{
+  "name": "vscode-lg",
+  "displayName": "Listing Generator (LG)",
+  "description": "VS Code integration for the Listing Generator CLI: generate code listings, contexts, paths and stats.",
+  "publisher": "your-org",
+  "version": "0.1.0",
+  "engines": {
+    "vscode": "^1.85.0"
+  },
+  "categories": ["Other"],
+  "main": "./dist/extension.js",
+  "activationEvents": [
+    "onCommand:lg.generateListing",
+    "onCommand:lg.generateContext",
+    "onCommand:lg.showIncluded",
+    "onCommand:lg.showStats",
+    "onCommand:lg.createStarterConfig",
+    "onCommand:lg.runDoctor",
+    "onCommand:lg.reRunLast",
+    "workspaceContains:lg-cfg/config.yaml"
+  ],
+  "contributes": {
+    "commands": [
+      { "command": "lg.generateListing", "title": "LG: Generate Listing (Section)" },
+      { "command": "lg.generateContext", "title": "LG: Generate Context (Template)" },
+      { "command": "lg.showIncluded", "title": "LG: Show Included Paths" },
+      { "command": "lg.showStats", "title": "LG: Show Stats" },
+      { "command": "lg.createStarterConfig", "title": "LG: Create Starter Config" },
+      { "command": "lg.runDoctor", "title": "LG: Doctor (Self Check)" },
+      { "command": "lg.reRunLast", "title": "LG: Re-run Last" }
+    ],
+    "views": {
+      "explorer": [
+        {
+          "id": "lg.included",
+          "name": "Listing Generator — Included Files"
+        }
+      ]
+    },
+    "configuration": {
+      "title": "Listing Generator",
+      "properties": {
+        "lg.mode": {
+          "type": "string",
+          "enum": ["all", "changes"],
+          "default": "all",
+          "description": "Default mode for listing generation."
+        },
+        "lg.defaultSection": {
+          "type": "string",
+          "default": "all",
+          "description": "Default section name from lg-cfg/config.yaml."
+        },
+        "lg.defaultTemplate": {
+          "type": "string",
+          "default": "",
+          "description": "Default template name from lg-cfg/contexts (without .tpl.md)."
+        },
+        "lg.codeFence": {
+          "type": ["boolean", "null"],
+          "default": null,
+          "description": "Override CLI code fence behavior (null = do not override)."
+        },
+        "lg.maxHeadingLevel": {
+          "type": ["number", "null"],
+          "default": null,
+          "description": "Override Markdown max heading level (null = do not override)."
+        },
+        "lg.modelForStats": {
+          "type": "string",
+          "default": "o3",
+          "description": "Model name used to compute context share in stats."
+        },
+        "lg.python.interpreter": {
+          "type": "string",
+          "default": "",
+          "description": "Path to Python interpreter to run the CLI (leave empty for auto-detect)."
+        },
+        "lg.cli.path": {
+          "type": "string",
+          "default": "",
+          "description": "Explicit path to 'listing-generator' binary (leave empty to manage automatically)."
+        },
+        "lg.install.strategy": {
+          "type": "string",
+          "enum": ["managedVenv", "pipx", "system"],
+          "default": "managedVenv",
+          "description": "How to install/resolve the CLI."
+        },
+        "lg.autoUpdateCli": {
+          "type": "boolean",
+          "default": true,
+          "description": "Auto-update managed CLI when extension updates."
+        },
+        "lg.telemetry": {
+          "type": "boolean",
+          "default": false,
+          "description": "Send anonymous usage events (kept off by default)."
+        }
+      }
+    }
+  },
+  "scripts": {
+    "compile": "tsc -p ./",
+    "watch": "tsc -w -p ./",
+    "build": "npm run compile",
+    "vscode:prepublish": "npm run build",
+    "package": "vsce package",
+    "publish:ovsx": "ovsx publish"
+  },
+  "devDependencies": {
+    "@types/node": "^20.11.30",
+    "@types/vscode": "^1.85.0",
+    "ovsx": "^0.9.2",
+    "typescript": "^5.4.0",
+    "vsce": "^2.15.0"
+  }
+}
