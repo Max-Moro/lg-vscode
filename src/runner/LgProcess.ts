@@ -6,7 +6,13 @@ import * as cp from "child_process";
 
 export function spawnToString(cmd: string, args: string[], options: cp.SpawnOptions & { timeoutMs?: number } = {}): Promise<string> {
   return new Promise((resolve, reject) => {
-    const child = cp.spawn(cmd, args, { shell: process.platform === "win32", ...options });
+    const env = {
+      ...process.env,
+      // Гарантируем UTF-8 для Python-процесса (и вообще для stdout/err)
+      PYTHONUTF8: "1",
+      PYTHONIOENCODING: "utf-8"
+    };
+    const child = cp.spawn(cmd, args, { shell: process.platform === "win32", env, ...options });
     let out = "";
     let err = "";
 
