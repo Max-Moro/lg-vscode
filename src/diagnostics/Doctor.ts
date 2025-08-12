@@ -5,6 +5,7 @@
  */
 import * as vscode from "vscode";
 import { runDoctorJson } from "../runner/LgLocator";
+import { getVirtualProvider } from "../views/virtualBus";
 
 export async function runDoctor(ctx: vscode.ExtensionContext) {
   const wf = vscode.workspace.workspaceFolders?.[0];
@@ -13,20 +14,32 @@ export async function runDoctor(ctx: vscode.ExtensionContext) {
     return;
   }
   try {
-    const data = await runDoctorJson();
-    const md = new vscode.MarkdownString(undefined, true);
-    md.isTrusted = true;
-    md.appendMarkdown(`**Listing Generator** — version: \`${data.version}\`, protocol: \`${data.protocol}\`\n\n`);
-    md.appendMarkdown(`**Workspace root**: \`${data.root}\`\n\n`);
-    md.appendMarkdown(`### Checks\n`);
+    const data = await vscode.window.withProgress(
+      { location: vscode.ProgressLocation.Notification, title: "LG: Running Doctor…", cancellable: false },
+      async () => runDoctorJson()
+    );
+    // Сформируем Markdown сами (как строку) — и откроем через VirtualDocProvider.
+    const lines: string[] = [];
+    lines.push(`# Listing Generator — Doctor Report\n`);
+    lines.push(`- Version: \`${data.version}\``);
+    lines.push(`- Protocol: \`${data.protocol}\``);
+    lines.push(`- Workspace root: \`${data.root}\``);
+    lines.push(`\n## Checks\n`);
     for (const c of data.checks || []) {
       const mark = c.ok ? "✔" : "✖";
       const details = c.details ? ` — ${c.details}` : "";
-      md.appendMarkdown(`- ${mark} \`${c.name}\`${details}\n`);
+      lines.push(`- ${mark} \`${c.name}\`${details}`);
     }
-    await vscode.window.showInformationMessage("LG Doctor finished. Opening report…");
-    const doc = await vscode.workspace.openTextDocument({ language: "markdown", content: md.value });
-    await vscode.window.showTextDocument(doc, { preview: false });
+    const content = lines.join("\n");
+    const vp = getVirtualProvider();
+    if (vp) {
+      // откроем как read-only виртуальный документ: не Untitled, не dirty
+      await vp.open("doctor", "Doctor Report.md", content);
+    } else {
+      // запасной вариант (на всякий случай)
+      const doc = await vscode.workspace.openTextDocument({ language: "markdown", content });
+      await vscode.window.showTextDocument(doc, { preview: false });
+    }
   } catch (e: any) {
     vscode.window.showErrorMessage(`LG Doctor failed: ${e?.message || e}`);
   }

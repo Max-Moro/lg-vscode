@@ -4,6 +4,7 @@
  */
 import * as vscode from "vscode";
 import { VirtualDocProvider } from "./views/VirtualDocProvider";
+import { setVirtualProvider } from "./views/virtualBus";
 import { IncludedTree } from "./views/IncludedTree";
 import { showStatsWebview } from "./views/StatsWebview";
 import { runDoctor } from "./diagnostics/Doctor";
@@ -11,7 +12,6 @@ import { ensureStarterConfig } from "./starter/StarterConfig";
 import {
   locateCliOrOfferInstall,
   runListing,
-  runListIncluded,
   runContext,
   setExtensionContext,
   listSectionsJson,
@@ -32,6 +32,7 @@ export function activate(context: vscode.ExtensionContext) {
   context.subscriptions.push(
     vscode.workspace.registerTextDocumentContentProvider("lg", virtualProvider)
   );
+  setVirtualProvider(virtualProvider);
 
   // 2) Дерево включённых путей
   includedTree = new IncludedTree();

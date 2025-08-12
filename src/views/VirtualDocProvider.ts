@@ -13,7 +13,7 @@ export class VirtualDocProvider implements vscode.TextDocumentContentProvider {
     return this.cache.get(uri.toString()) ?? "Empty";
   }
 
-  async open(kind: "listing" | "context", name: string, content: string) {
+  async open(kind: "listing" | "context" | "doctor", name: string, content: string) {
     const uri = vscode.Uri.parse(`lg://${kind}/${encodeURIComponent(name)}`);
     this.cache.set(uri.toString(), content);
     this.emitter.fire(uri);
