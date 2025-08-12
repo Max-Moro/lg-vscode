@@ -153,16 +153,32 @@ export class ControlPanelView implements vscode.WebviewViewProvider {
   private getHtml() {
     const csp = ""; // VS Code webview uses safe default; we only do inline-no eval.
     const css = `
-      body { font: 12px/1.5 var(--vscode-font-family); color: var(--vscode-foreground); padding: 8px; }
-      h3 { margin: 8px 0; font-weight: 600; }
-      .row { display: flex; gap: 6px; align-items: center; margin: 6px 0; flex-wrap: wrap; }
+      :root {
+        --pad-0: 2px;
+        --pad-1: 4px;
+        --gap-s: 6px;
+        --gap-xs: 4px;
+        --font-sz: 12px;
+      }
+      body { font: var(--font-sz)/1.35 var(--vscode-font-family); color: var(--vscode-foreground); padding: var(--pad-1); }
+      h3 { margin: var(--pad-1) 0; font-weight: 600; font-size: 12px; }
+      /* Ряды могут переноситься, но «кластеры» внутри — неделимы */
+      .row { display: flex; gap: var(--gap-s); align-items: center; margin: var(--pad-1) 0; flex-wrap: wrap; }
+      .cluster { display: inline-flex; align-items: center; gap: var(--gap-xs); flex-wrap: nowrap; white-space: nowrap; }
+      .cluster label { margin-right: 2px; }
       select, button, input[type="radio"] { font: inherit; }
-      button { display: inline-flex; align-items: center; gap: 6px; padding: 4px 8px; }
-      .help { color: var(--vscode-descriptionForeground); margin: 4px 0 8px; }
-      .block { border: 1px solid var(--vscode-editorIndentGuide-background); border-radius: 6px; padding: 8px; margin-bottom: 10px; }
+      select { max-width: 100%; min-width: 0; }
+      /* Компактные кнопки */
+      button { display: inline-flex; align-items: center; gap: 6px; padding: 2px 6px; line-height: 1.2; }
+      .btn-primary { }
+      .help { color: var(--vscode-descriptionForeground); margin: 2px 0 6px; }
+      .block { border: 1px solid var(--vscode-editorIndentGuide-background); border-radius: 6px; padding: 6px; margin-bottom: 8px; }
       .spacer { flex: 1; }
-      .codicon { font-size: 14px; }
+      .codicon { font-size: 13px; }
       .muted { color: var(--vscode-descriptionForeground); }
+      /* Чтобы при 320px ничего не «выпирало» за край */
+      .fill { flex: 1 1 100%; min-width: 0; }
+      .grow { flex: 1 1 auto; }
     `;
     const html = `
       <!doctype html>
@@ -176,12 +192,16 @@ export class ControlPanelView implements vscode.WebviewViewProvider {
         <div class="block">
           <h3><span class="codicon codicon-organization"></span> Project Scope</h3>
           <div class="row">
-            <label>Section:</label>
-            <select id="section"></select>
+            <span class="cluster" title="Секция из lg-cfg/config.yaml">
+              <label>Section:</label>
+              <select id="section"></select>
+            </span>
             <span class="spacer"></span>
-            <label>Mode:</label>
-            <label><input type="radio" name="mode" value="all"> all</label>
-            <label><input type="radio" name="mode" value="changes"> changes</label>
+            <span class="cluster" title="Режим отбора файлов">
+              <label>Mode:</label>
+              <label class="cluster"><input type="radio" name="mode" value="all"> all</label>
+              <label class="cluster"><input type="radio" name="mode" value="changes"> changes</label>
+            </span>
           </div>
           <div class="help">Выберите секцию и режим (all — весь проект, changes — только изменённые файлы по Git).</div>
         </div>
@@ -189,15 +209,19 @@ export class ControlPanelView implements vscode.WebviewViewProvider {
         <div class="block">
           <h3><span class="codicon codicon-run"></span> Generate</h3>
           <div class="row">
-            <button id="btn-listing" title="Сшить исходники из выбранной секции в единый листинг">
-              <span class="codicon codicon-play"></span> Generate Listing
-            </button>
-            <select id="template" title="Шаблон контекстного промта (.tpl.md)">
-              <option value="">— select template —</option>
-            </select>
-            <button id="btn-context" title="Сгенерировать контекст-промт по шаблону">
-              <span class="codicon codicon-file-code"></span> Generate Context
-            </button>
+            <span class="cluster">
+              <button class="btn-primary" id="btn-listing" title="Сшить исходники из выбранной секции в единый листинг">
+                <span class="codicon codicon-play"></span> Generate Listing
+              </button>
+            </span>
+            <span class="cluster fill">
+              <select class="grow" id="template" title="Шаблон контекстного промта (.tpl.md)">
+                <option value="">— select template —</option>
+              </select>
+              <button id="btn-context" title="Сгенерировать контекст-промт по шаблону">
+                <span class="codicon codicon-file-code"></span> Generate Context
+              </button>
+            </span>
           </div>
           <div class="help">Listing — склейка файлов. Context — шаблон с автоподстановкой листингов секций.</div>
         </div>
@@ -205,22 +229,26 @@ export class ControlPanelView implements vscode.WebviewViewProvider {
         <div class="block">
           <h3><span class="codicon codicon-graph"></span> Inspect</h3>
           <div class="row">
-            <button id="btn-included" title="Показать какие файлы проходят фильтры">
-              <span class="codicon codicon-list-tree"></span> Show Included
-            </button>
-            <button id="btn-stats" title="Таблица размеров и токенов с долями контекста">
-              <span class="codicon codicon-table"></span> Show Stats
-            </button>
+            <span class="cluster">
+              <button id="btn-included" title="Показать какие файлы проходят фильтры">
+                <span class="codicon codicon-list-tree"></span> Show Included
+              </button>
+            </span>
             <span class="spacer"></span>
-            <label class="muted">Model:</label>
-            <select id="model">
-              <option>o3</option>
-              <option>gpt-4o</option>
-              <option>gpt-4o-mini</option>
-              <option>claude-3-opus</option>
-              <option>claude-3-sonnet</option>
-              <option>gemini-1.5-pro</option>
-            </select>
+            <span class="cluster">
+              <button id="btn-stats" title="Таблица размеров и токенов с долями контекста">
+                <span class="codicon codicon-table"></span> Show Stats
+              </button>
+              <label class="muted">Model:</label>
+              <select id="model">
+                <option>o3</option>
+                <option>gpt-4o</option>
+                <option>gpt-4o-mini</option>
+                <option>claude-3-opus</option>
+                <option>claude-3-sonnet</option>
+                <option>gemini-1.5-pro</option>
+              </select>
+            </span>
           </div>
           <div class="help">Included — список путей; Stats — оценка токенов и долей окна модели.</div>
         </div>
@@ -228,16 +256,20 @@ export class ControlPanelView implements vscode.WebviewViewProvider {
         <div class="block">
           <h3><span class="codicon codicon-tools"></span> Utilities</h3>
           <div class="row">
-            <button id="btn-starter" title="Создать lg-cfg/config.yaml и пример шаблона">
-              <span class="codicon codicon-new-file"></span> Create Starter Config
-            </button>
-            <button id="btn-doctor" title="Проверка окружения и конфигурации">
-              <span class="codicon codicon-pulse"></span> Doctor
-            </button>
+            <span class="cluster">
+              <button id="btn-starter" title="Создать lg-cfg/config.yaml и пример шаблона">
+                <span class="codicon codicon-new-file"></span> Create Starter Config
+              </button>
+              <button id="btn-doctor" title="Проверка окружения и конфигурации">
+                <span class="codicon codicon-pulse"></span> Doctor
+              </button>
+            </span>
             <span class="spacer"></span>
-            <button id="btn-settings" title="Открыть настройки расширения">
-              <span class="codicon codicon-gear"></span> Settings
-            </button>
+            <span class="cluster">
+              <button id="btn-settings" title="Открыть настройки расширения">
+                <span class="codicon codicon-gear"></span> Settings
+              </button>
+            </span>
           </div>
         </div>
 
