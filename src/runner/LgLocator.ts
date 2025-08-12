@@ -7,15 +7,18 @@
  *  - удобные функции: runListing / runListIncluded / runContext.
  */
 import * as vscode from "vscode";
-import * as path from "path";
-import * as fs from "fs";
 import { spawnToString } from "./LgProcess";
 import { ensureManagedCli, resolveManagedCliBin } from "./LgInstaller";
 import { findPython } from "./PythonFind";
 
+let _ctx: vscode.ExtensionContext | undefined;
+export function setExtensionContext(ctx: vscode.ExtensionContext) {
+  _ctx = ctx;
+}
+
 export type RunSpec = { cmd: string; args: string[] };
 
-async function resolveCliRunSpec(ctx: vscode.ExtensionContext): Promise<RunSpec | undefined> {
+async function resolveCliRunSpec(): Promise<RunSpec | undefined> {
   const cfg = vscode.workspace.getConfiguration();
   const explicit = cfg.get<string>("lg.cli.path")?.trim();
   if (explicit) {
@@ -25,10 +28,19 @@ async function resolveCliRunSpec(ctx: vscode.ExtensionContext): Promise<RunSpec 
 
   const strategy = (cfg.get<string>("lg.install.strategy") || "managedVenv") as "managedVenv" | "pipx" | "system";
 
+  // ——— DEV: system + задан python.interpreter → используем его как launcher —
+  if (strategy === "system") {
+    const interp = cfg.get<string>("lg.python.interpreter")?.trim();
+    if (interp) {
+      return { cmd: interp, args: ["-m", "lg.cli"] };
+    }
+  }
+
   if (strategy === "managedVenv") {
     // 1) гарантируем установленный CLI в управляемом venv
-    await ensureManagedCli(ctx);
-    const bin = await resolveManagedCliBin(ctx);
+    if (!_ctx) { throw new Error("Extension context is not initialized"); }
+    await ensureManagedCli(_ctx);
+    const bin = await resolveManagedCliBin(_ctx);
     if (bin) return { cmd: bin, args: [] };
   }
 
@@ -55,7 +67,8 @@ function workspaceCwd(): string | undefined {
 // ---------------------- Публичные API для extension.ts ---------------------- //
 
 export async function locateCliOrOfferInstall(ctx: vscode.ExtensionContext): Promise<string | undefined> {
-  const spec = await resolveCliRunSpec(ctx);
+  _ctx = ctx;
+  const spec = await resolveCliRunSpec();
   if (spec) return spec.cmd; // упрощённый ответ для «быстрых» проверок
 
   const choice = await vscode.window.showInformationMessage(
@@ -63,7 +76,7 @@ export async function locateCliOrOfferInstall(ctx: vscode.ExtensionContext): Pro
     "Установить", "Позже"
   );
   if (choice === "Установить") {
-    await ensureManagedCli(ctx);
+    await ensureManagedCli(_ctx!);
   }
   return undefined;
 }
@@ -74,10 +87,8 @@ export async function runListing(params: {
   codeFenceOverride?: boolean | null;
   maxHeadingLevel?: number | null;
 }): Promise<string> {
-  const spec = await resolveCliRunSpec(vscode.extensions.getExtension("your-org.vscode-lg")?.exports?.context ?? ({} as any) );
-  const ctx = (vscode.extensions.getExtension("your-org.vscode-lg") as any)?.exports?.context as vscode.ExtensionContext | undefined;
-  const finalSpec = spec ?? (await resolveCliRunSpec(ctx!));
-  if (!finalSpec) throw new Error("CLI is not available. Run 'LG: Doctor' or 'LG: Create Starter Config'.");
+  const finalSpec = await resolveCliRunSpec();
+  if (!finalSpec) throw new Error("CLI is not available. Configure `lg.python.interpreter` or `lg.cli.path`, or use managed venv.");
 
   const args: string[] = [];
   if (params.section) args.push("--section", params.section);
@@ -99,9 +110,7 @@ export async function runListIncluded(params: {
   section?: string;
   mode?: "all" | "changes";
 }): Promise<string[]> {
-  const spec = await resolveCliRunSpec(vscode.extensions.getExtension("your-org.vscode-lg")?.exports?.context ?? ({} as any) );
-  const ctx = (vscode.extensions.getExtension("your-org.vscode-lg") as any)?.exports?.context as vscode.ExtensionContext | undefined;
-  const finalSpec = spec ?? (await resolveCliRunSpec(ctx!));
+  const finalSpec = await resolveCliRunSpec();
   if (!finalSpec) throw new Error("CLI is not available.");
 
   const args: string[] = [];
@@ -116,9 +125,7 @@ export async function runListIncluded(params: {
 }
 
 export async function runContext(templateName: string): Promise<string> {
-  const spec = await resolveCliRunSpec(vscode.extensions.getExtension("your-org.vscode-lg")?.exports?.context ?? ({} as any) );
-  const ctx = (vscode.extensions.getExtension("your-org.vscode-lg") as any)?.exports?.context as vscode.ExtensionContext | undefined;
-  const finalSpec = spec ?? (await resolveCliRunSpec(ctx!));
+  const finalSpec = await resolveCliRunSpec();
   if (!finalSpec) throw new Error("CLI is not available.");
 
   const args = ["--context", templateName];

@@ -8,12 +8,15 @@ import { IncludedTree } from "./views/IncludedTree";
 import { showStatsWebview } from "./views/StatsWebview";
 import { runDoctor } from "./diagnostics/Doctor";
 import { ensureStarterConfig } from "./starter/StarterConfig";
-import { locateCliOrOfferInstall, runListing, runListIncluded, runContext } from "./runner/LgLocator";
+import { locateCliOrOfferInstall, runListing, runListIncluded, runContext, setExtensionContext } from "./runner/LgLocator";
+
 
 let virtualProvider: VirtualDocProvider;
 let includedTree: IncludedTree;
 
 export function activate(context: vscode.ExtensionContext) {
+  setExtensionContext(context);
+
   // 1) Провайдер виртуальных документов (lg://listing, lg://context)
   virtualProvider = new VirtualDocProvider();
   context.subscriptions.push(
