@@ -63,6 +63,9 @@ export class ControlPanelView implements vscode.WebviewViewProvider {
           case "createStarter":
             vscode.commands.executeCommand("lg.createStarterConfig");
             break;
+          case "openConfig":
+            vscode.commands.executeCommand("lg.openConfig");
+            break;
           case "doctor":
             vscode.commands.executeCommand("lg.runDoctor");
             break;
@@ -316,12 +319,15 @@ export class ControlPanelView implements vscode.WebviewViewProvider {
               <button id="btn-starter" title="Создать lg-cfg/config.yaml и пример шаблона">
                 <span class="codicon codicon-new-file"></span> Create Starter Config
               </button>
-              <button id="btn-doctor" title="Проверка окружения и конфигурации">
-                <span class="codicon codicon-pulse"></span> Doctor
+              <button id="btn-open-config" title="Открыть lg-cfg/config.yaml">
+                <span class="codicon codicon-file"></span> Open Config
               </button>
             </span>
             <span class="spacer"></span>
             <span class="cluster">
+              <button id="btn-doctor" title="Проверка окружения и конфигурации">
+                <span class="codicon codicon-pulse"></span> Doctor
+              </button>
               <button id="btn-settings" title="Открыть настройки расширения">
                 <span class="codicon codicon-gear"></span> Settings
               </button>
@@ -345,6 +351,7 @@ export class ControlPanelView implements vscode.WebviewViewProvider {
             btnIncluded: qs("#btn-included"),
             btnStats: qs("#btn-stats"),
             btnStarter: qs("#btn-starter"),
+            btnOpenConfig: qs("#btn-open-config"),
             btnDoctor: qs("#btn-doctor"),
             btnSettings: qs("#btn-settings"),
           };
@@ -365,6 +372,7 @@ export class ControlPanelView implements vscode.WebviewViewProvider {
           ui.btnIncluded.addEventListener("click", () => post("showIncluded"));
           ui.btnStats.addEventListener("click", () => post("showStats"));
           ui.btnStarter.addEventListener("click", () => post("createStarter"));
+          ui.btnOpenConfig.addEventListener("click", () => post("openConfig"));
           ui.btnDoctor.addEventListener("click", () => post("doctor"));
           ui.btnSettings.addEventListener("click", () => post("openSettings"));
 

@@ -159,6 +159,34 @@ export function activate(context: vscode.ExtensionContext) {
       }
     }),
 
+    vscode.commands.registerCommand("lg.openConfig", async () => {
+      const wf = vscode.workspace.workspaceFolders?.[0];
+      if (!wf) {
+        return vscode.window.showErrorMessage("Open a folder to use Listing Generator.");
+      }
+      const uri = vscode.Uri.joinPath(wf.uri, "lg-cfg", "config.yaml");
+      try {
+        await vscode.workspace.fs.stat(uri);
+      } catch {
+        const choice = await vscode.window.showInformationMessage(
+          "lg-cfg/config.yaml not found. Create a starter config?",
+          "Create", "Cancel"
+        );
+        if (choice === "Create") {
+          await vscode.commands.executeCommand("lg.createStarterConfig");
+        } else {
+          return;
+        }
+      }
+      // Повторная проверка/открытие
+      try {
+        const doc = await vscode.workspace.openTextDocument(uri);
+        await vscode.window.showTextDocument(doc, { preview: false });
+      } catch (e: any) {
+        vscode.window.showErrorMessage(`LG: cannot open config — ${e?.message || e}`);
+      }
+    }),
+
     vscode.commands.registerCommand("lg.runDoctor", async () => {
       await runDoctor(context);
     }),
