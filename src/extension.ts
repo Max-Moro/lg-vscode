@@ -41,7 +41,7 @@ export function activate(context: vscode.ExtensionContext) {
         return vscode.window.showErrorMessage("Open a folder to use Listing Generator.");
       }
       // предлагается выбрать секцию из config.yaml, но на этом шаге возьмём настройку или "all"
-      const section = vscode.workspace.getConfiguration().get<string>("lg.defaultSection") || "all";
+      const section = vscode.workspace.getConfiguration().get<string>("lg.defaultSection") || "all-src";
       const mode = (vscode.workspace.getConfiguration().get<string>("lg.mode") as "all" | "changes") || "all";
       try {
         const content = await vscode.window.withProgress(

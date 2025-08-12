@@ -48,7 +48,7 @@
         },
         "lg.defaultSection": {
           "type": "string",
-          "default": "all",
+          "default": "all-src",
           "description": "Default section name from lg-cfg/config.yaml."
         },
         "lg.defaultTemplate": {

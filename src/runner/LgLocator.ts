@@ -90,7 +90,7 @@ export async function runListing(params: {
   const finalSpec = await resolveCliRunSpec();
   if (!finalSpec) throw new Error("CLI is not available. Configure `lg.python.interpreter` or `lg.cli.path`, or use managed venv.");
 
-  const args: string[] = [];
+  const args: string[] = [...(finalSpec.args || [])];
   if (params.section) args.push("--section", params.section);
   if (params.mode) args.push("--mode", params.mode);
   // CLI по умолчанию уже fenced, но разрешим override
@@ -113,7 +113,7 @@ export async function runListIncluded(params: {
   const finalSpec = await resolveCliRunSpec();
   if (!finalSpec) throw new Error("CLI is not available.");
 
-  const args: string[] = [];
+  const args: string[] = [...(finalSpec.args || [])];
   if (params.section) args.push("--section", params.section);
   if (params.mode) args.push("--mode", params.mode);
   args.push("--list-included");
@@ -128,7 +128,7 @@ export async function runContext(templateName: string): Promise<string> {
   const finalSpec = await resolveCliRunSpec();
   if (!finalSpec) throw new Error("CLI is not available.");
 
-  const args = ["--context", templateName];
+  const args = [...(finalSpec.args || []), "--context", templateName];
   const out = await spawnToString(finalSpec.cmd, args, { cwd: workspaceCwd(), timeoutMs: 120_000 });
   return out;
 }
