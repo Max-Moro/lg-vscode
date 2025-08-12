@@ -22,35 +22,22 @@ export async function ensureStarterConfig() {
   // config.yaml
   const cfg = `schema_version: 5
 
-all:
-  extensions: [".py", ".md", ".yaml", ".json", ".toml"]
-  code_fence: true
-  markdown:
-    max_heading_level: 3
-  filters:
-    mode: block
-    block:
-      - ".git/"
-      - "**/__pycache__/**"
-      - "**/*.pyc"
-      - "**/*.log"
-
-docs:
+docs-intro:
   extensions: [".md"]
   filters:
     mode: allow
     allow:
       - "/README.md"
+
+all-src:
+  extensions: [".py", ".ts", ".js", ".json", ".yaml", ".toml"]
 `;
 
   // example.tpl.md
-  const tpl = `Вводная часть проекта.
+  const tpl = `\${docs-intro}
 
-== Документация ==
-\${tpl:docs/architecture}
-
-== Исходники секции 'all' ==
-\${all}
+# Исходный код проекта
+\${all-src}
 `;
 
   await vscode.workspace.fs.writeFile(cfgFile, Buffer.from(cfg, "utf8"));
