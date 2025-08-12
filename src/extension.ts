@@ -42,6 +42,12 @@ export function activate(context: vscode.ExtensionContext) {
   // 2.1) Панель управления как webview view
   const control = new ControlPanelView(context, virtualProvider, includedTree);
   context.subscriptions.push(vscode.window.registerWebviewViewProvider("lg.control", control, { webviewOptions: { retainContextWhenHidden: true } }));
+  // 2.2) Подписка на смену темы VS Code → переслать в webview (если открыт)
+  context.subscriptions.push(
+    vscode.window.onDidChangeActiveColorTheme(theme => {
+      control.postTheme(theme.kind);
+    })
+  );
 
   // 3) Команды
   context.subscriptions.push(

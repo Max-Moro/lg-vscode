@@ -77,6 +77,13 @@ export class ControlPanelView implements vscode.WebviewViewProvider {
 
     // Первичная инициализация
     this.pushListsAndState().catch(() => void 0);
+    // Отправим текущую тему сразу при инициализации
+    this.postTheme(vscode.window.activeColorTheme.kind);
+  }
+
+  /** Публичный метод: безопасно отправить в webview информацию о теме */
+  public postTheme(kind: vscode.ColorThemeKind) {
+    this.view?.webview.postMessage({ type: "theme", kind });
   }
 
   // ——————————————— handlers ——————————————— //
@@ -151,7 +158,10 @@ export class ControlPanelView implements vscode.WebviewViewProvider {
 
   // ——————————————— HTML ——————————————— //
   private getHtml() {
-    const csp = ""; // VS Code webview uses safe default; we only do inline-no eval.
+    // путь к codicons внутри расширения
+    const codiconsUri = this.view?.webview.asWebviewUri(
+      vscode.Uri.joinPath(this.context.extensionUri, "node_modules", "@vscode", "codicons", "dist", "codicon.css")
+    );
     const css = `
       :root {
         --pad-0: 2px;
@@ -160,19 +170,51 @@ export class ControlPanelView implements vscode.WebviewViewProvider {
         --gap-xs: 4px;
         --font-sz: 12px;
       }
-      body { font: var(--font-sz)/1.35 var(--vscode-font-family); color: var(--vscode-foreground); padding: var(--pad-1); }
+      body {
+        font: var(--font-sz)/1.35 var(--vscode-font-family);
+        color: var(--vscode-foreground);
+        background: var(--vscode-editorBackground);
+        padding: var(--pad-1);
+      }
       h3 { margin: var(--pad-1) 0; font-weight: 600; font-size: 12px; }
       /* Ряды могут переноситься, но «кластеры» внутри — неделимы */
       .row { display: flex; gap: var(--gap-s); align-items: center; margin: var(--pad-1) 0; flex-wrap: wrap; }
       .cluster { display: inline-flex; align-items: center; gap: var(--gap-xs); flex-wrap: nowrap; white-space: nowrap; }
       .cluster label { margin-right: 2px; }
       select, button, input[type="radio"] { font: inherit; }
-      select { max-width: 100%; min-width: 0; }
+      select {
+        max-width: 100%; min-width: 0;
+        background: var(--vscode-dropdown-background);
+        color: var(--vscode-dropdown-foreground);
+        border: 1px solid var(--vscode-dropdown-border, var(--vscode-editorWidget-border, transparent));
+        border-radius: 4px;
+        padding: 2px 6px;
+      }
+      select:focus { outline: 1px solid var(--vscode-focusBorder); }
       /* Компактные кнопки */
-      button { display: inline-flex; align-items: center; gap: 6px; padding: 2px 6px; line-height: 1.2; }
+      button {
+        display: inline-flex; align-items: center; gap: 6px;
+        padding: 2px 6px; line-height: 1.2; border-radius: 4px;
+        background: var(--vscode-button-secondaryBackground);
+        color: var(--vscode-button-secondaryForeground);
+        border: 1px solid var(--vscode-dropdown-border, transparent);
+        cursor: pointer;
+      }
+      button:hover { background: var(--vscode-button-secondaryHoverBackground); }
+      .btn-primary {
+        background: var(--vscode-button-background);
+        color: var(--vscode-button-foreground);
+        border-color: var(--vscode-button-border, var(--vscode-button-background));
+      }
+      .btn-primary:hover { background: var(--vscode-button-hoverBackground); }
+      button:focus { outline: 1px solid var(--vscode-focusBorder); }
       .btn-primary { }
       .help { color: var(--vscode-descriptionForeground); margin: 2px 0 6px; }
-      .block { border: 1px solid var(--vscode-editorIndentGuide-background); border-radius: 6px; padding: 6px; margin-bottom: 8px; }
+      .block {
+        border: 1px solid var(--vscode-editorWidget-border, var(--vscode-editorIndentGuide-background));
+        background: var(--vscode-editorWidget-background, transparent);
+        border-radius: 6px; padding: 6px; margin-bottom: 8px;
+      }
       .spacer { flex: 1; }
       .codicon { font-size: 13px; }
       .muted { color: var(--vscode-descriptionForeground); }
@@ -186,6 +228,7 @@ export class ControlPanelView implements vscode.WebviewViewProvider {
       <head>
         <meta charset="utf-8" />
         <meta http-equiv="Content-Security-Policy" content="default-src 'none'; style-src 'unsafe-inline'; img-src data:; script-src 'unsafe-inline';">
+        <link rel="stylesheet" href="${codiconsUri}">
         <style>${css}</style>
       </head>
       <body>
@@ -320,6 +363,9 @@ export class ControlPanelView implements vscode.WebviewViewProvider {
               setState(msg.state);
             } else if (msg.type === "state") {
               setState(msg.state);
+            } else if (msg.type === "theme") {
+              // msg.kind: 1=Light, 2=Dark, 3=HighContrast, 4=HighContrastLight
+              document.documentElement.dataset.vscodeThemeKind = String(msg.kind);
             }
           });
 
