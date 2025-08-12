@@ -8,7 +8,17 @@ import { IncludedTree } from "./views/IncludedTree";
 import { showStatsWebview } from "./views/StatsWebview";
 import { runDoctor } from "./diagnostics/Doctor";
 import { ensureStarterConfig } from "./starter/StarterConfig";
-import { locateCliOrOfferInstall, runListing, runListIncluded, runContext, setExtensionContext } from "./runner/LgLocator";
+import {
+  locateCliOrOfferInstall,
+  runListing,
+  runListIncluded,
+  runContext,
+  setExtensionContext,
+  listSectionsJson,
+  listContextsJson,
+  runListIncludedJson,
+  runStatsJson
+} from "./runner/LgLocator";
 
 
 let virtualProvider: VirtualDocProvider;
@@ -40,8 +50,18 @@ export function activate(context: vscode.ExtensionContext) {
       if (!workspace) {
         return vscode.window.showErrorMessage("Open a folder to use Listing Generator.");
       }
-      // предлагается выбрать секцию из config.yaml, но на этом шаге возьмём настройку или "all"
-      const section = vscode.workspace.getConfiguration().get<string>("lg.defaultSection") || "all-src";
+      // 1) получаем список секций и показываем QuickPick
+      let section = vscode.workspace.getConfiguration().get<string>("lg.defaultSection") || "all-src";
+      try {
+        const secs = await listSectionsJson();
+        if (secs.length) {
+          const picked = await vscode.window.showQuickPick(secs, { placeHolder: "Select section to generate listing" });
+          if (!picked) return;
+          section = picked;
+        }
+      } catch {
+        // игнор: fallback на настройку
+      }
       const mode = (vscode.workspace.getConfiguration().get<string>("lg.mode") as "all" | "changes") || "all";
       try {
         const content = await vscode.window.withProgress(
@@ -55,12 +75,21 @@ export function activate(context: vscode.ExtensionContext) {
     }),
 
     vscode.commands.registerCommand("lg.generateContext", async () => {
-      // просто спросим имя шаблона (без .tpl.md)
-      const name = await vscode.window.showInputBox({
-        title: "LG — Template name (without .tpl.md)",
-        value: vscode.workspace.getConfiguration().get<string>("lg.defaultTemplate") || ""
-      });
-      if (!name) return;
+      // QuickPick по списку контекстов
+      let name = vscode.workspace.getConfiguration().get<string>("lg.defaultTemplate") || "";
+      try {
+        const ctxs = await listContextsJson();
+        if (!ctxs.length) {
+          vscode.window.showWarningMessage("No context templates found in lg-cfg/contexts/");
+          return;
+        }
+        const picked = await vscode.window.showQuickPick(ctxs, { placeHolder: "Select context template" });
+        if (!picked) return;
+        name = picked;
+      } catch (e: any) {
+        vscode.window.showErrorMessage(`LG: Failed to list contexts — ${e?.message || e}`);
+        return;
+      }
       try {
         const content = await vscode.window.withProgress(
           { location: vscode.ProgressLocation.Notification, title: `LG: Generating context '${name}'…`, cancellable: false },
@@ -73,14 +102,22 @@ export function activate(context: vscode.ExtensionContext) {
     }),
 
     vscode.commands.registerCommand("lg.showIncluded", async () => {
-      const section = vscode.workspace.getConfiguration().get<string>("lg.defaultSection") || "all";
+      let section = vscode.workspace.getConfiguration().get<string>("lg.defaultSection") || "all-src";
+      try {
+        const secs = await listSectionsJson();
+        if (secs.length) {
+          const picked = await vscode.window.showQuickPick(secs, { placeHolder: "Select section to list included paths" });
+          if (!picked) return;
+          section = picked;
+        }
+      } catch {}
       const mode = (vscode.workspace.getConfiguration().get<string>("lg.mode") as "all" | "changes") || "all";
       try {
-        const paths = await vscode.window.withProgress(
+        const files = await vscode.window.withProgress(
           { location: vscode.ProgressLocation.Notification, title: "LG: Collecting included paths…", cancellable: false },
-          async () => runListIncluded({ section, mode })
+          async () => runListIncludedJson({ section, mode })
         );
-        includedTree.setPaths(paths);
+        includedTree.setPaths(files.map(f => f.path));
         await vscode.commands.executeCommand("workbench.view.explorer");
         vscode.commands.executeCommand("lg.included.focus");
       } catch (e: any) {
@@ -89,7 +126,27 @@ export function activate(context: vscode.ExtensionContext) {
     }),
 
     vscode.commands.registerCommand("lg.showStats", async () => {
-      await showStatsWebview();
+      // Выбор секции и модели → вебвью
+      let section = vscode.workspace.getConfiguration().get<string>("lg.defaultSection") || "all-src";
+      try {
+        const secs = await listSectionsJson();
+        if (secs.length) {
+          const picked = await vscode.window.showQuickPick(secs, { placeHolder: "Select section for stats" });
+          if (!picked) return;
+          section = picked;
+        }
+      } catch {}
+      const mode = (vscode.workspace.getConfiguration().get<string>("lg.mode") as "all" | "changes") || "all";
+      const model = vscode.workspace.getConfiguration().get<string>("lg.modelForStats") || "o3";
+      try {
+        const data = await vscode.window.withProgress(
+          { location: vscode.ProgressLocation.Notification, title: "LG: Computing stats…", cancellable: false },
+          async () => runStatsJson({ section, mode, model })
+        );
+        await showStatsWebview(data);
+      } catch (e: any) {
+        vscode.window.showErrorMessage(`LG: ${e?.message || e}`);
+      }
     }),
 
     vscode.commands.registerCommand("lg.runDoctor", async () => {

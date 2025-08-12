@@ -81,16 +81,21 @@ export async function locateCliOrOfferInstall(ctx: vscode.ExtensionContext): Pro
   return undefined;
 }
 
+/** Универсальный запуск CLI с учётом preArgs (`python -m lg.cli`). Возвращает stdout как строку. */
+export async function runCli(cliArgs: string[], opts: { timeoutMs?: number } = {}): Promise<string> {
+  const spec = await resolveCliRunSpec();
+  if (!spec) throw new Error("CLI is not available. Configure `lg.python.interpreter` or `lg.cli.path`, or use managed venv.");
+  const args = [...spec.args, ...cliArgs];
+  return spawnToString(spec.cmd, args, { cwd: workspaceCwd(), timeoutMs: opts.timeoutMs ?? 120_000 });
+}
+
 export async function runListing(params: {
   section?: string;
   mode?: "all" | "changes";
   codeFenceOverride?: boolean | null;
   maxHeadingLevel?: number | null;
 }): Promise<string> {
-  const finalSpec = await resolveCliRunSpec();
-  if (!finalSpec) throw new Error("CLI is not available. Configure `lg.python.interpreter` or `lg.cli.path`, or use managed venv.");
-
-  const args: string[] = [...(finalSpec.args || [])];
+  const args: string[] = [];
   if (params.section) args.push("--section", params.section);
   if (params.mode) args.push("--mode", params.mode);
   // CLI по умолчанию уже fenced, но разрешим override
@@ -102,22 +107,18 @@ export async function runListing(params: {
   if (typeof params.maxHeadingLevel === "number") {
     args.push("--max-heading-level", String(params.maxHeadingLevel));
   }
-  const out = await spawnToString(finalSpec.cmd, args, { cwd: workspaceCwd(), timeoutMs: 60_000 });
-  return out;
+  return runCli(args, { timeoutMs: 60_000 });
 }
 
 export async function runListIncluded(params: {
   section?: string;
   mode?: "all" | "changes";
 }): Promise<string[]> {
-  const finalSpec = await resolveCliRunSpec();
-  if (!finalSpec) throw new Error("CLI is not available.");
-
-  const args: string[] = [...(finalSpec.args || [])];
+  const args: string[] = [];
   if (params.section) args.push("--section", params.section);
   if (params.mode) args.push("--mode", params.mode);
   args.push("--list-included");
-  const out = await spawnToString(finalSpec.cmd, args, { cwd: workspaceCwd(), timeoutMs: 60_000 });
+  const out = await runCli(args, { timeoutMs: 60_000 });
   return out
     .split(/\r?\n/)
     .map((s) => s.trim())
@@ -125,10 +126,50 @@ export async function runListIncluded(params: {
 }
 
 export async function runContext(templateName: string): Promise<string> {
-  const finalSpec = await resolveCliRunSpec();
-  if (!finalSpec) throw new Error("CLI is not available.");
+  const args = ["--context", templateName];
+  return runCli(args, { timeoutMs: 120_000 });
+}
 
-  const args = [...(finalSpec.args || []), "--context", templateName];
-  const out = await spawnToString(finalSpec.cmd, args, { cwd: workspaceCwd(), timeoutMs: 120_000 });
-  return out;
+// ---------------------- JSON-friendly helpers ---------------------- //
+
+export async function listSectionsJson(): Promise<string[]> {
+  const out = await runCli(["--list-sections", "--json"], { timeoutMs: 20_000 });
+  const data = JSON.parse(out);
+  return Array.isArray(data.sections) ? data.sections : [];
+}
+
+export async function listContextsJson(): Promise<string[]> {
+  const out = await runCli(["--list-contexts", "--json"], { timeoutMs: 20_000 });
+  const data = JSON.parse(out);
+  return Array.isArray(data.contexts) ? data.contexts : [];
+}
+
+export async function runListIncludedJson(params: { section?: string; mode?: "all" | "changes" }): Promise<{ path: string; sizeBytes: number }[]> {
+  const args: string[] = [];
+  if (params.section) args.push("--section", params.section);
+  if (params.mode) args.push("--mode", params.mode);
+  args.push("--list-included", "--json");
+  const out = await runCli(args, { timeoutMs: 60_000 });
+  const data = JSON.parse(out);
+  return Array.isArray(data.files) ? data.files : [];
+}
+
+export type StatsJson = {
+  model: string;
+  ctxLimit: number;
+  total: { sizeBytes: number; tokens: number; ctxShare: number };
+  files: { path: string; sizeBytes: number; tokens: number; promptShare: number; ctxShare: number }[];
+};
+export async function runStatsJson(params: { section?: string; mode?: "all" | "changes"; model?: string }): Promise<StatsJson> {
+  const args: string[] = [];
+  if (params.section) args.push("--section", params.section);
+  if (params.mode) args.push("--mode", params.mode);
+  args.push("--list-included", "--stats", "--json", "--model", params.model ?? "o3");
+  const out = await runCli(args, { timeoutMs: 90_000 });
+  return JSON.parse(out) as StatsJson;
+}
+
+export async function runDoctorJson(): Promise<any> {
+  const out = await runCli(["--doctor", "--json"], { timeoutMs: 20_000 });
+  return JSON.parse(out);
 }
