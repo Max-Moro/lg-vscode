@@ -8,7 +8,7 @@ import { IncludedTree } from "./views/IncludedTree";
 import { showStatsWebview } from "./views/StatsWebview";
 import { runDoctor } from "./diagnostics/Doctor";
 import { ensureStarterConfig } from "./starter/StarterConfig";
-import { locateCliOrOfferInstall, runLgTextCommandStub } from "./runner/LgLocator";
+import { locateCliOrOfferInstall, runListing, runListIncluded, runContext } from "./runner/LgLocator";
 
 let virtualProvider: VirtualDocProvider;
 let includedTree: IncludedTree;
@@ -33,36 +33,56 @@ export function activate(context: vscode.ExtensionContext) {
     }),
 
     vscode.commands.registerCommand("lg.generateListing", async () => {
-      // MVP: вместо реального запуска CLI — stub. Следующей итерацией заменим на Runner.
       const workspace = vscode.workspace.workspaceFolders?.[0];
       if (!workspace) {
         return vscode.window.showErrorMessage("Open a folder to use Listing Generator.");
       }
-      // Демонстрация UX: откроем виртуальный документ
-      const content = [
-        "# Listing Generator — Placeholder",
-        "",
-        "Здесь будет реальный листинг из Python CLI.",
-        "Следующим шагом подключим запуск `listing-generator` через Runner."
-      ].join("\n");
-      await virtualProvider.open("listing", "Generated Listing.md", content);
-      // Обновим дерево "included" демонстрационными путями
-      includedTree.setPaths(["src/app.py", "core/utils.py", "README.md"]);
+      // предлагается выбрать секцию из config.yaml, но на этом шаге возьмём настройку или "all"
+      const section = vscode.workspace.getConfiguration().get<string>("lg.defaultSection") || "all";
+      const mode = (vscode.workspace.getConfiguration().get<string>("lg.mode") as "all" | "changes") || "all";
+      try {
+        const content = await vscode.window.withProgress(
+          { location: vscode.ProgressLocation.Notification, title: "LG: Generating listing…", cancellable: false },
+          async () => runListing({ section, mode })
+        );
+        await virtualProvider.open("listing", `Listing — ${section}.md`, content);
+      } catch (e: any) {
+        vscode.window.showErrorMessage(`LG: ${e?.message || e}`);
+      }
     }),
 
     vscode.commands.registerCommand("lg.generateContext", async () => {
-      const content = [
-        "# Context Prompt — Placeholder",
-        "",
-        "Здесь будет сгенерированный промт по шаблону."
-      ].join("\n");
-      await virtualProvider.open("context", "Generated Context.md", content);
+      // просто спросим имя шаблона (без .tpl.md)
+      const name = await vscode.window.showInputBox({
+        title: "LG — Template name (without .tpl.md)",
+        value: vscode.workspace.getConfiguration().get<string>("lg.defaultTemplate") || ""
+      });
+      if (!name) return;
+      try {
+        const content = await vscode.window.withProgress(
+          { location: vscode.ProgressLocation.Notification, title: `LG: Generating context '${name}'…`, cancellable: false },
+          async () => runContext(name)
+        );
+        await virtualProvider.open("context", `Context — ${name}.md`, content);
+      } catch (e: any) {
+        vscode.window.showErrorMessage(`LG: ${e?.message || e}`);
+      }
     }),
 
     vscode.commands.registerCommand("lg.showIncluded", async () => {
-      // просто сфокусироваться на TreeView
-      await vscode.commands.executeCommand("workbench.view.explorer");
-      vscode.commands.executeCommand("lg.included.focus");
+      const section = vscode.workspace.getConfiguration().get<string>("lg.defaultSection") || "all";
+      const mode = (vscode.workspace.getConfiguration().get<string>("lg.mode") as "all" | "changes") || "all";
+      try {
+        const paths = await vscode.window.withProgress(
+          { location: vscode.ProgressLocation.Notification, title: "LG: Collecting included paths…", cancellable: false },
+          async () => runListIncluded({ section, mode })
+        );
+        includedTree.setPaths(paths);
+        await vscode.commands.executeCommand("workbench.view.explorer");
+        vscode.commands.executeCommand("lg.included.focus");
+      } catch (e: any) {
+        vscode.window.showErrorMessage(`LG: ${e?.message || e}`);
+      }
     }),
 
     vscode.commands.registerCommand("lg.showStats", async () => {
