@@ -190,7 +190,8 @@ export class ControlPanelView implements vscode.WebviewViewProvider {
         border-radius: 4px;
         padding: 2px 6px;
       }
-      select:focus { outline: 1px solid var(--vscode-focusBorder); }
+      select:focus-visible { outline: 1px solid var(--vscode-focusBorder); outline-offset: 1px; }
+      select:disabled { color: var(--vscode-disabledForeground); opacity: .7; }
       /* Компактные кнопки */
       button {
         display: inline-flex; align-items: center; gap: 6px;
@@ -201,13 +202,14 @@ export class ControlPanelView implements vscode.WebviewViewProvider {
         cursor: pointer;
       }
       button:hover { background: var(--vscode-button-secondaryHoverBackground); }
+      button:focus-visible { outline: 1px solid var(--vscode-focusBorder); outline-offset: 1px; }
+      button[disabled] { cursor: default; opacity: .7; color: var(--vscode-disabledForeground); }
       .btn-primary {
         background: var(--vscode-button-background);
         color: var(--vscode-button-foreground);
         border-color: var(--vscode-button-border, var(--vscode-button-background));
       }
       .btn-primary:hover { background: var(--vscode-button-hoverBackground); }
-      button:focus { outline: 1px solid var(--vscode-focusBorder); }
       .btn-primary { }
       .help { color: var(--vscode-descriptionForeground); margin: 2px 0 6px; }
       .block {
@@ -221,17 +223,28 @@ export class ControlPanelView implements vscode.WebviewViewProvider {
       /* Чтобы при 320px ничего не «выпирало» за край */
       .fill { flex: 1 1 100%; min-width: 0; }
       .grow { flex: 1 1 auto; }
+      /* High contrast: усилим бордеры и фокусы */
+      [data-vscode-theme-kind="3"], /* HighContrast */
+      [data-vscode-theme-kind="4"]  /* HighContrastLight */ {
+        .block { border-color: var(--vscode-contrastBorder, var(--vscode-editorWidget-border)); }
+        select, button { border-color: var(--vscode-contrastBorder, var(--vscode-focusBorder)); }
+        select:focus-visible, button:focus-visible { outline-color: var(--vscode-contrastActiveBorder, var(--vscode-focusBorder)); }
+      }
+      /* Respect reduced motion */
+      @media (prefers-reduced-motion: reduce) {
+        * { transition: none !important; animation: none !important; }
+      }
     `;
     const html = `
       <!doctype html>
       <html>
       <head>
         <meta charset="utf-8" />
-        <meta http-equiv="Content-Security-Policy" content="default-src 'none'; style-src 'unsafe-inline'; img-src data:; script-src 'unsafe-inline';">
+        <meta http-equiv="Content-Security-Policy" content="default-src 'none'; style-src 'unsafe-inline' ${this.view?.webview.cspSource}; img-src data:; script-src 'unsafe-inline';">
         <link rel="stylesheet" href="${codiconsUri}">
         <style>${css}</style>
       </head>
-      <body>
+      <body data-vscode-theme-kind="">
         <div class="block">
           <h3><span class="codicon codicon-organization"></span> Project Scope</h3>
           <div class="row">
@@ -240,7 +253,7 @@ export class ControlPanelView implements vscode.WebviewViewProvider {
               <select id="section"></select>
             </span>
             <span class="spacer"></span>
-            <span class="cluster" title="Режим отбора файлов">
+            <span class="cluster" title="Режим отбора файлов" role="group" aria-label="Mode">
               <label>Mode:</label>
               <label class="cluster"><input type="radio" name="mode" value="all"> all</label>
               <label class="cluster"><input type="radio" name="mode" value="changes"> changes</label>
