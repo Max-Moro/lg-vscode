@@ -5,7 +5,8 @@ import {
   runListing,
   runContext,
   runListIncludedJson,
-  runStatsJson
+  runStatsJson,
+  runContextStatsJson
 } from "../runner/LgLocator";
 import { VirtualDocProvider } from "./VirtualDocProvider";
 import { IncludedTree } from "./IncludedTree";
@@ -19,7 +20,7 @@ type PanelState = {
 
 const MKEY = "lg.control.state";
 const DEFAULT_STATE: PanelState = {
-  section: "all",
+  section: "all-src",
   mode: "all",
   template: "",
   model: "o3"
@@ -53,6 +54,9 @@ export class ControlPanelView implements vscode.WebviewViewProvider {
             break;
           case "generateContext":
             await this.onGenerateContext();
+            break;
+          case "showContextStats":
+            await this.onShowContextStats();
             break;
           case "showIncluded":
             await this.onShowIncluded();
@@ -110,6 +114,21 @@ export class ControlPanelView implements vscode.WebviewViewProvider {
       () => runContext(s.template)
     );
     await this.vdocs.open("context", `Context — ${s.template}.md`, content);
+  }
+
+  private async onShowContextStats() {
+    const s = this.getState();
+    if (!s.template) {
+      vscode.window.showWarningMessage("Select a template first.");
+      return;
+    }
+    const model = s.model || "o3";
+    const data = await vscode.window.withProgress(
+      { location: vscode.ProgressLocation.Notification, title: `LG: Computing stats for context '${s.template}'…`, cancellable: false },
+      () => runContextStatsJson({ template: s.template, model })
+    );
+    const { showStatsWebview } = await import("./StatsWebview");
+    await showStatsWebview(data);
   }
 
   private async onShowIncluded() {
@@ -251,12 +270,18 @@ export class ControlPanelView implements vscode.WebviewViewProvider {
         <div class="block">
           <h3><span class="codicon codicon-run"></span>AI Contexts</h3>
           <div class="row">
-            <span class="cluster fill">
+            <span class="cluster">
               <select class="grow" id="template" title="Шаблон контекстного промта (.tpl.md)">
                 <option value="">— select template —</option>
               </select>
               <button class="btn-primary" id="btn-context" title="Сгенерировать контекст-промт по шаблону">
                 <span class="codicon codicon-file-code"></span> Generate Context
+              </button>
+            </span>
+            <span class="spacer"></span>
+            <span class="cluster">
+              <button id="btn-context-stats" title="Показать суммарную статистику токенов для выбранного контекста">
+                <span class="codicon codicon-table"></span> Show Context Stats
               </button>
             </span>
           </div>
@@ -292,6 +317,14 @@ export class ControlPanelView implements vscode.WebviewViewProvider {
               <button id="btn-stats" title="Таблица размеров и токенов с долями контекста">
                 <span class="codicon codicon-table"></span> Show Stats
               </button>
+            </span>
+          </div>
+        </div>
+
+        <div class="block">
+          <h3><span class="codicon codicon-organization"></span> Project Scope</h3>
+          <div class="row">
+            <span class="cluster" title="Параметры для расчета статистики">
               <label class="muted">Model:</label>
               <select id="model">
                 <option>o3</option>
@@ -341,6 +374,7 @@ export class ControlPanelView implements vscode.WebviewViewProvider {
             model: qs("#model"),
             btnListing: qs("#btn-listing"),
             btnContext: qs("#btn-context"),
+            btnContextStats: qs("#btn-context-stats"),
             btnIncluded: qs("#btn-included"),
             btnStats: qs("#btn-stats"),
             btnStarter: qs("#btn-starter"),
@@ -362,6 +396,7 @@ export class ControlPanelView implements vscode.WebviewViewProvider {
 
           ui.btnListing.addEventListener("click", () => post("generateListing"));
           ui.btnContext.addEventListener("click", () => post("generateContext"));
+          ui.btnContextStats.addEventListener("click", () => post("showContextStats"));
           ui.btnIncluded.addEventListener("click", () => post("showIncluded"));
           ui.btnStats.addEventListener("click", () => post("showStats"));
           ui.btnStarter.addEventListener("click", () => post("createStarter"));

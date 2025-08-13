@@ -156,6 +156,12 @@ export async function runContext(templateName: string): Promise<string> {
   return runCli(args, { timeoutMs: 120_000 });
 }
 
+export async function runContextStatsJson(params: { template: string; model?: string }): Promise<StatsJson> {
+  const args = ["--context-stats", params.template, "--json", "--model", params.model ?? "o3"];
+  const out = await runCli(args, { timeoutMs: 120_000 });
+  return JSON.parse(out) as StatsJson;
+}
+
 // ---------------------- JSON-friendly helpers ---------------------- //
 
 export async function listSectionsJson(): Promise<string[]> {
