@@ -249,48 +249,42 @@ export class ControlPanelView implements vscode.WebviewViewProvider {
       </head>
       <body data-vscode-theme-kind="">
         <div class="block">
-          <h3><span class="codicon codicon-organization"></span> Project Scope</h3>
+          <h3><span class="codicon codicon-run"></span>AI Contexts</h3>
+          <div class="row">
+            <span class="cluster fill">
+              <select class="grow" id="template" title="Шаблон контекстного промта (.tpl.md)">
+                <option value="">— select template —</option>
+              </select>
+              <button class="btn-primary" id="btn-context" title="Сгенерировать контекст-промт по шаблону">
+                <span class="codicon codicon-file-code"></span> Generate Context
+              </button>
+            </span>
+          </div>
+        </div>
+
+        <div class="block">
+          <h3><span class="codicon codicon-graph"></span> Inspect</h3>
           <div class="row">
             <span class="cluster" title="Секция из lg-cfg/config.yaml">
               <label>Section:</label>
               <select id="section"></select>
             </span>
             <span class="spacer"></span>
-            <span class="cluster" title="Режим отбора файлов" role="group" aria-label="Mode">
+            <span class="cluster" title="Режим отбора файлов (все или измененные)" role="group" aria-label="Mode">
               <label>Mode:</label>
               <label class="cluster"><input type="radio" name="mode" value="all"> all</label>
               <label class="cluster"><input type="radio" name="mode" value="changes"> changes</label>
             </span>
           </div>
-          <div class="help">Выберите секцию и режим (all — весь проект, changes — только изменённые файлы по Git).</div>
-        </div>
-
-        <div class="block">
-          <h3><span class="codicon codicon-run"></span> Generate</h3>
-          <div class="row">
-            <span class="cluster">
-              <button class="btn-primary" id="btn-listing" title="Сшить исходники из выбранной секции в единый листинг">
-                <span class="codicon codicon-play"></span> Generate Listing
-              </button>
-            </span>
-            <span class="cluster fill">
-              <select class="grow" id="template" title="Шаблон контекстного промта (.tpl.md)">
-                <option value="">— select template —</option>
-              </select>
-              <button id="btn-context" title="Сгенерировать контекст-промт по шаблону">
-                <span class="codicon codicon-file-code"></span> Generate Context
-              </button>
-            </span>
-          </div>
-          <div class="help">Listing — склейка файлов. Context — шаблон с автоподстановкой листингов секций.</div>
-        </div>
-
-        <div class="block">
-          <h3><span class="codicon codicon-graph"></span> Inspect</h3>
           <div class="row">
             <span class="cluster">
               <button id="btn-included" title="Показать какие файлы проходят фильтры">
                 <span class="codicon codicon-list-tree"></span> Show Included
+              </button>
+            </span>
+            <span class="cluster">
+              <button id="btn-listing" title="Сшить исходники из выбранной секции в единый листинг">
+                <span class="codicon codicon-play"></span> Generate Listing
               </button>
             </span>
             <span class="spacer"></span>
@@ -309,7 +303,6 @@ export class ControlPanelView implements vscode.WebviewViewProvider {
               </select>
             </span>
           </div>
-          <div class="help">Included — список путей; Stats — оценка токенов и долей окна модели.</div>
         </div>
 
         <div class="block">
