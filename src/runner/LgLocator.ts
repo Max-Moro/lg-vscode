@@ -60,8 +60,33 @@ async function resolveCliRunSpec(): Promise<RunSpec | undefined> {
 }
 
 function workspaceCwd(): string | undefined {
-  const wf = vscode.workspace.workspaceFolders?.[0];
-  return wf?.uri.fsPath;
+  const folders = vscode.workspace.workspaceFolders;
+  if (!folders || folders.length === 0) return undefined;
+
+  // 1) Если есть корень, который сам и есть "lg-cfg" → берем его родителя как общий root
+  const cfgRoot = folders.find(f => {
+    const base = require("path").basename(f.uri.fsPath).toLowerCase();
+    return base === "lg-cfg" || f.name.toLowerCase().includes("lg config");
+  });
+  if (cfgRoot) {
+    const parent = require("path").dirname(cfgRoot.uri.fsPath);
+    return parent;
+  }
+
+  // 2) Иначе ищем корень, внутри которого существует lg-cfg/config.yaml
+  for (const f of folders) {
+    const p = require("path").join(f.uri.fsPath, "lg-cfg", "config.yaml");
+    try {
+      if (require("fs").existsSync(p)) {
+        return f.uri.fsPath;
+      }
+    } catch {
+      // ignore
+    }
+  }
+
+  // 3) Fallback: первый корень
+  return folders[0].uri.fsPath;
 }
 
 // ---------------------- Публичные API для extension.ts ---------------------- //
