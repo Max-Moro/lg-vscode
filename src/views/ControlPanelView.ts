@@ -1,4 +1,5 @@
 import * as vscode from "vscode";
+import * as path from "path";
 import {
   listSectionsJson,
   listContextsJson,
@@ -38,7 +39,7 @@ export class ControlPanelView implements vscode.WebviewViewProvider {
   resolveWebviewView(view: vscode.WebviewView): void | Thenable<void> {
     this.view = view;
     view.webview.options = { enableScripts: true };
-    view.webview.html = this.getHtml();
+    view.webview.html = this.buildHtml(view);
 
     view.webview.onDidReceiveMessage(async (msg) => {
       try {
@@ -179,270 +180,16 @@ export class ControlPanelView implements vscode.WebviewViewProvider {
   }
 
   // ——————————————— HTML ——————————————— //
-  private getHtml() {
-    // путь к codicons внутри расширения
-    const codiconsUri = this.view?.webview.asWebviewUri(
-      vscode.Uri.joinPath(this.context.extensionUri, "node_modules", "@vscode", "codicons", "dist", "codicon.css")
-    );
-    const css = `
-      :root {
-        --pad-0: 2px;
-        --pad-1: 4px;
-        --gap-s: 6px;
-        --gap-xs: 4px;
-        --font-sz: 12px;
-      }
-      body {
-        font: var(--font-sz)/1.35 var(--vscode-font-family);
-        color: var(--vscode-foreground);
-        background: var(--vscode-editorBackground);
-        padding: var(--pad-1);
-      }
-      h3 { margin: var(--pad-1) 0; font-weight: 600; font-size: 12px; }
-      /* Ряды могут переноситься, но «кластеры» внутри — неделимы */
-      .row { display: flex; gap: var(--gap-s); align-items: center; margin: var(--pad-1) 0; flex-wrap: wrap; }
-      .cluster { display: inline-flex; align-items: center; gap: var(--gap-xs); flex-wrap: nowrap; white-space: nowrap; }
-      .cluster label { margin-right: 2px; }
-      select, button, input[type="radio"] { font: inherit; }
-      select {
-        max-width: 100%; min-width: 0;
-        background: var(--vscode-dropdown-background);
-        color: var(--vscode-dropdown-foreground);
-        border: 1px solid var(--vscode-dropdown-border, var(--vscode-editorWidget-border, transparent));
-        border-radius: 4px;
-        padding: 2px 6px;
-      }
-      select:focus-visible { outline: 1px solid var(--vscode-focusBorder); outline-offset: 1px; }
-      select:disabled { color: var(--vscode-disabledForeground); opacity: .7; }
-      /* Компактные кнопки */
-      button {
-        display: inline-flex; align-items: center; gap: 6px;
-        padding: 2px 6px; line-height: 1.2; border-radius: 4px;
-        background: var(--vscode-button-secondaryBackground);
-        color: var(--vscode-button-secondaryForeground);
-        border: 1px solid var(--vscode-dropdown-border, transparent);
-        cursor: pointer;
-      }
-      button:hover { background: var(--vscode-button-secondaryHoverBackground); }
-      button:focus-visible { outline: 1px solid var(--vscode-focusBorder); outline-offset: 1px; }
-      button[disabled] { cursor: default; opacity: .7; color: var(--vscode-disabledForeground); }
-      .btn-primary {
-        background: var(--vscode-button-background);
-        color: var(--vscode-button-foreground);
-        border-color: var(--vscode-button-border, var(--vscode-button-background));
-      }
-      .btn-primary:hover { background: var(--vscode-button-hoverBackground); }
-      .btn-primary { }
-      .help { color: var(--vscode-descriptionForeground); margin: 2px 0 6px; }
-      .block {
-        border: 1px solid var(--vscode-editorWidget-border, var(--vscode-editorIndentGuide-background));
-        background: var(--vscode-editorWidget-background, transparent);
-        border-radius: 6px; padding: 6px; margin-bottom: 8px;
-      }
-      .spacer { flex: 1; }
-      .codicon { font-size: 13px; }
-      .muted { color: var(--vscode-descriptionForeground); }
-      /* Чтобы при 320px ничего не «выпирало» за край */
-      .fill { flex: 1 1 100%; min-width: 0; }
-      .grow { flex: 1 1 auto; }
-      /* High contrast: усилим бордеры и фокусы */
-      [data-vscode-theme-kind="3"], /* HighContrast */
-      [data-vscode-theme-kind="4"]  /* HighContrastLight */ {
-        .block { border-color: var(--vscode-contrastBorder, var(--vscode-editorWidget-border)); }
-        select, button { border-color: var(--vscode-contrastBorder, var(--vscode-focusBorder)); }
-        select:focus-visible, button:focus-visible { outline-color: var(--vscode-contrastActiveBorder, var(--vscode-focusBorder)); }
-      }
-      /* Respect reduced motion */
-      @media (prefers-reduced-motion: reduce) {
-        * { transition: none !important; animation: none !important; }
-      }
-    `;
-    const html = `
-      <!doctype html>
-      <html>
-      <head>
-        <meta charset="utf-8" />
-        <meta http-equiv="Content-Security-Policy" content="default-src 'none'; style-src 'unsafe-inline' ${this.view?.webview.cspSource}; img-src data:; script-src 'unsafe-inline';">
-        <link rel="stylesheet" href="${codiconsUri}">
-        <style>${css}</style>
-      </head>
-      <body data-vscode-theme-kind="">
-        <div class="block">
-          <h3><span class="codicon codicon-run"></span>AI Contexts</h3>
-          <div class="row">
-            <span class="cluster">
-              <select class="grow" id="template" title="Шаблон контекстного промта (.tpl.md)">
-                <option value="">— select template —</option>
-              </select>
-              <button class="btn-primary" id="btn-context" title="Сгенерировать контекст-промт по шаблону">
-                <span class="codicon codicon-file-code"></span> Generate Context
-              </button>
-            </span>
-            <span class="spacer"></span>
-            <span class="cluster">
-              <button id="btn-context-stats" title="Показать суммарную статистику токенов для выбранного контекста">
-                <span class="codicon codicon-table"></span> Show Context Stats
-              </button>
-            </span>
-          </div>
-        </div>
-
-        <div class="block">
-          <h3><span class="codicon codicon-graph"></span> Inspect</h3>
-          <div class="row">
-            <span class="cluster" title="Секция из lg-cfg/config.yaml">
-              <label>Section:</label>
-              <select id="section"></select>
-            </span>
-            <span class="spacer"></span>
-            <span class="cluster" title="Режим отбора файлов (все или измененные)" role="group" aria-label="Mode">
-              <label>Mode:</label>
-              <label class="cluster"><input type="radio" name="mode" value="all"> all</label>
-              <label class="cluster"><input type="radio" name="mode" value="changes"> changes</label>
-            </span>
-          </div>
-          <div class="row">
-            <span class="cluster">
-              <button id="btn-included" title="Показать какие файлы проходят фильтры">
-                <span class="codicon codicon-list-tree"></span> Show Included
-              </button>
-            </span>
-            <span class="cluster">
-              <button id="btn-listing" title="Сшить исходники из выбранной секции в единый листинг">
-                <span class="codicon codicon-play"></span> Generate Listing
-              </button>
-            </span>
-            <span class="spacer"></span>
-            <span class="cluster">
-              <button id="btn-stats" title="Таблица размеров и токенов с долями контекста">
-                <span class="codicon codicon-table"></span> Show Stats
-              </button>
-            </span>
-          </div>
-        </div>
-
-        <div class="block">
-          <h3><span class="codicon codicon-organization"></span> Project Scope</h3>
-          <div class="row">
-            <span class="cluster" title="Параметры для расчета статистики">
-              <label class="muted">Model:</label>
-              <select id="model">
-                <option>o3</option>
-                <option>gpt-4o</option>
-                <option>gpt-4o-mini</option>
-                <option>claude-3-opus</option>
-                <option>claude-3-sonnet</option>
-                <option>gemini-1.5-pro</option>
-              </select>
-            </span>
-          </div>
-        </div>
-
-        <div class="block">
-          <h3><span class="codicon codicon-tools"></span> Utilities</h3>
-          <div class="row">
-            <span class="cluster">
-              <button id="btn-starter" title="Создать lg-cfg/config.yaml и пример шаблона">
-                <span class="codicon codicon-new-file"></span> Create Starter Config
-              </button>
-              <button id="btn-open-config" title="Открыть lg-cfg/config.yaml">
-                <span class="codicon codicon-file"></span> Open Config
-              </button>
-            </span>
-            <span class="spacer"></span>
-            <span class="cluster">
-              <button id="btn-doctor" title="Проверка окружения и конфигурации">
-                <span class="codicon codicon-pulse"></span> Doctor
-              </button>
-              <button id="btn-settings" title="Открыть настройки расширения">
-                <span class="codicon codicon-gear"></span> Settings
-              </button>
-            </span>
-          </div>
-        </div>
-
-        <script>
-          const vscode = acquireVsCodeApi();
-          const qs = (s) => document.querySelector(s);
-          const qsa = (s) => Array.from(document.querySelectorAll(s));
-
-          const ui = {
-            section: qs("#section"),
-            template: qs("#template"),
-            modeAll: () => qs('input[name="mode"][value="all"]'),
-            modeChanges: () => qs('input[name="mode"][value="changes"]'),
-            model: qs("#model"),
-            btnListing: qs("#btn-listing"),
-            btnContext: qs("#btn-context"),
-            btnContextStats: qs("#btn-context-stats"),
-            btnIncluded: qs("#btn-included"),
-            btnStats: qs("#btn-stats"),
-            btnStarter: qs("#btn-starter"),
-            btnOpenConfig: qs("#btn-open-config"),
-            btnDoctor: qs("#btn-doctor"),
-            btnSettings: qs("#btn-settings"),
-          };
-
-          function post(type, payload) { vscode.postMessage({ type, ...payload }); }
-
-          // events
-          ui.section.addEventListener("change", () => post("setState", { state: { section: ui.section.value }}));
-          qsa('input[name="mode"]').forEach(r => r.addEventListener("change", () => {
-            const val = document.querySelector('input[name="mode"]:checked').value;
-            post("setState", { state: { mode: val }});
-          }));
-          ui.template.addEventListener("change", () => post("setState", { state: { template: ui.template.value }}));
-          ui.model.addEventListener("change", () => post("setState", { state: { model: ui.model.value }}));
-
-          ui.btnListing.addEventListener("click", () => post("generateListing"));
-          ui.btnContext.addEventListener("click", () => post("generateContext"));
-          ui.btnContextStats.addEventListener("click", () => post("showContextStats"));
-          ui.btnIncluded.addEventListener("click", () => post("showIncluded"));
-          ui.btnStats.addEventListener("click", () => post("showStats"));
-          ui.btnStarter.addEventListener("click", () => post("createStarter"));
-          ui.btnOpenConfig.addEventListener("click", () => post("openConfig"));
-          ui.btnDoctor.addEventListener("click", () => post("doctor"));
-          ui.btnSettings.addEventListener("click", () => post("openSettings"));
-
-          window.addEventListener("message", (e) => {
-            const msg = e.data;
-            if (msg.type === "data") {
-              fillSelect(ui.section, msg.sections);
-              fillSelect(ui.template, ["— select template —", ...msg.contexts], msg.state.template || "");
-              setState(msg.state);
-            } else if (msg.type === "state") {
-              setState(msg.state);
-            } else if (msg.type === "theme") {
-              // msg.kind: 1=Light, 2=Dark, 3=HighContrast, 4=HighContrastLight
-              document.documentElement.dataset.vscodeThemeKind = String(msg.kind);
-            }
-          });
-
-          function fillSelect(sel, items, value) {
-            const cur = sel.value;
-            sel.innerHTML = "";
-            for (const it of items) {
-              const opt = document.createElement("option");
-              opt.value = it === "— select template —" ? "" : it;
-              opt.textContent = it;
-              sel.appendChild(opt);
-            }
-            sel.value = (value !== undefined ? value : cur) || "";
-          }
-
-          function setState(s) {
-            if (s.section !== undefined) ui.section.value = s.section;
-            if (s.template !== undefined) ui.template.value = s.template;
-            if (s.model !== undefined) ui.model.value = s.model;
-            if (s.mode === "changes") ui.modeChanges().checked = true; else ui.modeAll().checked = true;
-          }
-
-          // init
-          post("init");
-        </script>
-      </body>
-      </html>
-    `;
-    return html;
+  private buildHtml(view: vscode.WebviewView): string {
+    // читаем шаблон control.html и подставляем необходимые URI/значения
+    const tplUri = vscode.Uri.joinPath(this.context.extensionUri, "media", "control.html");
+    const raw = require("fs").readFileSync(tplUri.fsPath, "utf8");
+    // ВАЖНО: путь к codicon.css берём через require.resolve — это устойчиво к хоистингу node_modules
+    const codiconCssPath = require.resolve("@vscode/codicons/dist/codicon.css");
+    const codicons = view.webview.asWebviewUri(vscode.Uri.file(codiconCssPath)).toString();
+    const csp = view.webview.cspSource;
+    return raw
+      .replaceAll("{{codiconsUri}}", codicons)
+      .replaceAll("{{cspSource}}", csp);
   }
 }
