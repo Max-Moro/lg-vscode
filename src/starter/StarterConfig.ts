@@ -3,15 +3,15 @@
  * Это полезно, чтобы пользователь мог сразу «пощупать» UX.
  */
 import * as vscode from "vscode";
+import { effectiveWorkspaceRoot } from "../runner/LgLocator";
 
 export async function ensureStarterConfig() {
-  const wf = vscode.workspace.workspaceFolders?.[0];
-  if (!wf) {
+  const rootFs = effectiveWorkspaceRoot();
+  if (!rootFs) {
     vscode.window.showErrorMessage("Open a folder to create starter config.");
     return;
   }
-  const root = wf.uri;
-  const cfgDir = vscode.Uri.joinPath(root, "lg-cfg");
+  const cfgDir = vscode.Uri.file(require("path").join(rootFs, "lg-cfg"));
   const ctxDir = vscode.Uri.joinPath(cfgDir, "contexts");
   const cfgFile = vscode.Uri.joinPath(cfgDir, "config.yaml");
   const tplFile = vscode.Uri.joinPath(ctxDir, "example.tpl.md");

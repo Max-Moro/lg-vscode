@@ -59,7 +59,8 @@ async function resolveCliRunSpec(): Promise<RunSpec | undefined> {
   return undefined;
 }
 
-function workspaceCwd(): string | undefined {
+/** Единое правило выбора корня: родитель lg-cfg, либо корень, где есть lg-cfg/config.yaml, иначе первый корень. */
+export function effectiveWorkspaceRoot(): string | undefined {
   const folders = vscode.workspace.workspaceFolders;
   if (!folders || folders.length === 0) return undefined;
 
@@ -111,7 +112,7 @@ export async function runCli(cliArgs: string[], opts: { timeoutMs?: number } = {
   const spec = await resolveCliRunSpec();
   if (!spec) throw new Error("CLI is not available. Configure `lg.python.interpreter` or `lg.cli.path`, or use managed venv.");
   const args = [...spec.args, ...cliArgs];
-  return spawnToString(spec.cmd, args, { cwd: workspaceCwd(), timeoutMs: opts.timeoutMs ?? 120_000 });
+  return spawnToString(spec.cmd, args, { cwd: effectiveWorkspaceRoot(), timeoutMs: opts.timeoutMs ?? 120_000 });
 }
 
 export async function runListing(params: {

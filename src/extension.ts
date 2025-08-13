@@ -17,7 +17,8 @@ import {
   listSectionsJson,
   listContextsJson,
   runListIncludedJson,
-  runStatsJson
+  runStatsJson,
+  effectiveWorkspaceRoot
 } from "./runner/LgLocator";
 import { ControlPanelView } from "./views/ControlPanelView";
 
@@ -160,11 +161,11 @@ export function activate(context: vscode.ExtensionContext) {
     }),
 
     vscode.commands.registerCommand("lg.openConfig", async () => {
-      const wf = vscode.workspace.workspaceFolders?.[0];
-      if (!wf) {
+      const root = effectiveWorkspaceRoot();
+      if (!root) {
         return vscode.window.showErrorMessage("Open a folder to use Listing Generator.");
       }
-      const uri = vscode.Uri.joinPath(wf.uri, "lg-cfg", "config.yaml");
+      const uri = vscode.Uri.file(require("path").join(root, "lg-cfg", "config.yaml"));
       try {
         await vscode.workspace.fs.stat(uri);
       } catch {
