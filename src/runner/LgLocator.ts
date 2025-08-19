@@ -32,7 +32,7 @@ async function resolveCliRunSpec(): Promise<RunSpec | undefined> {
   if (strategy === "system") {
     const interp = cfg.get<string>("lg.python.interpreter")?.trim();
     if (interp) {
-      return { cmd: interp, args: ["-m", "lg.cli"] };
+      return { cmd: interp, args: ["-m", "lg_vnext.cli"] };
     }
   }
 
@@ -50,10 +50,10 @@ async function resolveCliRunSpec(): Promise<RunSpec | undefined> {
     return { cmd: "listing-generator", args: [] };
   } catch { /* ignore */ }
 
-  // 3) fallback: python -m lg.cli (потребуется python)
+  // 3) fallback: python -m lg_vnext.cli (потребуется python)
   const py = await findPython();
   if (py) {
-    return { cmd: py, args: ["-m", "lg.cli"] };
+    return { cmd: py, args: ["-m", "lg_vnext.cli"] };
   }
 
   return undefined;
@@ -118,72 +118,49 @@ export async function runCli(cliArgs: string[], opts: { timeoutMs?: number } = {
 export async function runListing(params: {
   section?: string;
   mode?: "all" | "changes";
-  codeFenceOverride?: boolean | null;
-  maxHeadingLevel?: number | null;
+  codeFenceOverride?: boolean | null; // only false → --no-fence
 }): Promise<string> {
-  const args: string[] = [];
-  if (params.section) args.push("--section", params.section);
+  const target = params.section ? `sec:${params.section}` : "sec:all";
+  const args: string[] = ["render", target];
   if (params.mode) args.push("--mode", params.mode);
-  // CLI по умолчанию уже fenced, но разрешим override
-  if (params.codeFenceOverride === true) args.push("--code-fence");
-  if (params.codeFenceOverride === false) {
-    // нет прямого --no-code-fence флага, но мы можем задать через maxHeadingLevel только для md;
-    // оставим пусто: используем дефолт CLI/конфига
-  }
-  if (typeof params.maxHeadingLevel === "number") {
-    args.push("--max-heading-level", String(params.maxHeadingLevel));
-  }
+  if (params.codeFenceOverride === false) args.push("--no-fence");
   return runCli(args, { timeoutMs: 60_000 });
-}
-
-export async function runListIncluded(params: {
-  section?: string;
-  mode?: "all" | "changes";
-}): Promise<string[]> {
-  const args: string[] = [];
-  if (params.section) args.push("--section", params.section);
-  if (params.mode) args.push("--mode", params.mode);
-  args.push("--list-included");
-  const out = await runCli(args, { timeoutMs: 60_000 });
-  return out
-    .split(/\r?\n/)
-    .map((s) => s.trim())
-    .filter(Boolean);
-}
+ }
 
 export async function runContext(templateName: string): Promise<string> {
-  const args = ["--context", templateName];
+  const args = ["render", `ctx:${templateName}`];
   return runCli(args, { timeoutMs: 120_000 });
 }
 
 export async function runContextStatsJson(params: { template: string; model?: string }): Promise<StatsJson> {
-  const args = ["--context-stats", params.template, "--json", "--model", params.model ?? "o3"];
+  const args = ["report", `ctx:${params.template}`, "--model", params.model ?? "o3"];
   const out = await runCli(args, { timeoutMs: 120_000 });
-  return JSON.parse(out) as StatsJson;
+  const data = JSON.parse(out);
+  return reportToStatsJson(data);
 }
 
 // ---------------------- JSON-friendly helpers ---------------------- //
 
 export async function listSectionsJson(): Promise<string[]> {
-  const out = await runCli(["--list-sections", "--json"], { timeoutMs: 20_000 });
+  const out = await runCli(["list", "sections"], { timeoutMs: 20_000 });
   const data = JSON.parse(out);
   return Array.isArray(data.sections) ? data.sections : [];
 }
 
 export async function listContextsJson(): Promise<string[]> {
-  const out = await runCli(["--list-contexts", "--json"], { timeoutMs: 20_000 });
+  const out = await runCli(["list", "contexts"], { timeoutMs: 20_000 });
   const data = JSON.parse(out);
   return Array.isArray(data.contexts) ? data.contexts : [];
 }
 
 export async function runListIncludedJson(params: { section?: string; mode?: "all" | "changes" }): Promise<{ path: string; sizeBytes: number }[]> {
-  const args: string[] = [];
-  if (params.section) args.push("--section", params.section);
+  const target = params.section ? `sec:${params.section}` : "sec:all";
+  const args: string[] = ["report", target];
   if (params.mode) args.push("--mode", params.mode);
-  args.push("--list-included", "--json");
   const out = await runCli(args, { timeoutMs: 60_000 });
   const data = JSON.parse(out);
-  return Array.isArray(data.files) ? data.files : [];
+  const files = Array.isArray(data.files) ? data.files : [];
+  return files.map((f: any) => ({ path: f.path, sizeBytes: f.sizeBytes ?? 0 }));
 }
 
 export type StatsJson = {
@@ -193,15 +170,39 @@ export type StatsJson = {
   files: { path: string; sizeBytes: number; tokens: number; promptShare: number; ctxShare: number }[];
 };
 export async function runStatsJson(params: { section?: string; mode?: "all" | "changes"; model?: string }): Promise<StatsJson> {
-  const args: string[] = [];
-  if (params.section) args.push("--section", params.section);
+  const target = params.section ? `sec:${params.section}` : "sec:all";
+  const args: string[] = ["report", target, "--model", params.model ?? "o3"];
   if (params.mode) args.push("--mode", params.mode);
-  args.push("--list-included", "--stats", "--json", "--model", params.model ?? "o3");
   const out = await runCli(args, { timeoutMs: 90_000 });
-  return JSON.parse(out) as StatsJson;
+  const data = JSON.parse(out);
+  return reportToStatsJson(data);
 }
 
 export async function runDoctorJson(): Promise<any> {
-  const out = await runCli(["--doctor", "--json"], { timeoutMs: 20_000 });
+  const out = await runCli(["diag"], { timeoutMs: 20_000 });
   return JSON.parse(out);
+}
+
+// ——————————— helpers ——————————— //
+function reportToStatsJson(data: any): StatsJson {
+  // ожидаем API v4 из lg/api_schema.py
+  const model = String(data?.model ?? "unknown");
+  const ctxLimit = Number(data?.ctxLimit ?? 0);
+  const totalTokens =
+    (typeof data?.total?.renderedTokens === "number" ? data.total.renderedTokens :
+     typeof data?.total?.tokensProcessed === "number" ? data.total.tokensProcessed :
+     0);
+  const total = {
+    sizeBytes: Number(data?.total?.sizeBytes ?? 0),
+    tokens: totalTokens,
+    ctxShare: Number(data?.total?.ctxShare ?? 0)
+  };
+  const files = Array.isArray(data?.files) ? data.files.map((f: any) => ({
+    path: String(f.path),
+    sizeBytes: Number(f.sizeBytes ?? 0),
+    tokens: Number(f.tokensProcessed ?? f.tokensRaw ?? 0),
+    promptShare: Number(f.promptShare ?? 0),
+    ctxShare: Number(f.ctxShare ?? 0)
+  })) : [];
+  return { model, ctxLimit, total, files };
 }

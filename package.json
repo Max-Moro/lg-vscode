@@ -76,11 +76,6 @@
           "default": null,
           "description": "Override CLI code fence behavior (null = do not override)."
         },
-        "lg.maxHeadingLevel": {
-          "type": ["number", "null"],
-          "default": null,
-          "description": "Override Markdown max heading level (null = do not override)."
-        },
         "lg.modelForStats": {
           "type": "string",
           "default": "o3",

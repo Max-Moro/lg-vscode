@@ -21,7 +21,7 @@ export async function runDoctor(ctx: vscode.ExtensionContext) {
     // Сформируем Markdown сами (как строку) — и откроем через VirtualDocProvider.
     const lines: string[] = [];
     lines.push(`# Listing Generator — Doctor Report\n`);
-    lines.push(`- Version: \`${data.version}\``);
+    lines.push(`- Version: \`${data.tool_version ?? "unknown"}\``);
     lines.push(`- Protocol: \`${data.protocol}\``);
     lines.push(`- Workspace root: \`${data.root}\``);
     lines.push(`\n## Checks\n`);

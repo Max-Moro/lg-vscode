@@ -78,7 +78,6 @@ npm install
 | `lg.defaultSection`     | `string`                              | `"all-src"`     | Секция из `lg-cfg/config.yaml`.                                 |                  |
 | `lg.defaultTemplate`    | `string`                              | `""`            | Шаблон (без `.tpl.md`).                                         |                  |
 | `lg.codeFence`          | `boolean \| null`                     | `null`          | Переопределение fenced-блоков (если нужно).                     |                  |
-| `lg.maxHeadingLevel`    | `number \| null`                      | `null`          | Переопределение уровней заголовков Markdown.                    |                  |
 | `lg.modelForStats`      | `string`                              | `"o3"`          | Модель для оценок контекста.                                    |                  |
 | `lg.python.interpreter` | `string`                              | `""`            | Путь к Python, если используете стратегию `system`.             |                  |
 | `lg.cli.path`           | `string`                              | `""`            | Явный путь к `listing-generator` (если хотите миновать Python). |                  |
