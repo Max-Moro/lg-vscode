@@ -132,14 +132,50 @@ export async function runContext(templateName: string): Promise<string> {
   return runCli(args, { timeoutMs: 120_000 });
 }
 
-export async function runContextStatsJson(params: { template: string; model?: string }): Promise<StatsJson> {
+// ---------------------- JSON-API v4 ---------------------- //
+export type RunResult = {
+  formatVersion: 4;
+  scope: "context" | "section";
+  model: string;
+  encoder: string;
+  ctxLimit: number;
+  total: {
+    sizeBytes: number;
+    tokensProcessed: number;
+    tokensRaw: number;
+    savedTokens: number;
+    savedPct: number;
+    ctxShare: number;
+    renderedTokens?: number;
+    renderedOverheadTokens?: number;
+    metaSummary: Record<string, number>;
+  };
+  files: Array<{
+    path: string;
+    sizeBytes: number;
+    tokensRaw: number;
+    tokensProcessed: number;
+    savedTokens: number;
+    savedPct: number;
+    promptShare: number;
+    ctxShare: number;
+    meta: Record<string, string | number | boolean>;
+  }>;
+  context?: {
+    templateName: string;
+    sectionsUsed: Record<string, number>;
+    finalRenderedTokens?: number;
+    templateOnlyTokens?: number;
+    templateOverheadPct?: number;
+    finalCtxShare?: number;
+  };
+};
+
+export async function runContextStatsJson(params: { template: string; model?: string }): Promise<RunResult> {
   const args = ["report", `ctx:${params.template}`, "--model", params.model ?? "o3"];
   const out = await runCli(args, { timeoutMs: 120_000 });
-  const data = JSON.parse(out);
-  return reportToStatsJson(data);
+  return JSON.parse(out) as RunResult;
 }
-
-// ---------------------- JSON-friendly helpers ---------------------- //
 
 export async function listSectionsJson(): Promise<string[]> {
   const out = await runCli(["list", "sections"], { timeoutMs: 20_000 });
@@ -163,46 +199,16 @@ export async function runListIncludedJson(params: { section?: string; mode?: "al
   return files.map((f: any) => ({ path: f.path, sizeBytes: f.sizeBytes ?? 0 }));
 }
 
-export type StatsJson = {
-  model: string;
-  ctxLimit: number;
-  total: { sizeBytes: number; tokens: number; ctxShare: number };
-  files: { path: string; sizeBytes: number; tokens: number; promptShare: number; ctxShare: number }[];
-};
-export async function runStatsJson(params: { section?: string; mode?: "all" | "changes"; model?: string }): Promise<StatsJson> {
+export async function runStatsJson(params: { section?: string; mode?: "all" | "changes"; model?: string }): Promise<RunResult> {
   const target = params.section ? `sec:${params.section}` : "sec:all";
   const args: string[] = ["report", target, "--model", params.model ?? "o3"];
   if (params.mode) args.push("--mode", params.mode);
   const out = await runCli(args, { timeoutMs: 90_000 });
   const data = JSON.parse(out);
-  return reportToStatsJson(data);
+  return JSON.parse(out) as RunResult;
 }
 
 export async function runDoctorJson(): Promise<any> {
   const out = await runCli(["diag"], { timeoutMs: 20_000 });
   return JSON.parse(out);
-}
-
-// ——————————— helpers ——————————— //
-function reportToStatsJson(data: any): StatsJson {
-  // ожидаем API v4 из lg/api_schema.py
-  const model = String(data?.model ?? "unknown");
-  const ctxLimit = Number(data?.ctxLimit ?? 0);
-  const totalTokens =
-    (typeof data?.total?.renderedTokens === "number" ? data.total.renderedTokens :
-     typeof data?.total?.tokensProcessed === "number" ? data.total.tokensProcessed :
-     0);
-  const total = {
-    sizeBytes: Number(data?.total?.sizeBytes ?? 0),
-    tokens: totalTokens,
-    ctxShare: Number(data?.total?.ctxShare ?? 0)
-  };
-  const files = Array.isArray(data?.files) ? data.files.map((f: any) => ({
-    path: String(f.path),
-    sizeBytes: Number(f.sizeBytes ?? 0),
-    tokens: Number(f.tokensProcessed ?? f.tokensRaw ?? 0),
-    promptShare: Number(f.promptShare ?? 0),
-    ctxShare: Number(f.ctxShare ?? 0)
-  })) : [];
-  return { model, ctxLimit, total, files };
 }
