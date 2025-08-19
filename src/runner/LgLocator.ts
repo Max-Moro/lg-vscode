@@ -32,7 +32,7 @@ async function resolveCliRunSpec(): Promise<RunSpec | undefined> {
   if (strategy === "system") {
     const interp = cfg.get<string>("lg.python.interpreter")?.trim();
     if (interp) {
-      return { cmd: interp, args: ["-m", "lg_vnext.cli"] };
+      return { cmd: interp, args: ["-m", "lg.cli"] };
     }
   }
 
@@ -50,10 +50,10 @@ async function resolveCliRunSpec(): Promise<RunSpec | undefined> {
     return { cmd: "listing-generator", args: [] };
   } catch { /* ignore */ }
 
-  // 3) fallback: python -m lg_vnext.cli (потребуется python)
+  // 3) fallback: python -m lg.cli (потребуется python)
   const py = await findPython();
   if (py) {
-    return { cmd: py, args: ["-m", "lg_vnext.cli"] };
+    return { cmd: py, args: ["-m", "lg.cli"] };
   }
 
   return undefined;
