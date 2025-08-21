@@ -37,7 +37,8 @@
       { "command": "lg.openConfig", "title": "LG: Open Config (lg-cfg/config.yaml)" },
       { "command": "lg.createStarterConfig", "title": "LG: Create Starter Config" },
       { "command": "lg.runDoctor", "title": "LG: Doctor (Self Check)" },
-      { "command": "lg.reRunLast", "title": "LG: Re-run Last" }
+      { "command": "lg.reRunLast", "title": "LG: Re-run Last" },
+      { "command": "lg.resetCache", "title": "LG: Reset Cache" }
     ],
     "views": {
       "lg": [

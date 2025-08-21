@@ -66,6 +66,9 @@ export class ControlPanelView implements vscode.WebviewViewProvider {
           case "showStats":
             await this.onShowStats();
             break;
+          case "resetCache":
+            vscode.commands.executeCommand("lg.resetCache");
+            break;
           case "createStarter":
             vscode.commands.executeCommand("lg.createStarterConfig");
             break;

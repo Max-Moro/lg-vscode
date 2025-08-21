@@ -192,6 +192,21 @@ export function activate(context: vscode.ExtensionContext) {
       await runDoctor(context);
     }),
 
+    vscode.commands.registerCommand("lg.resetCache", async () => {
+      try {
+        await vscode.window.withProgress(
+          { location: vscode.ProgressLocation.Notification, title: "LG: Resetting cache…", cancellable: false },
+          async () => {
+            const { runCli } = await import("./runner/LgLocator");
+            await runCli(["diag", "--rebuild-cache"], { timeoutMs: 60_000 });
+          }
+        );
+        vscode.window.showInformationMessage("LG cache has been reset.");
+      } catch (e: any) {
+        vscode.window.showErrorMessage(`LG: Failed to reset cache — ${e?.message || e}`);
+      }
+    }),
+
     vscode.commands.registerCommand("lg.reRunLast", async () => {
       vscode.window.showInformationMessage("Re-run last: пока заглушка. Скоро подключим Runner.");
     })

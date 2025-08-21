@@ -131,6 +131,9 @@
           <button id="btn-doctor" title="Проверка окружения и конфигурации">
             <span class="codicon codicon-pulse"></span> Doctor
           </button>
+          <button id="btn-reset-cache" title="Сбросить кеш Listing Generator">
+            <span class="codicon codicon-trash"></span> Reset Cache
+          </button>
           <button id="btn-settings" title="Открыть настройки расширения">
             <span class="codicon codicon-gear"></span> Settings
           </button>
@@ -157,6 +160,7 @@
         btnStarter: qs("#btn-starter"),
         btnOpenConfig: qs("#btn-open-config"),
         btnDoctor: qs("#btn-doctor"),
+        btnResetCache: qs("#btn-reset-cache"),
         btnSettings: qs("#btn-settings"),
       };
 
@@ -179,6 +183,7 @@
       ui.btnStarter.addEventListener("click", () => post("createStarter"));
       ui.btnOpenConfig.addEventListener("click", () => post("openConfig"));
       ui.btnDoctor.addEventListener("click", () => post("doctor"));
+      ui.btnResetCache.addEventListener("click", () => post("resetCache"));
       ui.btnSettings.addEventListener("click", () => post("openSettings"));
 
       // init handshake
