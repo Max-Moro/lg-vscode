@@ -189,6 +189,12 @@ export async function listContextsJson(): Promise<string[]> {
   return Array.isArray(data.contexts) ? data.contexts : [];
 }
 
+export async function listModelsJson(): Promise<string[]> {
+  const out = await runCli(["list", "models"], { timeoutMs: 20_000 });
+  const data = JSON.parse(out);
+  return Array.isArray(data.models) ? data.models : [];
+}
+
 export async function runListIncludedJson(params: { section?: string; mode?: "all" | "changes" }): Promise<{ path: string; sizeBytes: number }[]> {
   const target = params.section ? `sec:${params.section}` : "sec:all";
   const args: string[] = ["report", target];

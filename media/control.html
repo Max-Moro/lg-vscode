@@ -110,14 +110,7 @@
       <div class="row">
         <span class="cluster" title="Параметры для расчета статистики">
           <label class="muted">Model:</label>
-          <select id="model">
-            <option>o3</option>
-            <option>gpt-4o</option>
-            <option>gpt-4o-mini</option>
-            <option>claude-3-opus</option>
-            <option>claude-3-sonnet</option>
-            <option>gemini-1.5-pro</option>
-          </select>
+          <select id="model"></select>
         </span>
       </div>
     </div>
@@ -197,6 +190,7 @@
         if (msg.type === "data") {
           fillSelect(ui.section, msg.sections);
           fillSelect(ui.template, ["— select template —", ...msg.contexts], msg.state.template || "");
+          fillSelect(ui.model, msg.models || [], msg.state.model || "");
           setState(msg.state);
         } else if (msg.type === "state") {
           setState(msg.state);

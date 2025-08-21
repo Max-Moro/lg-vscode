@@ -3,6 +3,7 @@ import * as path from "path";
 import {
   listSectionsJson,
   listContextsJson,
+  listModelsJson,
   runListing,
   runContext,
   runListIncludedJson,
@@ -187,16 +188,21 @@ export class ControlPanelView implements vscode.WebviewViewProvider {
   }
 
   private async pushListsAndState() {
-    const [sections, contexts] = await Promise.all([
+    const [sections, contexts, models] = await Promise.all([
       listSectionsJson().catch(() => [] as string[]),
-      listContextsJson().catch(() => [] as string[])
+      listContextsJson().catch(() => [] as string[]),
+      listModelsJson().catch(() => [] as string[])
     ]);
     const state = this.getState();
     if (!sections.includes(state.section) && sections.length) {
       state.section = sections[0];
       this.context.globalState.update(MKEY, state);
     }
-    this.post({ type: "data", sections, contexts, state });
+    if (!models.includes(state.model) && models.length) {
+      state.model = models[0];
+      this.context.globalState.update(MKEY, state);
+    }
+    this.post({ type: "data", sections, contexts, models, state });
   }
 
   private post(msg: any) {
