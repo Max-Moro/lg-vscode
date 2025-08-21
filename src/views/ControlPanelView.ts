@@ -87,6 +87,30 @@ export class ControlPanelView implements vscode.WebviewViewProvider {
     this.pushListsAndState().catch(() => void 0);
     // Отправим текущую тему сразу при инициализации
     this.postTheme(vscode.window.activeColorTheme.kind);
+
+
+    // -------------------- watcher на lg-cfg -------------------- //
+    const { effectiveWorkspaceRoot } = require("../runner/LgLocator");
+    const root = effectiveWorkspaceRoot();
+    if (root) {
+      const lgCfgUri = vscode.Uri.file(require("path").join(root, "lg-cfg"));
+      const pattern = new vscode.RelativePattern(lgCfgUri, "**/*");
+      const watcher = vscode.workspace.createFileSystemWatcher(pattern);
+
+      let refreshTimer: NodeJS.Timeout | undefined;
+      const scheduleRefresh = () => {
+        if (refreshTimer) clearTimeout(refreshTimer);
+        refreshTimer = setTimeout(() => {
+          this.pushListsAndState().catch(() => void 0);
+          refreshTimer = undefined;
+        }, 300);
+      };
+
+      watcher.onDidCreate(scheduleRefresh, this);
+      watcher.onDidChange(scheduleRefresh, this);
+      watcher.onDidDelete(scheduleRefresh, this);
+      this.context.subscriptions.push(watcher);
+    }
   }
 
   /** Публичный метод: безопасно отправить в webview информацию о теме */
