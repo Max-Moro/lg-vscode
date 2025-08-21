@@ -51,7 +51,7 @@
 5. Выберите **Section** / **Mode** и запустите **Generate Listing** или **Generate Context**.
 
 > Конфигурация проекта хранится в `lg-cfg/config.yaml` и `lg-cfg/contexts/**.tpl.md` (см. документацию CLI).
-
+<!-- lg:omit:start -->
 ---
 
 ## Установка
@@ -167,4 +167,4 @@ npm install
 
 **Q:** Где включается fenced-обёртка?<br/>
 **A:** По умолчанию — как настроено в `lg-cfg/config.yaml`. Можно временно переопределить через настройку `lg.codeFence`.
-
+<!-- lg:omit:end -->
