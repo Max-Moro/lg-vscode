@@ -13,6 +13,7 @@ export async function showStatsWebview(data: RunResult) {
     vscode.ViewColumn.Active,
     {
       enableScripts: true,
+      retainContextWhenHidden: true,
       localResourceRoots: [vscode.Uri.joinPath(getExtensionUri(), "media")],
     }
   );
