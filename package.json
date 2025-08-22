@@ -10,13 +10,6 @@
   "categories": ["Other"],
   "main": "./dist/extension.js",
   "activationEvents": [
-    "onCommand:lg.generateListing",
-    "onCommand:lg.generateContext",
-    "onCommand:lg.showIncluded",
-    "onCommand:lg.showStats",
-    "onCommand:lg.createStarterConfig",
-    "onCommand:lg.runDoctor",
-    "onCommand:lg.reRunLast",
     "workspaceContains:lg-cfg/config.yaml"
   ],
   "contributes": {
@@ -37,7 +30,6 @@
       { "command": "lg.openConfig", "title": "LG: Open Config (lg-cfg/config.yaml)" },
       { "command": "lg.createStarterConfig", "title": "LG: Create Starter Config" },
       { "command": "lg.runDoctor", "title": "LG: Doctor (Self Check)" },
-      { "command": "lg.reRunLast", "title": "LG: Re-run Last" },
       { "command": "lg.resetCache", "title": "LG: Reset Cache" },
       { "command": "lg.toggleIncludedViewMode", "title": "Toggle Tree/Flat View", "icon": "$(list-tree)" }
     ],
@@ -46,11 +38,13 @@
         {
           "type": "webview",
           "id": "lg.control",
-          "name": "LG — Control Panel"
+          "name": "LG — Control Panel",
+          "icon": "media/lg.svg"
         },
         {
           "id": "lg.included",
-          "name": "Included Files"
+          "name": "Included Files",
+          "icon": "media/lg.svg"
         }
       ]
     },
@@ -82,11 +76,6 @@
           "default": "",
           "description": "Default template name from lg-cfg/contexts (without .tpl.md)."
         },
-        "lg.codeFence": {
-          "type": ["boolean", "null"],
-          "default": null,
-          "description": "Override CLI code fence behavior (null = do not override)."
-        },
         "lg.modelForStats": {
           "type": "string",
           "default": "o3",
@@ -112,11 +101,6 @@
           "type": "boolean",
           "default": true,
           "description": "Auto-update managed CLI when extension updates."
-        },
-        "lg.telemetry": {
-          "type": "boolean",
-          "default": false,
-          "description": "Send anonymous usage events (kept off by default)."
         },
         "lg.openAsEditable": {
           "type": "boolean",

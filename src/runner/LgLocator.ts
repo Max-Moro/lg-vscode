@@ -118,12 +118,10 @@ export async function runCli(cliArgs: string[], opts: { timeoutMs?: number } = {
 export async function runListing(params: {
   section?: string;
   mode?: "all" | "changes";
-  codeFenceOverride?: boolean | null; // only false → --no-fence
 }): Promise<string> {
   const target = params.section ? `sec:${params.section}` : "sec:all";
   const args: string[] = ["render", target];
   if (params.mode) args.push("--mode", params.mode);
-  if (params.codeFenceOverride === false) args.push("--no-fence");
   return runCli(args, { timeoutMs: 60_000 });
  }
 
@@ -134,7 +132,7 @@ export async function runContext(templateName: string): Promise<string> {
 
 // ---------------------- JSON-API v4 ---------------------- //
 export type RunResult = {
-  formatVersion: 4;
+  protocol: number;
   scope: "context" | "section";
   target: string;
   model: string;

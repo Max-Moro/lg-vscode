@@ -212,10 +212,6 @@ export function activate(context: vscode.ExtensionContext) {
       includedTree.toggleViewMode();
       const mode = includedTree.getMode();
       vscode.window.setStatusBarMessage(`LG Included: ${mode === "tree" ? "Tree" : "Flat"} view`, 2000);
-    }),
-
-    vscode.commands.registerCommand("lg.reRunLast", async () => {
-      vscode.window.showInformationMessage("Re-run last: пока заглушка. Скоро подключим Runner.");
     })
   );
 
