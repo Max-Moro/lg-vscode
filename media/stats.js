@@ -185,10 +185,39 @@
 
   function renderMetaSummary(meta) {
     if (!meta || !Object.keys(meta).length) return "";
-    const rows = Object.entries(meta).map(([k, v]) =>
-      `<tr><td class="monosmall">${esc(k)}</td><td class="right">${fmtInt(v)}</td></tr>`
-    ).join("");
-    return `<div class="section"><h3>Adapter Metrics (Summary)</h3>
-      <table class="kv"><tbody>${rows}</tbody></table></div>`;
+
+    // Двухуровневая группировка:
+    // 1) уровень — языковой адаптер (md, py, ...),
+    // 2) уровень — остаток ключа целиком ПОСЛЕ первого "." (например: "removed.sections").
+    // Приватные (_*) и нулевые значения скрываем.
+    /** @type {Record<string, Array<[string, number]>>} */
+    const groups = {};
+    for (const [k, v] of Object.entries(meta)) {
+      if (k.startsWith("_") || v === 0) continue;
+      const dot = k.indexOf(".");
+      if (dot <= 0 || dot === k.length - 1) {
+        // Если формат неожиданный (без префикса/остатка) — пропустим,
+        // чтобы не смешивать с адаптерами.
+        continue;
+      }
+      const prefix = k.slice(0, dot);            // "md"
+      const rest   = k.slice(dot + 1);           // "removed.sections"
+      if (!groups[prefix]) groups[prefix] = [];
+      groups[prefix].push([rest, /** @type {number} */(v)]);
+    }
+
+    const prefixes = Object.keys(groups).sort((a, b) => a.localeCompare(b));
+    if (!prefixes.length) return "";
+
+    const groupHtml = prefixes.map(prefix => {
+      const items = groups[prefix].slice().sort((a, b) => a[0].localeCompare(b[0]));
+      const rows = items.map(([name, val]) =>
+        `<tr><td class="monosmall">${esc(name)}</td><td class="right">${fmtInt(val)}</td></tr>`
+      ).join("");
+      const title = prefix.charAt(0).toUpperCase() + prefix.slice(1);
+      return `<div class="kv-group"><h4>${esc(title)}</h4><table class="kv"><tbody>${rows}</tbody></table></div>`;
+    }).join("");
+
+    return `<div class="section"><h3>Adapter Metrics (Summary)</h3>${groupHtml}</div>`;
   }
 })();

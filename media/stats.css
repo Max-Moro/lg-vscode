@@ -21,7 +21,20 @@ td.right, th.right { text-align: right; }
 .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
 .section { margin-top: 16px; }
 .monosmall { font-family: var(--vscode-editor-font-family, monospace); font-size: 11px; }
+
 .kv { width: 100%; border-collapse: collapse; }
 .kv td { padding: 4px 6px; border-bottom: 1px dashed var(--vscode-editorIndentGuide-background); }
+
+/* Adapter Metrics: ограничим ширину и добавим стиль групп */
+.kv-group { max-width: 480px; margin: 12px 0; }
+.kv-group h4 {
+  margin: 4px 0;
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--vscode-descriptionForeground);
+  border-bottom: 1px solid var(--vscode-editorIndentGuide-background);
+  padding-bottom: 2px;
+}
+
 .filter { margin: 8px 0 12px; display: flex; gap: 8px; align-items: center; }
 input[type="search"] { width: 320px; padding: 6px 8px; background: var(--vscode-input-background); color: var(--vscode-input-foreground); border: 1px solid var(--vscode-inputBorder); border-radius: 6px; }
