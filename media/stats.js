@@ -22,6 +22,7 @@
   function render(data) {
     const total = data.total || {};
     const scope = data.scope || "context";
+
     let name = "";
     if (scope === "context") {
       name = data.target.startsWith("ctx:") ? data.target.slice(4) : data.target;
@@ -29,6 +30,8 @@
       name = data.target.startsWith("sec:") ? data.target.slice(4) : data.target;
     }
     const scopeLabel = scope === "context" ? "Context" : "Section";
+    document.title = `${scopeLabel}: ${name} — Statistics`;
+
     const hasRendered = typeof total.renderedTokens === "number";
     const renderedTokens = total.renderedTokens || 0;
     const renderedOverhead = total.renderedOverheadTokens || 0;

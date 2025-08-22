@@ -16,7 +16,7 @@ export async function showStatsWebview(data: RunResult) {
 
   const panel = vscode.window.createWebviewPanel(
     "lg.stats",
-    `${scope}: ${name} — Stats`,
+    `${scope}: ${name} — Statistics`,
     vscode.ViewColumn.Active,
     {
       enableScripts: true,
