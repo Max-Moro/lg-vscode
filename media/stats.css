@@ -38,3 +38,25 @@ td.right, th.right { text-align: right; }
 
 .filter { margin: 8px 0 12px; display: flex; gap: 8px; align-items: center; }
 input[type="search"] { width: 320px; padding: 6px 8px; background: var(--vscode-input-background); color: var(--vscode-input-foreground); border: 1px solid var(--vscode-inputBorder); border-radius: 6px; }
+
+/* ——— Debug row: два независимых спойлера в одну строку ——— */
+.debug-row {
+  display: flex;
+  gap: 16px;
+  flex-wrap: wrap;
+  align-items: flex-start;
+  margin-top: 12px;
+}
+.rawjson {
+  width: 480px;
+  height: 300px;
+  font-family: var(--vscode-editor-font-family, monospace);
+  font-size: 11px;
+  white-space: pre;
+  resize: both;
+  background: var(--vscode-editor-background);
+  color: var(--vscode-foreground);
+  border: 1px solid var(--vscode-editorIndentGuide-background);
+  border-radius: 6px;
+  padding: 8px;
+}

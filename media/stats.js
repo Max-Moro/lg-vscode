@@ -22,7 +22,13 @@
   function render(data) {
     const total = data.total || {};
     const scope = data.scope || "context";
-    const name = scope === "context" ? (data.context?.templateName || "") : (data.context?.templateName || data.files?.[0]?.section || "");
+    let name = "";
+    if (scope === "context") {
+      name = data.target.startsWith("ctx:") ? data.target.slice(4) : data.target;
+    } else if (scope === "section") {
+      name = data.target.startsWith("sec:") ? data.target.slice(4) : data.target;
+    }
+    const scopeLabel = scope === "context" ? "Context" : "Section";
     const hasRendered = typeof total.renderedTokens === "number";
     const renderedTokens = total.renderedTokens || 0;
     const renderedOverhead = total.renderedOverheadTokens || 0;
@@ -33,8 +39,8 @@
     const hasFinal = scope === "context" && typeof ctxBlock.finalRenderedTokens === "number";
 
     app.innerHTML = `
-      <h2>Listing Generator — Statistics</h2>
-      <p class="muted">Scope: <b>${esc(scope)}</b> • ${scope==="context"?"Template":"Section"}: <b>${esc(name)}</b> • Model: <b>${esc(data.model)}</b> • Encoder: <b>${esc(data.encoder)}</b> • Ctx limit: <b>${fmtInt(data.ctxLimit)}</b> tokens</p>
+      <h2>${esc(scopeLabel)}: ${esc(name)} — Statistics</h2>
+      <p class="muted">Scope: <b>${esc(scope)}</b> • Name: <b>${esc(name)}</b> • Model: <b>${esc(data.model)}</b> • Encoder: <b>${esc(data.encoder)}</b> • Ctx limit: <b>${fmtInt(data.ctxLimit)}</b> tokens</p>
 
       <div class="cards">
         ${card("Source Data", `
@@ -172,13 +178,22 @@
     // initial
     sortData(); updateHeaders(); renderBody();
 
-    // Adapter Metrics
-    const metricsHtml = renderMetaSummary(total.metaSummary);
-    if (metricsHtml) {
-      const wrapper = document.createElement("div");
-      wrapper.innerHTML = metricsHtml;
-      app.appendChild(wrapper);
-    }
+    // Adapter Metrics and Raw JSON (debug)
+    const metricsHtml = renderMetaSummary(total.metaSummary) || "";
+    const rawJsonHtml = `
+      <div class="section">
+        <details>
+          <summary><span class="kv-summary">Raw JSON (debug)</span></summary>
+          <textarea class="rawjson">${esc(JSON.stringify(data, null, 2))}</textarea>
+        </details>
+      </div>`;
+
+    const debugRowHtml = `
+      <div class="debug-row">
+        ${metricsHtml}
+        ${rawJsonHtml}
+      </div>`;
+    app.insertAdjacentHTML("beforeend", debugRowHtml);
   }
 
   function card(title, valueHtml, tooltip) {

@@ -136,6 +136,7 @@ export async function runContext(templateName: string): Promise<string> {
 export type RunResult = {
   formatVersion: 4;
   scope: "context" | "section";
+  target: string;
   model: string;
   encoder: string;
   ctxLimit: number;

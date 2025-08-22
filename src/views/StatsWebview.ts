@@ -7,9 +7,16 @@ import * as fs from "fs";
 import type { RunResult } from "../runner/LgLocator";
 
 export async function showStatsWebview(data: RunResult) {
+  const scope = data.scope === "context" ? "Context" : "Section";
+  const name = data.target.startsWith("ctx:")
+    ? data.target.slice(4)
+    : data.target.startsWith("sec:")
+    ? data.target.slice(4)
+    : data.target;
+
   const panel = vscode.window.createWebviewPanel(
     "lg.stats",
-    "Listing Generator — Stats",
+    `${scope}: ${name} — Stats`,
     vscode.ViewColumn.Active,
     {
       enableScripts: true,
