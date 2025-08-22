@@ -40,19 +40,19 @@
         ${card("Source Data", `
            📦 ${hrSize(total.sizeBytes)}<br/>
            🔤 ${fmtInt(total.tokensRaw)} tokens
-        `, "Сырые данные до адаптеров")}
+        `, "Сырые данные до языковых адаптеров")}
 
         ${card("Processed Data", `
            🔤 ${fmtInt(total.tokensProcessed)}<br/>
            💾 ${fmtInt(total.savedTokens)} <span class="pill good">${fmtPct(total.savedPct)}</span><br/>
            📊 <span class="${pillClass(total.ctxShare)}">${fmtPct(total.ctxShare)}</span>
-        `, "После адаптеров: processed, saved, share")}
+        `, "После языковых адаптеров: processed, saved, share")}
 
         ${hasRendered ? card("Rendered Data", `
            🔤 ${fmtInt(renderedTokens)}<br/>
            📐 ${fmtInt(renderedOverhead)}<br/>
            ◔ <span class="pill neutral">${fmtPct(renderedOverheadPct)}</span>
-        `, "Рендеринг промта (fences, FILE метки)") : ""}
+        `, "Рендеринг промта (fences, FILE-метки)") : ""}
 
         ${hasFinal ? card("Template Overhead", `
            🧩 ${fmtInt(ctxBlock.templateOnlyTokens)}<br/>
@@ -65,16 +65,13 @@
         `, "Итоговый размер промта") : ""}
       </div>
 
-      ${renderMetaSummary(total.metaSummary)}
-
       <div class="section">
 
       <div class="section">
         <h3>Files</h3>
         <div class="filter">
           <label class="muted">Filter:</label>
-          <input id="flt" type="search" placeholder="path or ext (e.g. .py)" />
-          <span class="muted">Sort by clicking on headers</span>
+          <input id="flt" type="search" placeholder="path or ext" />
         </div>
       </div>
 
@@ -174,6 +171,14 @@
 
     // initial
     sortData(); updateHeaders(); renderBody();
+
+    // Adapter Metrics
+    const metricsHtml = renderMetaSummary(total.metaSummary);
+    if (metricsHtml) {
+      const wrapper = document.createElement("div");
+      wrapper.innerHTML = metricsHtml;
+      app.appendChild(wrapper);
+    }
   }
 
   function card(title, valueHtml, tooltip) {
@@ -218,6 +223,11 @@
       return `<div class="kv-group"><h4>${esc(title)}</h4><table class="kv"><tbody>${rows}</tbody></table></div>`;
     }).join("");
 
-    return `<div class="section"><h3>Adapter Metrics (Summary)</h3>${groupHtml}</div>`;
+    return `<div class="section">
+      <details>
+        <summary><span class="kv-summary">Adapter Metrics</span></summary>
+        ${groupHtml}
+      </details>
+    </div>`;
   }
 })();
