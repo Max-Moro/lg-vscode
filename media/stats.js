@@ -38,6 +38,8 @@
     const ctxBlock = scope === "context" ? (data.context || {}) : {};
     const hasFinal = scope === "context" && typeof ctxBlock.finalRenderedTokens === "number";
 
+    const hideSaved = (total.savedTokens ?? 0) === 0;
+
     app.innerHTML = `
       <h2>${esc(scopeLabel)}: ${esc(name)} — Statistics</h2>
       <p class="muted">Scope: <b>${esc(scope)}</b> • Name: <b>${esc(name)}</b> • Model: <b>${esc(data.model)}</b> • Encoder: <b>${esc(data.encoder)}</b> • Ctx limit: <b>${fmtInt(data.ctxLimit)}</b> tokens</p>
@@ -48,11 +50,11 @@
            🔤 ${fmtInt(total.tokensRaw)} tokens
         `, "Сырые данные до языковых адаптеров")}
 
-        ${card("Processed Data", `
+        ${!hideSaved ? card("Processed Data", `
            🔤 ${fmtInt(total.tokensProcessed)}<br/>
            💾 ${fmtInt(total.savedTokens)} <span class="pill good">${fmtPct(total.savedPct)}</span><br/>
            📊 <span class="${pillClass(total.ctxShare)}">${fmtPct(total.ctxShare)}</span>
-        `, "После языковых адаптеров: processed, saved, share")}
+        `, "После языковых адаптеров: processed, saved, share") : ""}
 
         ${hasRendered ? card("Rendered Data", `
            🔤 ${fmtInt(renderedTokens)}<br/>
@@ -88,8 +90,10 @@
             <th class="sortable right" data-key="size"   data-dir-default="desc"  title="Размер исходного файла">Size <span class="arrow">▲▼</span></th>
             <th class="sortable right" data-key="raw"    data-dir-default="desc"  title="Tokens Raw (с учётом кратности в context)">Raw <span class="arrow">▲▼</span></th>
             <th class="sortable right" data-key="proc"   data-dir-default="desc"  title="Tokens Processed (с учётом кратности)">Processed <span class="arrow">▲▼</span></th>
-            <th class="sortable right" data-key="saved"  data-dir-default="desc"  title="Экономия в токенах">Saved <span class="arrow">▲▼</span></th>
-            <th class="sortable right" data-key="savedp" data-dir-default="desc"  title="Экономия в процентах">Saved% <span class="arrow">▲▼</span></th>
+            ${!hideSaved ? `
+              <th class="sortable right" data-key="saved"  data-dir-default="desc"  title="Экономия в токенах">Saved <span class="arrow">▲▼</span></th>
+              <th class="sortable right" data-key="savedp" data-dir-default="desc"  title="Экономия в процентах">Saved% <span class="arrow">▲▼</span></th>
+            ` : ""}
             <th class="sortable right" data-key="prompt" data-dir-default="desc"  title="Доля в сумме processed">Prompt% <span class="arrow">▲▼</span></th>
             <th class="sortable right" data-key="ctx"    data-dir-default="desc"  title="Вклад файла в окно модели">Ctx% <span class="arrow">▲▼</span></th>
           </tr>
@@ -149,8 +153,10 @@
           <td class="right">${hrSize(f.sizeBytes)}</td>
           <td class="right">${fmtInt(f.tokensRaw)}</td>
           <td class="right">${fmtInt(f.tokensProcessed)}</td>
-          <td class="right">${fmtInt(f.savedTokens)}</td>
-          <td class="right">${(f.savedPct ?? 0).toFixed(1)}%</td>
+          ${!hideSaved ? `
+            <td class="right">${fmtInt(f.savedTokens)}</td>
+            <td class="right">${(f.savedPct ?? 0).toFixed(1)}%</td>
+          ` : ""}
           <td class="right">${(f.promptShare ?? 0).toFixed(1)}%</td>
           <td class="right${warn}">${(f.ctxShare ?? 0).toFixed(1)}%</td>
         </tr>`;
