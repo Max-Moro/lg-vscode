@@ -1,47 +1,140 @@
 /**
  * Боковая панель со списком «включённых путей».
- * Исправлено для multi-root workspace: открываем файлы по абсолютным URI.
  */
 import * as vscode from "vscode";
 import * as path from "path";
 import * as fs from "fs";
 import { effectiveWorkspaceRoot } from "../runner/LgLocator";
 
-export class IncludedTree implements vscode.TreeDataProvider<PathItem> {
-  private items: PathItem[] = [];
+type ViewMode = "flat" | "tree";
+const STATE_KEY = "lg.included.viewMode";
+
+export class IncludedTree implements vscode.TreeDataProvider<vscode.TreeItem> {
+  private items: vscode.TreeItem[] = [];
   private emitter = new vscode.EventEmitter<void>();
   readonly onDidChangeTreeData = this.emitter.event;
+  private viewMode: ViewMode = "tree";
+  private relPaths: string[] = [];
+  private memento?: vscode.Memento;
+
+  constructor(ctx?: vscode.ExtensionContext) {
+    this.memento = ctx?.globalState;
+    const saved = this.memento?.get<ViewMode>(STATE_KEY);
+    if (saved === "flat" || saved === "tree") this.viewMode = saved;
+  }
 
   setPaths(paths: string[]) {
-    // Преобразуем относительные POSIX-пути (из CLI) в абсолютные URI.
-    this.items = paths.map((rel) => {
-      const uri = resolveRelPathToUri(rel);
-      return new PathItem(rel, uri);
-    });
+    this.relPaths = paths.slice();
+    this.items = this.viewMode === "flat"
+      ? buildFlatItems(this.relPaths)
+      : buildTreeItems(this.relPaths);
     this.emitter.fire();
   }
 
-  getTreeItem(el: PathItem): vscode.TreeItem {
-    return el;
+  getTreeItem(el: vscode.TreeItem): vscode.TreeItem { return el; }
+
+  getChildren(element?: vscode.TreeItem): vscode.ProviderResult<vscode.TreeItem[]> {
+    // Если VS Code спрашивает детей у конкретной папки — отдаём их.
+    if (element && (element as any).__children) {
+      return (element as any).__children as vscode.TreeItem[];
+    }
+    // Иначе — корневой список.
+    return this.items;
   }
 
-  getChildren(): PathItem[] {
-    return this.items;
+  toggleViewMode() {
+    this.viewMode = this.viewMode === "flat" ? "tree" : "flat";
+    this.memento?.update(STATE_KEY, this.viewMode).then(undefined, () => void 0);
+    // Перестроим
+    this.setPaths(this.relPaths);
+  }
+
+  getMode(): ViewMode {
+    return this.viewMode;
   }
 }
 
 class PathItem extends vscode.TreeItem {
-  constructor(relPath: string, uri: vscode.Uri) {
-    super(relPath, vscode.TreeItemCollapsibleState.None);
+  constructor(labelText: string, relPath: string, uri: vscode.Uri) {
+    super(labelText, vscode.TreeItemCollapsibleState.None);
     this.command = {
       title: "Open File",
       command: "vscode.open",
       arguments: [uri],
     };
-    this.resourceUri = uri; // позволяет VS Code показывать иконки по типу файла
+    // Оставляем resourceUri — VS Code сам подставит иконки по типу файла.
+    this.resourceUri = uri;
     this.contextValue = "lg.path";
-    this.iconPath = new vscode.ThemeIcon("file");
+    // Не задаём iconPath для файлов, чтобы не сломать авто-иконки.
+    // (Для папок iconPath остаётся в FolderItem.)
   }
+}
+
+class FolderItem extends vscode.TreeItem {
+  constructor(name: string, children: vscode.TreeItem[]) {
+    super(name, vscode.TreeItemCollapsibleState.Collapsed);
+    this.iconPath = new vscode.ThemeIcon("folder");
+    // Вложенные элементы возвращаем через override `children` (ниже храним ссылку)
+    (this as any).__children = children;
+  }
+}
+
+function buildFlatItems(relPaths: string[]): vscode.TreeItem[] {
+  // Плоский режим: показываем полный относительный путь как label.
+  return relPaths.map((rel) => new PathItem(rel, rel, resolveRelPathToUri(rel)));
+}
+
+function buildTreeItems(relPaths: string[]): vscode.TreeItem[] {
+  // Строим простое дерево по сегментам POSIX-пути (CLI отдаёт POSIX).
+  type Node = { name: string; files: string[]; folders: Map<string, Node> };
+  const root: Node = { name: "", files: [], folders: new Map() };
+
+  for (const rel of relPaths) {
+    const parts = rel.split("/").filter(Boolean);
+    if (!parts.length) continue;
+    let node = root;
+    for (let i = 0; i < parts.length - 1; i++) {
+      const seg = parts[i];
+      if (!node.folders.has(seg)) node.folders.set(seg, { name: seg, files: [], folders: new Map() });
+      node = node.folders.get(seg)!;
+    }
+    node.files.push(rel);
+  }
+
+  const toItems = (node: Node): vscode.TreeItem[] => {
+    const folderItems: vscode.TreeItem[] = [];
+    for (const [_, child] of Array.from(node.folders.entries()).sort(([a], [b]) => a.localeCompare(b))) {
+      const children = [
+        ...toItems(child), // сначала подпапки
+        ...child.files
+          .slice()
+          .sort((a, b) => a.localeCompare(b))
+          .map((rel) => {
+            // Древовидный режим: label — только basename (последний сегмент POSIX-пути)
+            const parts = rel.split("/");
+            const base = parts.length ? parts[parts.length - 1] : rel;
+            return new PathItem(base, rel, resolveRelPathToUri(rel));
+          }),
+      ];
+      folderItems.push(new FolderItem(child.name, children));
+    }
+    return folderItems;
+  };
+
+  // Верхний уровень: папки + файлы верхнего уровня
+  const top: vscode.TreeItem[] = toItems(root);
+  top.push(
+    ...root.files
+      .slice()
+      .sort((a, b) => a.localeCompare(b))
+      .map((rel) => {
+        const parts = rel.split("/");
+        const base = parts.length ? parts[parts.length - 1] : rel;
+        return new PathItem(base, rel, resolveRelPathToUri(rel));
+      })
+  );
+
+  return top;
 }
 
 /**

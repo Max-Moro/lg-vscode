@@ -37,7 +37,7 @@ export function activate(context: vscode.ExtensionContext) {
   setVirtualProvider(virtualProvider);
 
   // 2) Дерево включённых путей
-  includedTree = new IncludedTree();
+  includedTree = new IncludedTree(context);
   context.subscriptions.push(vscode.window.registerTreeDataProvider("lg.included", includedTree));
 
   // 2.1) Панель управления как webview view
@@ -205,6 +205,13 @@ export function activate(context: vscode.ExtensionContext) {
       } catch (e: any) {
         vscode.window.showErrorMessage(`LG: Failed to reset cache — ${e?.message || e}`);
       }
+    }),
+
+    // Переключатель вида: плоский/дерево
+    vscode.commands.registerCommand("lg.toggleIncludedViewMode", async () => {
+      includedTree.toggleViewMode();
+      const mode = includedTree.getMode();
+      vscode.window.setStatusBarMessage(`LG Included: ${mode === "tree" ? "Tree" : "Flat"} view`, 2000);
     }),
 
     vscode.commands.registerCommand("lg.reRunLast", async () => {

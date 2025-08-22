@@ -38,7 +38,8 @@
       { "command": "lg.createStarterConfig", "title": "LG: Create Starter Config" },
       { "command": "lg.runDoctor", "title": "LG: Doctor (Self Check)" },
       { "command": "lg.reRunLast", "title": "LG: Re-run Last" },
-      { "command": "lg.resetCache", "title": "LG: Reset Cache" }
+      { "command": "lg.resetCache", "title": "LG: Reset Cache" },
+      { "command": "lg.toggleIncludedViewMode", "title": "Toggle Tree/Flat View", "icon": "$(list-tree)" }
     ],
     "views": {
       "lg": [
@@ -50,6 +51,15 @@
         {
           "id": "lg.included",
           "name": "Included Files"
+        }
+      ]
+    },
+    "menus": {
+      "view/title": [
+        {
+          "command": "lg.toggleIncludedViewMode",
+          "when": "view == lg.included",
+          "group": "navigation@10"
         }
       ]
     },
