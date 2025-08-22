@@ -21,28 +21,53 @@
 
   function render(data) {
     const total = data.total || {};
-    const scope = data.scope;
+    const scope = data.scope || "context";
+    const name = scope === "context" ? (data.context?.templateName || "") : (data.context?.templateName || data.files?.[0]?.section || "");
     const hasRendered = typeof total.renderedTokens === "number";
     const renderedTokens = total.renderedTokens || 0;
     const renderedOverhead = total.renderedOverheadTokens || 0;
     const renderedOverheadPct = hasRendered && renderedTokens > 0 ? (100 * renderedOverhead / renderedTokens) : 0;
 
+    // Final / Template overhead (только для context)
+    const ctxBlock = scope === "context" ? (data.context || {}) : {};
+    const hasFinal = scope === "context" && typeof ctxBlock.finalRenderedTokens === "number";
+
     app.innerHTML = `
       <h2>Listing Generator — Statistics</h2>
-      <p class="muted">Scope: <b>${esc(scope)}</b> • Model: <b>${esc(data.model)}</b> • Encoder: <b>${esc(data.encoder)}</b> • Ctx limit: <b>${fmtInt(data.ctxLimit)}</b> tokens</p>
+      <p class="muted">Scope: <b>${esc(scope)}</b> • ${scope==="context"?"Template":"Section"}: <b>${esc(name)}</b> • Model: <b>${esc(data.model)}</b> • Encoder: <b>${esc(data.encoder)}</b> • Ctx limit: <b>${fmtInt(data.ctxLimit)}</b> tokens</p>
 
-      <div class="cards" title="Агрегаты по отчёту">
-        ${card("Source Size", hrSize(total.sizeBytes), "Сумма размеров исходных файлов (без кратности)")}
-        ${card("Tokens Raw", fmtInt(total.tokensRaw), "Сумма токенов сырых текстов")}
-        ${card("Tokens Processed", fmtInt(total.tokensProcessed), "Сумма токенов после адаптеров")}
-        ${card("Saved Tokens", `${fmtInt(total.savedTokens)} <span class="pill good">${fmtPct(total.savedPct)}</span>`, "Экономия: raw - processed")}
-        ${card("Context Share", `<span class="${pillClass(total.ctxShare)}">${fmtPct(total.ctxShare)}</span>`, "Доля окна: processed / ctxLimit")}
-        ${hasRendered ? card("Rendered Tokens", fmtInt(renderedTokens), "Токены итогового рендера (после склейки)") : ""}
-        ${hasRendered ? card("Rendered Overhead", `${fmtInt(renderedOverhead)} <span class="pill neutral">${fmtPct(renderedOverheadPct)}</span>`, "Оверхед рендера: rendered - processed") : ""}
+      <div class="cards">
+        ${card("Source Data", `
+           📦 ${hrSize(total.sizeBytes)}<br/>
+           🔤 ${fmtInt(total.tokensRaw)} tokens
+        `, "Сырые данные до адаптеров")}
+
+        ${card("Processed Data", `
+           🔤 ${fmtInt(total.tokensProcessed)}<br/>
+           💾 ${fmtInt(total.savedTokens)} <span class="pill good">${fmtPct(total.savedPct)}</span><br/>
+           📊 <span class="${pillClass(total.ctxShare)}">${fmtPct(total.ctxShare)}</span>
+        `, "После адаптеров: processed, saved, share")}
+
+        ${hasRendered ? card("Rendered Data", `
+           🔤 ${fmtInt(renderedTokens)}<br/>
+           📐 ${fmtInt(renderedOverhead)}<br/>
+           ◔ <span class="pill neutral">${fmtPct(renderedOverheadPct)}</span>
+        `, "Рендеринг промта (fences, FILE метки)") : ""}
+
+        ${hasFinal ? card("Template Overhead", `
+           🧩 ${fmtInt(ctxBlock.templateOnlyTokens)}<br/>
+           ◔ ${fmtPct(ctxBlock.templateOverheadPct)}
+        `, "Оверхед шаблона") : ""}
+
+        ${hasFinal ? card("Final Rendered", `
+           🔤 ${fmtInt(ctxBlock.finalRenderedTokens)}<br/>
+           📊 <span class="${pillClass(ctxBlock.finalCtxShare)}">${fmtPct(ctxBlock.finalCtxShare)}</span>
+        `, "Итоговый размер промта") : ""}
       </div>
 
       ${renderMetaSummary(total.metaSummary)}
-      ${scope === "context" && data.context ? renderContextBlock(data) : ""}
+
+      <div class="section">
 
       <div class="section">
         <h3>Files</h3>
@@ -165,34 +190,5 @@
     ).join("");
     return `<div class="section"><h3>Adapter Metrics (Summary)</h3>
       <table class="kv"><tbody>${rows}</tbody></table></div>`;
-  }
-
-  function renderContextBlock(data) {
-    const c = data.context || {};
-    const rows = Object.entries(c.sectionsUsed || {}).map(([name, m]) =>
-      `<tr><td class="monosmall">${esc(name)}</td><td class="right">${fmtInt(m)}</td></tr>`
-    ).join("");
-    const hasFinal = typeof c.finalRenderedTokens === "number";
-    const finalShare = typeof c.finalCtxShare === "number" ? `<span class="${pillClass(c.finalCtxShare)}">${fmtPct(c.finalCtxShare)}</span>` : "";
-    return `<div class="section">
-      <h3>Context</h3>
-      <div class="grid">
-        <div>
-          <table class="kv">
-            <tbody>
-              <tr><td class="muted">Template</td><td class="right monosmall">${esc(c.templateName || "")}</td></tr>
-              ${hasFinal ? `<tr><td class="muted" title="Токены итогового рендера всего шаблона">Final Rendered</td><td class="right">${fmtInt(c.finalRenderedTokens)}</td></tr>` : ""}
-              ${hasFinal ? `<tr><td class="muted" title="Клей шаблона: final - Σ(rendered секций * кратность)">Template Only</td><td class="right">${fmtInt(c.templateOnlyTokens)}</td></tr>` : ""}
-              ${hasFinal ? `<tr><td class="muted" title="Доля клея от финального рендера">Template Overhead</td><td class="right">${fmtPct(c.templateOverheadPct)}</td></tr>` : ""}
-              ${finalShare ? `<tr><td class="muted" title="Доля окна: finalRendered / ctxLimit">Final Ctx Share</td><td class="right">${finalShare}</td></tr>` : ""}
-            </tbody>
-          </table>
-        </div>
-        <div>
-          <div class="muted">Sections Used (multiplicity):</div>
-          <table class="kv"><tbody>${rows}</tbody></table>
-        </div>
-      </div>
-    </div>`;
   }
 })();
