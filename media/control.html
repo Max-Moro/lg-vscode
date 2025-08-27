@@ -55,9 +55,7 @@
       <h3><span class="codicon codicon-run"></span>AI Contexts</h3>
       <div class="row">
         <span class="cluster">
-          <select class="grow" id="template" title="Контекст (.ctx.md) из lg-cfg/">
-            <option value="">— select template —</option>
-          </select>
+          <select class="grow" id="template" title="Контекст (.ctx.md) из lg-cfg/"></select>
           <button class="btn-primary" id="btn-context" title="Сгенерировать контекст-промт по шаблону">
             <span class="codicon codicon-file-code"></span> Generate Context
           </button>
@@ -194,7 +192,7 @@
         const msg = e.data;
         if (msg.type === "data") {
           fillSelect(ui.section, msg.sections);
-          fillSelect(ui.template, ["— select template —", ...msg.contexts], msg.state.template || "");
+          fillSelect(ui.template, msg.contexts, msg.state.template || "");
           fillSelect(ui.model, msg.models || [], msg.state.model || "");
           setState(msg.state);
         } else if (msg.type === "state") {
@@ -210,7 +208,7 @@
         for (const it of items){
           const opt = document.createElement("option");
           if (typeof it === "string") {
-            opt.value = it === "— select template —" ? "" : it;
+            opt.value = it;
             opt.textContent = it;
           } else if (it && typeof it === "object") {
             opt.value = it.id;
@@ -218,7 +216,7 @@
           }
           sel.appendChild(opt);
         }
-        sel.value = (value !== undefined ? value : cur) || "";
+        sel.value = (value !== undefined ? value : cur) || (items[0] ?? "");
       }
 
       function setState(s){
