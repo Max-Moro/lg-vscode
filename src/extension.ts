@@ -91,10 +91,10 @@ export function activate(context: vscode.ExtensionContext) {
       try {
         const ctxs = await listContextsJson();
         if (!ctxs.length) {
-          vscode.window.showWarningMessage("No context templates found in lg-cfg/contexts/");
+          vscode.window.showWarningMessage("No contexts (*.ctx.md) found in lg-cfg/");
           return;
         }
-        const picked = await vscode.window.showQuickPick(ctxs, { placeHolder: "Select context template" });
+        const picked = await vscode.window.showQuickPick(ctxs, { placeHolder: "Select context (*.ctx.md)" });
         if (!picked) return;
         name = picked;
       } catch (e: any) {
@@ -165,12 +165,12 @@ export function activate(context: vscode.ExtensionContext) {
       if (!root) {
         return vscode.window.showErrorMessage("Open a folder to use Listing Generator.");
       }
-      const uri = vscode.Uri.file(require("path").join(root, "lg-cfg", "config.yaml"));
+      const uri = vscode.Uri.file(require("path").join(root, "lg-cfg", "sections.yaml"));
       try {
         await vscode.workspace.fs.stat(uri);
       } catch {
         const choice = await vscode.window.showInformationMessage(
-          "lg-cfg/config.yaml not found. Create a starter config?",
+          "lg-cfg/sections.yaml not found. Create a starter config?",
           "Create", "Cancel"
         );
         if (choice === "Create") {

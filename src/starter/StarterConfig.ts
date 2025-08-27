@@ -11,16 +11,17 @@ export async function ensureStarterConfig() {
     vscode.window.showErrorMessage("Open a folder to create starter config.");
     return;
   }
-  const cfgDir = vscode.Uri.file(require("path").join(rootFs, "lg-cfg"));
-  const ctxDir = vscode.Uri.joinPath(cfgDir, "contexts");
-  const cfgFile = vscode.Uri.joinPath(cfgDir, "config.yaml");
-  const tplFile = vscode.Uri.joinPath(ctxDir, "example.tpl.md");
+  const path = require("path");
+  const cfgDir = vscode.Uri.file(path.join(rootFs, "lg-cfg"));
+  const cfgFile = vscode.Uri.joinPath(cfgDir, "sections.yaml");
+  const tplFile = vscode.Uri.joinPath(cfgDir, "example.tpl.md");
+  const ctxFile = vscode.Uri.joinPath(cfgDir, "example.ctx.md");
 
   // mkdir -p
-  await vscode.workspace.fs.createDirectory(ctxDir);
+  await vscode.workspace.fs.createDirectory(cfgDir);
 
-  // config.yaml
-  const cfg = `schema_version: 5
+  // sections.yaml
+  const cfg = `schema_version: 6
 
 docs-intro:
   extensions: [".md"]
@@ -33,15 +34,22 @@ all-src:
   extensions: [".py", ".ts", ".js", ".json", ".yaml", ".toml"]
 `;
 
-  // example.tpl.md
-  const tpl = `\${docs-intro}
+  // example.tpl.md (вставляемый шаблон)
+  const tpl = `# Intro
+\${docs-intro}
 
 # Исходный код проекта
 \${all-src}
 `;
 
+  // example.ctx.md (контекст верхнего уровня)
+  const ctx = `# Demo Context
+\${tpl:example}
+`;
+
   await vscode.workspace.fs.writeFile(cfgFile, Buffer.from(cfg, "utf8"));
   await vscode.workspace.fs.writeFile(tplFile, Buffer.from(tpl, "utf8"));
+  await vscode.workspace.fs.writeFile(ctxFile, Buffer.from(ctx, "utf8"));
 
-  vscode.window.showInformationMessage("Starter config created: lg-cfg/config.yaml and contexts/example.tpl.md");
+  vscode.window.showInformationMessage("Starter created: lg-cfg/sections.yaml, example.tpl.md, example.ctx.md");
 }

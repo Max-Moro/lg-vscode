@@ -10,7 +10,7 @@
   "categories": ["Other"],
   "main": "./dist/extension.js",
   "activationEvents": [
-    "workspaceContains:lg-cfg/config.yaml"
+    "workspaceContains:lg-cfg/sections.yaml"
   ],
   "contributes": {
     "viewsContainers": {
@@ -27,7 +27,7 @@
       { "command": "lg.generateContext", "title": "LG: Generate Context (Template)" },
       { "command": "lg.showIncluded", "title": "LG: Show Included Paths" },
       { "command": "lg.showStats", "title": "LG: Show Stats" },
-      { "command": "lg.openConfig", "title": "LG: Open Config (lg-cfg/config.yaml)" },
+      { "command": "lg.openConfig", "title": "LG: Open Config (lg-cfg/sections.yaml)" },
       { "command": "lg.createStarterConfig", "title": "LG: Create Starter Config" },
       { "command": "lg.runDoctor", "title": "LG: Doctor (Self Check)" },
       { "command": "lg.resetCache", "title": "LG: Reset Cache" },
@@ -69,12 +69,12 @@
         "lg.defaultSection": {
           "type": "string",
           "default": "all-src",
-          "description": "Default section name from lg-cfg/config.yaml."
+          "description": "Default section id from lg-cfg/sections.yaml or any *.sec.yaml."
         },
         "lg.defaultTemplate": {
           "type": "string",
           "default": "",
-          "description": "Default template name from lg-cfg/contexts (without .tpl.md)."
+          "description": "Default context name from lg-cfg (without .ctx.md)."
         },
         "lg.modelForStats": {
           "type": "string",

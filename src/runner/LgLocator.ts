@@ -59,7 +59,7 @@ async function resolveCliRunSpec(): Promise<RunSpec | undefined> {
   return undefined;
 }
 
-/** Единое правило выбора корня: родитель lg-cfg, либо корень, где есть lg-cfg/config.yaml, иначе первый корень. */
+/** Единое правило выбора корня: родитель lg-cfg, либо корень, где есть lg-cfg/sections.yaml, иначе первый корень. */
 export function effectiveWorkspaceRoot(): string | undefined {
   const folders = vscode.workspace.workspaceFolders;
   if (!folders || folders.length === 0) return undefined;
@@ -74,9 +74,9 @@ export function effectiveWorkspaceRoot(): string | undefined {
     return parent;
   }
 
-  // 2) Иначе ищем корень, внутри которого существует lg-cfg/config.yaml
+  // 2) Иначе ищем корень, внутри которого существует lg-cfg/sections.yaml
   for (const f of folders) {
-    const p = require("path").join(f.uri.fsPath, "lg-cfg", "config.yaml");
+    const p = require("path").join(f.uri.fsPath, "lg-cfg", "sections.yaml");
     try {
       if (require("fs").existsSync(p)) {
         return f.uri.fsPath;

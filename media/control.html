@@ -55,7 +55,7 @@
       <h3><span class="codicon codicon-run"></span>AI Contexts</h3>
       <div class="row">
         <span class="cluster">
-          <select class="grow" id="template" title="Шаблон контекстного промта (.tpl.md)">
+          <select class="grow" id="template" title="Контекст (.ctx.md) из lg-cfg/">
             <option value="">— select template —</option>
           </select>
           <button class="btn-primary" id="btn-context" title="Сгенерировать контекст-промт по шаблону">
@@ -74,7 +74,7 @@
     <div class="block">
       <h3><span class="codicon codicon-graph"></span> Inspect</h3>
       <div class="row">
-        <span class="cluster" title="Секция из lg-cfg/config.yaml">
+        <span class="cluster" title="Секция из lg-cfg/sections.yaml или *.sec.yaml">
           <label>Section:</label>
           <select id="section"></select>
         </span>
@@ -119,10 +119,10 @@
       <h3><span class="codicon codicon-tools"></span> Utilities</h3>
       <div class="row">
         <span class="cluster">
-          <button id="btn-starter" title="Создать lg-cfg/config.yaml и пример шаблона">
+          <button id="btn-starter" title="Создать lg-cfg/sections.yaml и примеры .tpl.md/.ctx.md">
             <span class="codicon codicon-new-file"></span> Create Starter Config
           </button>
-          <button id="btn-open-config" title="Открыть lg-cfg/config.yaml">
+          <button id="btn-open-config" title="Открыть lg-cfg/sections.yaml">
             <span class="codicon codicon-file"></span> Open Config
           </button>
         </span>
