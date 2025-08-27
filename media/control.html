@@ -209,8 +209,13 @@
         sel.innerHTML = "";
         for (const it of items){
           const opt = document.createElement("option");
-          opt.value = it === "— select template —" ? "" : it;
-          opt.textContent = it;
+          if (typeof it === "string") {
+            opt.value = it === "— select template —" ? "" : it;
+            opt.textContent = it;
+          } else if (it && typeof it === "object") {
+            opt.value = it.id;
+            opt.textContent = it.label;
+          }
           sel.appendChild(opt);
         }
         sel.value = (value !== undefined ? value : cur) || "";

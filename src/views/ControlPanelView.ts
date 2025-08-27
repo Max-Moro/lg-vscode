@@ -151,10 +151,10 @@ export class ControlPanelView implements vscode.WebviewViewProvider {
       vscode.window.showWarningMessage("Select a template first.");
       return;
     }
-    const model = s.model || "o3";
+    const modelId = s.model || "o3";
     const data = await vscode.window.withProgress(
       { location: vscode.ProgressLocation.Notification, title: `LG: Computing stats for context '${s.template}'…`, cancellable: false },
-      () => runContextStatsJson({ template: s.template, model })
+      () => runContextStatsJson({ template: s.template, model: modelId })
     );
     const { showStatsWebview } = await import("./StatsWebview");
     await showStatsWebview(data);
@@ -172,9 +172,10 @@ export class ControlPanelView implements vscode.WebviewViewProvider {
 
   private async onShowStats() {
     const s = this.getState();
+    const modelId = s.model || "o3";
     const data = await vscode.window.withProgress(
       { location: vscode.ProgressLocation.Notification, title: "LG: Computing stats…", cancellable: false },
-      () => runStatsJson({ section: s.section, mode: s.mode, model: s.model })
+      () => runStatsJson({ section: s.section, mode: s.mode, model: modelId })
     );
     const { showStatsWebview } = await import("./StatsWebview");
     await showStatsWebview(data);
@@ -194,16 +195,19 @@ export class ControlPanelView implements vscode.WebviewViewProvider {
     const [sections, contexts, models] = await Promise.all([
       listSectionsJson().catch(() => [] as string[]),
       listContextsJson().catch(() => [] as string[]),
-      listModelsJson().catch(() => [] as string[])
+      listModelsJson().catch(() => [] as any[])
     ]);
     const state = this.getState();
     if (!sections.includes(state.section) && sections.length) {
       state.section = sections[0];
       this.context.globalState.update(MKEY, state);
     }
-    if (!models.includes(state.model) && models.length) {
-      state.model = models[0];
-      this.context.globalState.update(MKEY, state);
+    if (models.length) {
+      const ids = models.map((m: any) => m.id);
+      if (!ids.includes(state.model)) {
+        state.model = models[0].id;
+        this.context.globalState.update(MKEY, state);
+      }
     }
     this.post({ type: "data", sections, contexts, models, state });
   }
