@@ -1,0 +1,18 @@
+schema_version: 6
+
+docs:
+  extensions: [".md"]
+  filters:
+    mode: allow
+    allow:
+      - "/README.md"
+
+src:
+  extensions: [".ts", ".json", ".html", ".css", ".js"]
+  filters:
+    mode: allow
+    allow:
+      - "/src/"
+      - "/package.json"
+      - "/tsconfig.json"
+      - "/media/control.html"
