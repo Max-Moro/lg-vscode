@@ -20,6 +20,7 @@
   function pillClass(p) { return p>100?"pill crit":(p>=80?"pill warn":"pill good"); }
 
   function render(data) {
+    // Actions bar + refresh
     const total = data.total || {};
     const scope = data.scope || "context";
 
@@ -46,6 +47,9 @@
     app.innerHTML = `
       <h2>${esc(scopeLabel)}: ${esc(name)} — Statistics</h2>
       <p class="muted">Scope: <b>${esc(scope)}</b> • Name: <b>${esc(name)}</b> • Model: <b>${esc(data.model)}</b> • Encoder: <b>${esc(data.encoder)}</b> • Ctx limit: <b>${fmtInt(data.ctxLimit)}</b> tokens</p>
+      <div class="actions">
+        <button id="btn-refresh" title="Re-run stats">Refresh</button>
+      </div>
 
       <div class="cards">
         ${card("Source Data", `
@@ -203,6 +207,10 @@
         ${rawJsonHtml}
       </div>`;
     app.insertAdjacentHTML("beforeend", debugRowHtml);
+
+    // Hook refresh button
+    const btn = document.getElementById("btn-refresh");
+    if (btn) btn.addEventListener("click", () => vscode && vscode.postMessage({ type: "refresh" }));
   }
 
   function card(title, valueHtml, tooltip) {

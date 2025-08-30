@@ -6,7 +6,7 @@ import * as fs from "fs";
 
 import type { RunResult } from "../runner/LgLocator";
 
-export async function showStatsWebview(data: RunResult) {
+export async function showStatsWebview(data: RunResult, refetch?: () => Promise<RunResult>) {
   const scope = data.scope === "context" ? "Context" : "Section";
   const name = data.target.startsWith("ctx:")
     ? data.target.slice(4)
@@ -40,10 +40,33 @@ export async function showStatsWebview(data: RunResult) {
     .replace(/{{jsUri}}/g, jsUri)
     .replace(/{{nonce}}/g, String(nonce));
 
+  // Текущее содержимое (обновляем после refresh)
+  let current: RunResult = data;
+
   // Рукопожатие: ждём "ready" из браузера и шлём данные
   panel.webview.onDidReceiveMessage((msg) => {
     if (msg?.type === "ready") {
-      panel.webview.postMessage({ type: "runResult", payload: data });
+      panel.webview.postMessage({ type: "runResult", payload: current });
+    }
+  });
+
+  // Refresh handler (по кнопке в webview)
+  panel.webview.onDidReceiveMessage(async (msg) => {
+    if (msg?.type === "refresh") {
+      if (!refetch) {
+        vscode.window.showWarningMessage("Refresh is unavailable here.");
+        return;
+      }
+      try {
+        const next = await vscode.window.withProgress(
+          { location: vscode.ProgressLocation.Notification, title: "LG: Refreshing stats…", cancellable: false },
+          () => refetch()
+        );
+        current = next;
+        panel.webview.postMessage({ type: "runResult", payload: current });
+      } catch (e: any) {
+        vscode.window.showErrorMessage(`LG: ${e?.message || e}`);
+      }
     }
   });
 }

@@ -36,6 +36,9 @@ td.right, th.right { text-align: right; }
   padding-bottom: 2px;
 }
 
+.actions { margin: 8px 0 8px; }
+button { padding: 6px 10px; background: var(--vscode-button-background); color: var(--vscode-button-foreground); border: 0; border-radius: 6px; cursor: pointer; }
+
 .filter { margin: 8px 0 12px; display: flex; gap: 8px; align-items: center; }
 input[type="search"] { width: 320px; padding: 6px 8px; background: var(--vscode-input-background); color: var(--vscode-input-foreground); border: 1px solid var(--vscode-inputBorder); border-radius: 6px; }
 
