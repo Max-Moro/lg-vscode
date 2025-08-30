@@ -7,7 +7,7 @@
  *  - удобные функции: runListing / runListIncluded / runContext.
  */
 import * as vscode from "vscode";
-import { spawnToString } from "./LgProcess";
+import { spawnToString, spawnToResult } from "./LgProcess";
 import { ensureManagedCli, resolveManagedCliBin } from "./LgInstaller";
 import { findPython } from "./PythonFind";
 
@@ -226,4 +226,16 @@ export async function runStatsJson(params: { section?: string; mode?: "all" | "c
 export async function runDoctorJson(): Promise<any> {
   const out = await runCli(["diag"], { timeoutMs: 20_000 });
   return JSON.parse(out);
+}
+
+/** Диагностика с построением бандла: возвращает JSON и путь к zip (если удалось прочитать из stderr). */
+export async function runDoctorBundle(): Promise<{ data: any; bundlePath?: string }> {
+  const spec = await resolveCliRunSpec();
+  if (!spec) throw new Error("CLI is not available. Configure `lg.python.interpreter` or `lg.cli.path`, or use managed venv.");
+  const args = [...spec.args, "diag", "--bundle"];
+  const { stdout, stderr } = await spawnToResult(spec.cmd, args, { cwd: effectiveWorkspaceRoot(), timeoutMs: 60_000 });
+  const data = JSON.parse(stdout);
+  const m = /Diagnostic bundle written to:\s*(.+)\s*$/m.exec(stderr || "");
+  const bundlePath = m ? m[1].trim() : undefined;
+  return { data, bundlePath };
 }

@@ -192,7 +192,7 @@
     const rawJsonHtml = `
       <div class="section">
         <details>
-          <summary><span class="kv-summary">Raw JSON (debug)</span></summary>
+          <summary><span class="kv-summary">Raw JSON</span></summary>
           <textarea class="rawjson">${esc(JSON.stringify(data, null, 2))}</textarea>
         </details>
       </div>`;
