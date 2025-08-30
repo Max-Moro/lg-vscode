@@ -33,8 +33,6 @@
         <button id="btn-rebuild" class="secondary" title="Reset local LG cache and re-run">Rebuild cache</button>
         <button id="btn-bundle" class="secondary" title="Build diagn. bundle (.zip) with lg-cfg and git metadata">Build bundle</button>
         <button id="btn-copy" class="secondary" title="Copy raw JSON to clipboard">Copy JSON</button>
-        <button id="btn-settings" class="secondary" title="Open extension settings">Open settings</button>
-        <button id="btn-lgcfg" class="secondary" title="Open lg-cfg/sections.yaml">Open lg-cfg</button>
       </div>
       ${bundlePath ? `<p class="note">Bundle: <span class="monosmall">${esc(bundlePath)}</span></p>` : ""}
 
@@ -126,8 +124,6 @@
       const text = (el && el.textContent) ? el.textContent : "";
       vscode && vscode.postMessage({ type: "copyJson", text });
     });
-    $("btn-settings")?.addEventListener("click", () => vscode && vscode.postMessage({ type: "openSettings" }));
-    $("btn-lgcfg")?.addEventListener("click", () => vscode && vscode.postMessage({ type: "openLgCfg" }));
   }
 
   // ------- helpers -------

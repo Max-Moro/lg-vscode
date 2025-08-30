@@ -58,12 +58,6 @@ export async function showDoctorWebview(report: any) {
             panel.webview.postMessage({ type: "report", payload: data, bundlePath });
           }
           break;
-        case "openSettings":
-          vscode.commands.executeCommand("workbench.action.openSettings", "@ext:your-org.vscode-lg");
-          break;
-        case "openLgCfg":
-          vscode.commands.executeCommand("lg.openConfig");
-          break;
         case "copyJson":
           {
             const text =
