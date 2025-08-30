@@ -65,6 +65,16 @@ export async function showDoctorWebview(report: any) {
         case "openLgCfg":
           vscode.commands.executeCommand("lg.openConfig");
           break;
+        case "copyJson":
+          {
+            const text =
+              typeof msg.text === "string" && msg.text.length
+                ? msg.text
+                : JSON.stringify(await runDoctorJson(), null, 2);
+            await vscode.env.clipboard.writeText(text);
+            vscode.window.showInformationMessage("Doctor JSON copied to clipboard.");
+          }
+          break;
       }
     } catch (e: any) {
       vscode.window.showErrorMessage(`LG Doctor: ${e?.message || e}`);

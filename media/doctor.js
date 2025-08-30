@@ -106,6 +106,8 @@
         </div>
       </div>
 
+      ${renderMigrations(cfg)}
+
       <div class="section">
         <details>
           <summary><span class="kv-summary">Raw JSON</span></summary>
@@ -119,15 +121,46 @@
     $("btn-refresh")?.addEventListener("click", () => vscode && vscode.postMessage({ type: "refresh" }));
     $("btn-rebuild")?.addEventListener("click", () => vscode && vscode.postMessage({ type: "rebuildCache" }));
     $("btn-bundle")?.addEventListener("click", () => vscode && vscode.postMessage({ type: "buildBundle" }));
-    $("btn-copy")?.addEventListener("click", async () => {
-      try {
-        const el = document.getElementById("json");
-        if (el) {
-          await navigator.clipboard.writeText(el.textContent || "");
-        }
-      } catch {}
+    $("btn-copy")?.addEventListener("click", () => {
+      const el = document.getElementById("json");
+      const text = (el && el.textContent) ? el.textContent : "";
+      vscode && vscode.postMessage({ type: "copyJson", text });
     });
     $("btn-settings")?.addEventListener("click", () => vscode && vscode.postMessage({ type: "openSettings" }));
     $("btn-lgcfg")?.addEventListener("click", () => vscode && vscode.postMessage({ type: "openLgCfg" }));
+  }
+
+  // ------- helpers -------
+  function renderMigrations(cfg) {
+    const applied = Array.isArray(cfg.applied) ? cfg.applied : [];
+    const pending = Array.isArray(cfg.pending) ? cfg.pending : [];
+    if (!applied.length && !pending.length) return "";
+    const rows = (arr) =>
+      arr
+        .map((m) => `<tr><td class="right monosmall">${esc(String(m.id))}</td><td class="monosmall">${esc(m.title || "")}</td></tr>`)
+        .join("");
+    return `
+      <div class="section">
+        <h3>Migrations</h3>
+        <div class="row">
+          ${applied.length ? `
+            <div>
+              <h4>Applied (${applied.length})</h4>
+              <table>
+                <thead><tr><th class="right">#</th><th>Title</th></tr></thead>
+                <tbody>${rows(applied)}</tbody>
+              </table>
+            </div>` : ""}
+          ${pending.length ? `
+            <div>
+              <h4>Pending (${pending.length})</h4>
+              <table>
+                <thead><tr><th class="right">#</th><th>Title</th></tr></thead>
+                <tbody>${rows(pending)}</tbody>
+              </table>
+            </div>` : ""}
+        </div>
+      </div>
+    `;
   }
 })();
