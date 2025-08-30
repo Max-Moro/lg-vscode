@@ -21,7 +21,7 @@
     const ctxs = Array.isArray(data.contexts) ? data.contexts : [];
     const checks = Array.isArray(data.checks) ? data.checks : [];
 
-    const mig = (cfg.pending?.length || 0) === 0 ? `<span class="pill ok">up-to-date</span>` : `<span class="pill bad">${fmtInt(cfg.pending.length)} pending</span>`;
+    const mig = !cfg.last_error ? `<span class="pill ok">up-to-date</span>` : `<span class="pill bad">error</span>`;
     const cacheState = cache.error ? `<span class="pill bad">error</span>` : (cache.exists ? `<span class="pill ok">ok</span>` : `<span class="pill bad">missing</span>`);
 
     app.innerHTML = `
@@ -133,8 +133,7 @@
   // ------- helpers -------
   function renderMigrations(cfg) {
     const applied = Array.isArray(cfg.applied) ? cfg.applied : [];
-    const pending = Array.isArray(cfg.pending) ? cfg.pending : [];
-    if (!applied.length && !pending.length) return "";
+    if (!applied.length) return "";
     const rows = (arr) =>
       arr
         .map((m) => `<tr><td class="right monosmall">${esc(String(m.id))}</td><td class="monosmall">${esc(m.title || "")}</td></tr>`)
@@ -149,14 +148,6 @@
               <table>
                 <thead><tr><th class="right">#</th><th>Title</th></tr></thead>
                 <tbody>${rows(applied)}</tbody>
-              </table>
-            </div>` : ""}
-          ${pending.length ? `
-            <div>
-              <h4>Pending (${pending.length})</h4>
-              <table>
-                <thead><tr><th class="right">#</th><th>Title</th></tr></thead>
-                <tbody>${rows(pending)}</tbody>
               </table>
             </div>` : ""}
         </div>
