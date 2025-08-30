@@ -42,9 +42,8 @@ export async function showDoctorWebview(report: any) {
           }
           break;
         case "rebuildCache":
-          await vscode.commands.executeCommand("lg.resetCache");
           {
-            const data = await runDoctorJson();
+            const data = await runDoctorJson({ rebuild: true });
             panel.webview.postMessage({ type: "report", payload: data });
           }
           break;

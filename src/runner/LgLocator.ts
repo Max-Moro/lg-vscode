@@ -223,8 +223,9 @@ export async function runStatsJson(params: { section?: string; mode?: "all" | "c
   return JSON.parse(out) as RunResult;
 }
 
-export async function runDoctorJson(): Promise<any> {
-  const out = await runCli(["diag"], { timeoutMs: 20_000 });
+export async function runDoctorJson(opts?: { rebuild?: boolean }): Promise<any> {
+  const args = ["diag"].concat(opts?.rebuild ? ["--rebuild-cache"] : []);
+  const out = await runCli(args, { timeoutMs: opts?.rebuild ? 60_000 : 20_000 });
   return JSON.parse(out);
 }
 
