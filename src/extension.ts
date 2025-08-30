@@ -8,7 +8,7 @@ import { setVirtualProvider } from "./views/virtualBus";
 import { IncludedTree } from "./views/IncludedTree";
 import { showStatsWebview } from "./views/StatsWebview";
 import { runDoctor } from "./diagnostics/Doctor";
-import { ensureStarterConfig } from "./starter/StarterConfig";
+import { runInitWizard } from "./starter/StarterConfig";
 import {
   locateCliOrOfferInstall,
   runListing,
@@ -53,7 +53,7 @@ export function activate(context: vscode.ExtensionContext) {
   // 3) Команды
   context.subscriptions.push(
     vscode.commands.registerCommand("lg.createStarterConfig", async () => {
-      await ensureStarterConfig();
+      await runInitWizard();
     }),
 
     vscode.commands.registerCommand("lg.generateListing", async () => {

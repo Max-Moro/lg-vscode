@@ -1,55 +1,117 @@
 /**
- * Создаем минимальный lg-cfg/ с примером шаблона.
- * Это полезно, чтобы пользователь мог сразу «пощупать» UX.
+ * Starter config wizard for Listing Generator — wraps `lg init`.
+ * - Lists presets via `lg init --list-presets`
+ * - Lets user pick options (examples/models)
+ * - Handles conflicts (offers --force overwrite)
+ * - Opens lg-cfg/sections.yaml on success
  */
 import * as vscode from "vscode";
-import { effectiveWorkspaceRoot } from "../runner/LgLocator";
+import * as path from "path";
+import { runCli, effectiveWorkspaceRoot } from "../runner/LgLocator";
 
-export async function ensureStarterConfig() {
-  const rootFs = effectiveWorkspaceRoot();
-  if (!rootFs) {
+/** Public entry: interactive wizard to initialize lg-cfg via `lg init`. */
+export async function runInitWizard(): Promise<void> {
+  const root = effectiveWorkspaceRoot();
+  if (!root) {
     vscode.window.showErrorMessage("Open a folder to create starter config.");
     return;
   }
-  const path = require("path");
-  const cfgDir = vscode.Uri.file(path.join(rootFs, "lg-cfg"));
-  const cfgFile = vscode.Uri.joinPath(cfgDir, "sections.yaml");
-  const tplFile = vscode.Uri.joinPath(cfgDir, "example.tpl.md");
-  const ctxFile = vscode.Uri.joinPath(cfgDir, "example.ctx.md");
 
-  // mkdir -p
-  await vscode.workspace.fs.createDirectory(cfgDir);
+  // 1) Query available presets from CLI (fallback to "basic")
+  const presets = await listPresetsSafe();
+  const preset = await vscode.window.showQuickPick(presets, {
+    placeHolder: "Select preset for `lg init`",
+  });
+  if (!preset) return;
 
-  // sections.yaml
-  const cfg = `schema_version: 6
+  // 2) Options: include example templates & models.yaml
+  const includeExamples =
+    (await vscode.window.showQuickPick(["Yes", "No"], {
+      placeHolder: "Include example templates (.tpl/.ctx)?",
+    })) !== "No";
+  const includeModels =
+    (await vscode.window.showQuickPick(["No", "Yes"], {
+      placeHolder: "Also include models.yaml?",
+    })) === "Yes";
 
-docs-intro:
-  extensions: [".md"]
-  filters:
-    mode: allow
-    allow:
-      - "/README.md"
+  const baseArgs = ["init", "--preset", preset]
+    .concat(includeExamples ? [] : ["--no-examples"])
+    .concat(includeModels ? ["--with-models"] : []);
 
-all-src:
-  extensions: [".py", ".ts", ".js", ".json", ".yaml", ".toml"]
-`;
+  const runOnce = async (extra: string[] = []) => {
+    const out = await runCli([...baseArgs, ...extra], { timeoutMs: 120_000 });
+    try {
+      return JSON.parse(out);
+    } catch {
+      throw new Error("Unexpected CLI output (not JSON).");
+    }
+  };
 
-  // example.tpl.md (вставляемый шаблон)
-  const tpl = `# Intro
-\${docs-intro}
+  try {
+    const res = await vscode.window.withProgress(
+      {
+        location: vscode.ProgressLocation.Notification,
+        title: "LG: Initializing lg-cfg (lg init)…",
+        cancellable: false,
+      },
+      () => runOnce()
+    );
 
-# Исходный код проекта
-\${all-src}
-`;
+    // Conflicts without --force
+    if (!res?.ok) {
+      const conflicts = Array.isArray(res?.conflicts) ? (res.conflicts as string[]) : [];
+      if (conflicts.length) {
+        const choice = await vscode.window.showWarningMessage(
+          `lg-cfg already contains ${conflicts.length} file(s). Overwrite with --force?`,
+          "Overwrite",
+          "Cancel"
+        );
+        if (choice === "Overwrite") {
+          const forced = await vscode.window.withProgress(
+            {
+              location: vscode.ProgressLocation.Notification,
+              title: "LG: Overwriting existing lg-cfg…",
+              cancellable: false,
+            },
+            () => runOnce(["--force"])
+          );
+          if (!forced?.ok) throw new Error(forced?.error || "Failed to initialize lg-cfg");
+          await openSectionsYaml(root);
+          vscode.window.showInformationMessage("LG: Starter config initialized (overwritten).");
+          return;
+        }
+        return; // user cancelled overwrite
+      }
+      // No conflicts field — bubble up generic error (e.g., preset not found)
+      throw new Error(res?.error || "Failed to initialize lg-cfg");
+    }
 
-  // example.ctx.md (контекст верхнего уровня)
-  const ctx = `# Demo Context
-\${tpl:example}
-`;
+    await openSectionsYaml(root);
+    vscode.window.showInformationMessage("LG: Starter config created.");
+  } catch (e: any) {
+    vscode.window.showErrorMessage(`LG: ${e?.message || e}`);
+  }
+}
 
-  await vscode.workspace.fs.writeFile(cfgFile, Buffer.from(cfg, "utf8"));
-  await vscode.workspace.fs.writeFile(tplFile, Buffer.from(tpl, "utf8"));
-  await vscode.workspace.fs.writeFile(ctxFile, Buffer.from(ctx, "utf8"));
+// ----------------------------- internals ----------------------------- //
 
-  vscode.window.showInformationMessage("Starter created: lg-cfg/sections.yaml, example.tpl.md, example.ctx.md");
+async function listPresetsSafe(): Promise<string[]> {
+  try {
+    const raw = await runCli(["init", "--list-presets"], { timeoutMs: 20_000 });
+    const data = JSON.parse(raw);
+    const presets = Array.isArray(data?.presets) ? (data.presets as string[]) : [];
+    return presets.length ? presets : ["basic"];
+  } catch {
+    return ["basic"];
+  }
+}
+
+async function openSectionsYaml(rootFs: string) {
+  const uri = vscode.Uri.file(path.join(rootFs, "lg-cfg", "sections.yaml"));
+  try {
+    const doc = await vscode.workspace.openTextDocument(uri);
+    await vscode.window.showTextDocument(doc, { preview: false });
+  } catch {
+    // Some presets might not include sections.yaml; ignore silently.
+  }
 }

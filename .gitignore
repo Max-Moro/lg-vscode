@@ -4,3 +4,4 @@ dist/
 .vscode-test/
 .vscode/ipch/
 .ai-chat
+.lg-cache/
