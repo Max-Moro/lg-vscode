@@ -1,5 +1,6 @@
-/* global acquireVsCodeApi */
+/* global acquireVsCodeApi, LG */
 (function () {
+  const { esc, fmtInt, fmtPct, hrSize } = LG;
   const vscode = typeof acquireVsCodeApi === "function" ? acquireVsCodeApi() : null;
   const app = document.getElementById("app");
 
@@ -12,11 +13,6 @@
     }
   });
 
-  // Helpers
-  function esc(s) { return String(s ?? "").replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])); }
-  function fmtInt(n) { return (n ?? 0).toLocaleString(); }
-  function fmtPct(x) { return (x ?? 0).toFixed(1) + "%"; }
-  function hrSize(n) { const u=["bytes","KiB","MiB","GiB"]; let i=0,x=n||0; for(;i<u.length-1&&x>=1024;i++)x/=1024; return i===0?x+" bytes":x.toFixed(1)+" "+u[i]; }
   function pillClass(p) { return p>100?"pill crit":(p>=80?"pill warn":"pill good"); }
 
   function render(data) {

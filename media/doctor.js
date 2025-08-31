@@ -1,5 +1,6 @@
-/* global acquireVsCodeApi */
+/* global acquireVsCodeApi, LG */
 (function () {
+  const { esc, fmtInt, hrSize } = LG;
   const vscode = typeof acquireVsCodeApi === "function" ? acquireVsCodeApi() : null;
   const app = document.getElementById("app");
   vscode && vscode.postMessage({ type: "ready" });
@@ -10,9 +11,6 @@
     }
   });
 
-  function esc(s) { return String(s ?? "").replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])); }
-  function fmtInt(n) { return (n ?? 0).toLocaleString(); }
-  function hrSize(n) { const u=["bytes","KiB","MiB","GiB"]; let i=0,x=n||0; for(;i<u.length-1&&x>=1024;i++)x/=1024; return i===0?x+" bytes":x.toFixed(1)+" "+u[i]; }
   const lvlIcon = (l) => l==="ok"?"✔️":(l==="warn"?"⚠️":"❌");
   const lvlClass = (l) => l==="ok"?"ok":(l==="warn"?"warn":"bad");
   const lvlLabel = (l) => l==="ok"?"up-to-date":(l==="warn"?"needs attention":"error");

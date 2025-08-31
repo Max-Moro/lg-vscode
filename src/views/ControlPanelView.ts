@@ -242,8 +242,13 @@ export class ControlPanelView implements vscode.WebviewViewProvider {
     const codiconCssPath = require.resolve("@vscode/codicons/dist/codicon.css");
     const codicons = view.webview.asWebviewUri(vscode.Uri.file(codiconCssPath)).toString();
     const csp = view.webview.cspSource;
+    const media = (p: string) => vscode.Uri.joinPath(this.context.extensionUri, "media", p);
+    const baseCss = view.webview.asWebviewUri(media("base.css")).toString();
+    const controlCss = view.webview.asWebviewUri(media("control.css")).toString();
     return raw
       .replaceAll("{{codiconsUri}}", codicons)
-      .replaceAll("{{cspSource}}", csp);
+      .replaceAll("{{cspSource}}", csp)
+      .replaceAll("{{baseCssUri}}", baseCss)
+      .replaceAll("{{controlCssUri}}", controlCss);
   }
 }
