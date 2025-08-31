@@ -1,0 +1,37 @@
+:root{
+  --pad-1: 12px;
+  --gap-1: 12px;
+  --font-sz: 12px;
+}
+body { font: var(--font-sz)/1.5 var(--vscode-font-family); color: var(--vscode-foreground); padding: var(--pad-1); }
+h2 { margin: 0 0 8px; }
+.muted { color: var(--vscode-descriptionForeground); }
+.card {
+  padding: 10px 12px;
+  border: 1px solid var(--vscode-editorIndentGuide-background);
+  border-radius: 8px;
+  background: var(--vscode-editor-background);
+}
+.cards { display: grid; grid-template-columns: repeat(auto-fit,minmax(200px,1fr)); gap: 12px; margin: 12px 0; }
+.card h4 { margin: 0 0 6px; font-size: 12px; color: var(--vscode-descriptionForeground); }
+.card .value { font-size: 16px; font-weight: 600; }
+.pill { display:inline-block; padding:2px 8px; border-radius:999px; font-weight:600; font-size:11px; }
+.pill.ok { background: rgba(16,124,16,.2); }
+.pill.warn { background: rgba(176,128,0,.25); }
+.pill.bad { background: rgba(176,0,32,.3); }
+table { border-collapse: collapse; width: 100%; }
+th, td { padding: 6px 8px; border-bottom: 1px solid var(--vscode-editorIndentGuide-background); }
+th { text-align: left; }
+.right { text-align: right; }
+.monosmall { font-family: var(--vscode-editor-font-family, monospace); font-size: 11px; }
+button { padding: 6px 10px; background: var(--vscode-button-background); color: var(--vscode-button-foreground); border: 0; border-radius: 6px; cursor: pointer; }
+button.secondary { background: var(--vscode-input-background); color: var(--vscode-foreground); border: 1px solid var(--vscode-editorIndentGuide-background); }
+textarea.rawjson {
+  width: 480px; height: 300px; resize: both;
+  background: var(--vscode-editor-background);
+  color: var(--vscode-foreground);
+  border: 1px solid var(--vscode-editorIndentGuide-background);
+  border-radius: 6px; padding: 8px;
+  font-family: var(--vscode-editor-font-family, monospace);
+  font-size: 11px; white-space: pre;
+}

@@ -17,7 +17,9 @@ export async function showDoctorWebview(report: any) {
   const extUri = getExtensionUri();
   const media = (p: string) => vscode.Uri.joinPath(extUri, "media", p);
   const cssUri = panel.webview.asWebviewUri(media("doctor.css")).toString();
+  const baseCssUri = panel.webview.asWebviewUri(media("base.css")).toString();
   const jsUri = panel.webview.asWebviewUri(media("doctor.js")).toString();
+  const commonJsUri = panel.webview.asWebviewUri(media("common.js")).toString();
   const htmlTplPath = vscode.Uri.joinPath(extUri, "media", "doctor.html");
   const cspSource = panel.webview.cspSource;
   const nonce = makeNonce();
@@ -26,7 +28,9 @@ export async function showDoctorWebview(report: any) {
   panel.webview.html = rawHtml
     .replace(/{{cspSource}}/g, cspSource)
     .replace(/{{cssUri}}/g, cssUri)
+    .replace(/{{baseCssUri}}/g, baseCssUri)
     .replace(/{{jsUri}}/g, jsUri)
+    .replace(/{{commonJsUri}}/g, commonJsUri)
     .replace(/{{nonce}}/g, String(nonce));
 
   panel.webview.onDidReceiveMessage(async (msg) => {

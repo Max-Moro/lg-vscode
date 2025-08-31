@@ -32,7 +32,9 @@ export async function showStatsWebview(
   const extUri = getExtensionUri();
   const media = (p: string) => vscode.Uri.joinPath(extUri, "media", p);
   const cssUri = panel.webview.asWebviewUri(media("stats.css")).toString();
+  const baseCss = panel.webview.asWebviewUri(media("base.css")).toString();
   const jsUri = panel.webview.asWebviewUri(media("stats.js")).toString();
+  const commonJs = panel.webview.asWebviewUri(media("common.js")).toString();
   const htmlTplPath = vscode.Uri.joinPath(extUri, "media", "stats.html");
   const cspSource = panel.webview.cspSource;
   const nonce = makeNonce();
@@ -41,7 +43,9 @@ export async function showStatsWebview(
   panel.webview.html = rawHtml
     .replace(/{{cspSource}}/g, cspSource)
     .replace(/{{cssUri}}/g, cssUri)
+    .replace(/{{baseCssUri}}/g, baseCss)
     .replace(/{{jsUri}}/g, jsUri)
+    .replace(/{{commonJsUri}}/g, commonJs)
     .replace(/{{nonce}}/g, String(nonce));
 
   // Текущее содержимое (обновляем после refresh)

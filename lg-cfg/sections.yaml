@@ -11,14 +11,6 @@ src:
     mode: allow
     allow:
       - "/src/"
+      - "/media/"
       - "/package.json"
       - "/tsconfig.json"
-      - "/media/"
-    block:
-      - "StatsWebview.ts"
-    children:
-      media:
-        mode: block
-        block:
-          - "stats.*"
-          - "control.html"

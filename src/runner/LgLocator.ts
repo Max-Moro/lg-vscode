@@ -10,6 +10,7 @@ import * as vscode from "vscode";
 import { spawnToString, spawnToResult } from "./LgProcess";
 import { ensureManagedCli, resolveManagedCliBin } from "./LgInstaller";
 import { findPython } from "./PythonFind";
+import { assertProtocol } from "../protocol";
 
 let _ctx: vscode.ExtensionContext | undefined;
 export function setExtensionContext(ctx: vscode.ExtensionContext) {
@@ -173,7 +174,9 @@ export type RunResult = {
 export async function runContextStatsJson(params: { template: string; model?: string }): Promise<RunResult> {
   const args = ["report", `ctx:${params.template}`, "--model", params.model ?? "o3"];
   const out = await runCli(args, { timeoutMs: 120_000 });
-  return JSON.parse(out) as RunResult;
+  const data = JSON.parse(out) as RunResult;
+  assertProtocol(data, "report");
+  return data;
 }
 
 export async function listSectionsJson(): Promise<string[]> {
@@ -210,6 +213,7 @@ export async function runListIncludedJson(params: { section?: string; mode?: "al
   if (params.mode) args.push("--mode", params.mode);
   const out = await runCli(args, { timeoutMs: 60_000 });
   const data = JSON.parse(out);
+  assertProtocol(data, "report");
   const files = Array.isArray(data.files) ? data.files : [];
   return files.map((f: any) => ({ path: f.path, sizeBytes: f.sizeBytes ?? 0 }));
 }
@@ -219,14 +223,17 @@ export async function runStatsJson(params: { section?: string; mode?: "all" | "c
   const args: string[] = ["report", target, "--model", params.model ?? "o3"];
   if (params.mode) args.push("--mode", params.mode);
   const out = await runCli(args, { timeoutMs: 90_000 });
-  const data = JSON.parse(out);
-  return JSON.parse(out) as RunResult;
+  const data = JSON.parse(out) as RunResult;
+  assertProtocol(data, "report");
+  return data;
 }
 
 export async function runDoctorJson(opts?: { rebuild?: boolean }): Promise<any> {
   const args = ["diag"].concat(opts?.rebuild ? ["--rebuild-cache"] : []);
   const out = await runCli(args, { timeoutMs: opts?.rebuild ? 60_000 : 20_000 });
-  return JSON.parse(out);
+  const data = JSON.parse(out);
+  assertProtocol(data, "diag");
+  return data;
 }
 
 /** Диагностика с построением бандла: возвращает JSON и путь к zip (если удалось прочитать из stderr). */
