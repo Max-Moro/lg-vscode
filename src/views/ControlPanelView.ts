@@ -1,5 +1,4 @@
 import * as vscode from "vscode";
-import * as path from "path";
 import {
   listSectionsJson,
   listContextsJson,
@@ -199,25 +198,35 @@ export class ControlPanelView implements vscode.WebviewViewProvider {
     this.post({ type: "state", state: next });
   }
 
-  private async pushListsAndState() {
-    const [sections, contexts, models] = await Promise.all([
-      listSectionsJson().catch(() => [] as string[]),
-      listContextsJson().catch(() => [] as string[]),
-      listModelsJson().catch(() => [] as any[])
-    ]);
-    const state = this.getState();
-    if (!sections.includes(state.section) && sections.length) {
-      state.section = sections[0];
-      this.context.globalState.update(MKEY, state);
-    }
-    if (models.length) {
-      const ids = models.map((m: any) => m.id);
-      if (!ids.includes(state.model)) {
-        state.model = models[0].id;
-        this.context.globalState.update(MKEY, state);
-      }
-    }
-    this.post({ type: "data", sections, contexts, models, state });
+  // Очередь для последовательного выполнения listSectionsJson / listContextsJson / listModelsJson
+  private listsChain: Promise<void> = Promise.resolve();
+
+  private pushListsAndState(): Promise<void> {
+    // Встраиваем вызов в цепочку, чтобы запросы шли строго последовательно.
+    this.listsChain = this.listsChain
+      .then(async () => {
+        const sections = await listSectionsJson().catch(() => [] as string[]);
+        const contexts = await listContextsJson().catch(() => [] as string[]);
+        const models = await listModelsJson().catch(() => [] as any[]);
+
+        const state = this.getState();
+        if (!sections.includes(state.section) && sections.length) {
+          state.section = sections[0];
+          await this.context.globalState.update(MKEY, state);
+        }
+        if (models.length) {
+          const ids = models.map((m: any) => m.id);
+          if (!ids.includes(state.model)) {
+            state.model = models[0].id;
+            await this.context.globalState.update(MKEY, state);
+          }
+        }
+        this.post({ type: "data", sections, contexts, models, state });
+      })
+      .catch(() => {
+        // Гасим ошибку, чтобы не «сломать» цепочку последующих вызовов
+      });
+    return this.listsChain;
   }
 
   private post(msg: any) {
