@@ -245,10 +245,21 @@ export class ControlPanelView implements vscode.WebviewViewProvider {
     const media = (p: string) => vscode.Uri.joinPath(this.context.extensionUri, "media", p);
     const baseCss = view.webview.asWebviewUri(media("base.css")).toString();
     const controlCss = view.webview.asWebviewUri(media("control.css")).toString();
+    const controlJs = view.webview.asWebviewUri(media("control.js")).toString();
+    const nonce = makeNonce();
     return raw
       .replaceAll("{{codiconsUri}}", codicons)
       .replaceAll("{{cspSource}}", csp)
       .replaceAll("{{baseCssUri}}", baseCss)
-      .replaceAll("{{controlCssUri}}", controlCss);
+      .replaceAll("{{controlCssUri}}", controlCss)
+      .replaceAll("{{controlJsUri}}", controlJs)
+      .replaceAll("{{nonce}}", nonce);
   }
+}
+
+function makeNonce() {
+  const possible = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789";
+  let text = "";
+  for (let i = 0; i < 32; i++) text += possible.charAt(Math.floor(Math.random() * possible.length));
+  return text;
 }

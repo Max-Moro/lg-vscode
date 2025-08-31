@@ -1,14 +1,13 @@
-<!-- control.html — шаблон webview. Подставляем {{cspSource}} и {{codiconsUri}} из TS -->
 <!doctype html>
 <html>
   <head>
     <meta charset="utf-8" />
     <meta http-equiv="Content-Security-Policy"
           content="default-src 'none';
-                   style-src 'unsafe-inline' {{cspSource}};
+                   style-src {{cspSource}};
                    font-src {{cspSource}};
                    img-src data:;
-                   script-src 'unsafe-inline';">
+                   script-src 'nonce-{{nonce}}';">
     <link rel="stylesheet" href="{{codiconsUri}}">
     <link rel="stylesheet" href="{{baseCssUri}}">
     <link rel="stylesheet" href="{{controlCssUri}}">
@@ -101,93 +100,6 @@
         </span>
       </div>
     </div>
-
-    <script>
-      const vscode = acquireVsCodeApi();
-      const qs = (s) => document.querySelector(s);
-      const qsa = (s) => Array.from(document.querySelectorAll(s));
-
-      const ui = {
-        section: qs("#section"),
-        template: qs("#template"),
-        modeAll: () => qs('input[name="mode"][value="all"]'),
-        modeChanges: () => qs('input[name="mode"][value="changes"]'),
-        model: qs("#model"),
-        btnListing: qs("#btn-listing"),
-        btnContext: qs("#btn-context"),
-        btnContextStats: qs("#btn-context-stats"),
-        btnIncluded: qs("#btn-included"),
-        btnStats: qs("#btn-stats"),
-        btnStarter: qs("#btn-starter"),
-        btnOpenConfig: qs("#btn-open-config"),
-        btnDoctor: qs("#btn-doctor"),
-        btnResetCache: qs("#btn-reset-cache"),
-        btnSettings: qs("#btn-settings"),
-      };
-
-      function post(type, payload){ vscode.postMessage({ type, ...payload }); }
-
-      // events
-      ui.section.addEventListener("change", () => post("setState", { state: { section: ui.section.value }}));
-      qsa('input[name="mode"]').forEach(r => r.addEventListener("change", () => {
-        const val = document.querySelector('input[name="mode"]:checked').value;
-        post("setState", { state: { mode: val }});
-      }));
-      ui.template.addEventListener("change", () => post("setState", { state: { template: ui.template.value }}));
-      ui.model.addEventListener("change", () => post("setState", { state: { model: ui.model.value }}));
-
-      ui.btnListing.addEventListener("click", () => post("generateListing"));
-      ui.btnContext.addEventListener("click", () => post("generateContext"));
-      ui.btnContextStats.addEventListener("click", () => post("showContextStats"));
-      ui.btnIncluded.addEventListener("click", () => post("showIncluded"));
-      ui.btnStats.addEventListener("click", () => post("showStats"));
-      ui.btnStarter.addEventListener("click", () => post("createStarter"));
-      ui.btnOpenConfig.addEventListener("click", () => post("openConfig"));
-      ui.btnDoctor.addEventListener("click", () => post("doctor"));
-      ui.btnResetCache.addEventListener("click", () => post("resetCache"));
-      ui.btnSettings.addEventListener("click", () => post("openSettings"));
-
-      // init handshake
-      post("init");
-
-      // runtime updates from extension
-      window.addEventListener("message", (e) => {
-        const msg = e.data;
-        if (msg.type === "data") {
-          fillSelect(ui.section, msg.sections);
-          fillSelect(ui.template, msg.contexts, msg.state.template || "");
-          fillSelect(ui.model, msg.models || [], msg.state.model || "");
-          setState(msg.state);
-        } else if (msg.type === "state") {
-          setState(msg.state);
-        } else if (msg.type === "theme") {
-          document.documentElement.dataset.vscodeThemeKind = String(msg.kind);
-        }
-      });
-
-      function fillSelect(sel, items, value){
-        const cur = sel.value;
-        sel.innerHTML = "";
-        for (const it of items){
-          const opt = document.createElement("option");
-          if (typeof it === "string") {
-            opt.value = it;
-            opt.textContent = it;
-          } else if (it && typeof it === "object") {
-            opt.value = it.id;
-            opt.textContent = it.label;
-          }
-          sel.appendChild(opt);
-        }
-        sel.value = (value !== undefined ? value : cur) || (items[0] ?? "");
-      }
-
-      function setState(s){
-        if (s.section !== undefined) ui.section.value = s.section;
-        if (s.template !== undefined) ui.template.value = s.template;
-        if (s.model !== undefined) ui.model.value = s.model;
-        if (s.mode === "changes") ui.modeChanges().checked = true; else ui.modeAll().checked = true;
-      }
-    </script>
+    <script nonce="{{nonce}}" src="{{controlJsUri}}"></script>
   </body>
 </html>
