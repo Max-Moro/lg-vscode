@@ -20,7 +20,7 @@
   function pillClass(p) { return p>100?"pill crit":(p>=80?"pill warn":"pill good"); }
 
   function render(data) {
-    // Actions bar + refresh
+    // Actions bar: Refresh + Generate
     const total = data.total || {};
     const scope = data.scope || "context";
 
@@ -44,11 +44,13 @@
 
     const hideSaved = (total.savedTokens ?? 0) === 0;
 
+    const genLabel = scope === "context" ? "Generate Context" : "Generate Listing";
     app.innerHTML = `
       <h2>${esc(scopeLabel)}: ${esc(name)} — Statistics</h2>
       <p class="muted">Scope: <b>${esc(scope)}</b> • Name: <b>${esc(name)}</b> • Model: <b>${esc(data.model)}</b> • Encoder: <b>${esc(data.encoder)}</b> • Ctx limit: <b>${fmtInt(data.ctxLimit)}</b> tokens</p>
       <div class="actions">
         <button id="btn-refresh" title="Re-run stats">Refresh</button>
+        <button id="btn-generate" title="Render the final prompt now">${esc(genLabel)}</button>
       </div>
 
       <div class="cards">
@@ -211,6 +213,10 @@
     // Hook refresh button
     const btn = document.getElementById("btn-refresh");
     if (btn) btn.addEventListener("click", () => vscode && vscode.postMessage({ type: "refresh" }));
+
+    // Hook generate button
+    const gen = document.getElementById("btn-generate");
+    if (gen) gen.addEventListener("click", () => vscode && vscode.postMessage({ type: "generate" }));
   }
 
   function card(title, valueHtml, tooltip) {

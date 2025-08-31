@@ -154,7 +154,12 @@ export function activate(context: vscode.ExtensionContext) {
           { location: vscode.ProgressLocation.Notification, title: "LG: Computing stats…", cancellable: false },
           async () => runStatsJson({ section, mode, model })
         );
-        await showStatsWebview(data, () => runStatsJson({ section, mode, model }));
+        // передаём замыкания для refresh и generate
+        await showStatsWebview(
+          data,
+          () => runStatsJson({ section, mode, model }),
+          () => runListing({ section, mode })
+        );
       } catch (e: any) {
         vscode.window.showErrorMessage(`LG: ${e?.message || e}`);
       }

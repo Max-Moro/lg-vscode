@@ -3,10 +3,14 @@
  */
 import * as vscode from "vscode";
 import * as fs from "fs";
-
 import type { RunResult } from "../runner/LgLocator";
+import { getVirtualProvider } from "./virtualBus";
 
-export async function showStatsWebview(data: RunResult, refetch?: () => Promise<RunResult>) {
+export async function showStatsWebview(
+  data: RunResult,
+  refetch?: () => Promise<RunResult>,
+  generate?: () => Promise<string> // returns rendered markdown text
+) {
   const scope = data.scope === "context" ? "Context" : "Section";
   const name = data.target.startsWith("ctx:")
     ? data.target.slice(4)
@@ -64,6 +68,30 @@ export async function showStatsWebview(data: RunResult, refetch?: () => Promise<
         );
         current = next;
         panel.webview.postMessage({ type: "runResult", payload: current });
+      } catch (e: any) {
+        vscode.window.showErrorMessage(`LG: ${e?.message || e}`);
+      }
+    } else if (msg?.type === "generate") {
+      if (!generate) {
+        vscode.window.showWarningMessage("Generate is unavailable here.");
+        return;
+      }
+      try {
+        const text = await vscode.window.withProgress(
+          { location: vscode.ProgressLocation.Notification, title: "LG: Rendering…", cancellable: false },
+          () => generate()
+        );
+        // Закрываем вебвью статистики и открываем результат
+        const vp = getVirtualProvider();
+        const kind = current.scope === "context" ? "context" : "listing";
+        const title = current.scope === "context" ? `Context — ${name}.md` : `Listing — ${name}.md`;
+        panel.dispose();
+        if (vp) {
+          await vp.open(kind as any, title, text);
+        } else {
+          const doc = await vscode.workspace.openTextDocument({ language: "markdown", content: text });
+          await vscode.window.showTextDocument(doc, { preview: false });
+        }
       } catch (e: any) {
         vscode.window.showErrorMessage(`LG: ${e?.message || e}`);
       }

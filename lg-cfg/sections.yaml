@@ -13,4 +13,11 @@ src:
       - "/src/"
       - "/package.json"
       - "/tsconfig.json"
-      - "/media/control.html"
+      - "/media/"
+    block:
+      - "StatsWebview.ts"
+    children:
+      media:
+        mode: block
+        block:
+          - "/stats.*"
