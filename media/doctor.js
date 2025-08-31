@@ -13,6 +13,10 @@
   function esc(s) { return String(s ?? "").replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])); }
   function fmtInt(n) { return (n ?? 0).toLocaleString(); }
   function hrSize(n) { const u=["bytes","KiB","MiB","GiB"]; let i=0,x=n||0; for(;i<u.length-1&&x>=1024;i++)x/=1024; return i===0?x+" bytes":x.toFixed(1)+" "+u[i]; }
+  const lvlIcon = (l) => l==="ok"?"✔️":(l==="warn"?"⚠️":"❌");
+  const lvlClass = (l) => l==="ok"?"ok":(l==="warn"?"warn":"bad");
+  const lvlLabel = (l) => l==="ok"?"up-to-date":(l==="warn"?"needs attention":"error");
+  const findCheck = (checks, name) => checks.find(c => c?.name === name);
 
   function render(data, bundlePath) {
     const cfg = data.config || {};
@@ -21,7 +25,10 @@
     const ctxs = Array.isArray(data.contexts) ? data.contexts : [];
     const checks = Array.isArray(data.checks) ? data.checks : [];
 
-    const mig = !cfg.last_error ? `<span class="pill ok">up-to-date</span>` : `<span class="pill bad">error</span>`;
+    const migCheck = findCheck(checks, "config.migrations");
+    const mig = migCheck
+      ? `<span class="pill ${lvlClass(migCheck.level)}">${lvlLabel(migCheck.level)}</span>`
+      : `<span class="pill warn">unknown</span>`;
     const cacheState = cache.error ? `<span class="pill bad">error</span>` : (cache.exists ? `<span class="pill ok">ok</span>` : `<span class="pill bad">missing</span>`);
 
     app.innerHTML = `
@@ -72,7 +79,7 @@
             ${checks.map(c => `
               <tr>
                 <td class="monosmall">${esc(c.name)}</td>
-                <td>${c.ok ? "✔️" : "❌"}</td>
+                <td>${lvlIcon(c.level)}</td>
                 <td class="monosmall">${esc(c.details || "")}</td>
               </tr>
             `).join("")}
