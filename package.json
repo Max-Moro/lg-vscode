@@ -61,6 +61,10 @@
         "command": "lg.toggleIncludedViewMode",
         "title": "Toggle Tree/Flat View",
         "icon": "$(list-tree)"
+      },
+      {
+        "command": "lg.showLogs",
+        "title": "LG: Show Logs"
       }
     ],
     "views": {
@@ -90,6 +94,12 @@
     "configuration": {
       "title": "Listing Generator",
       "properties": {
+        "lg.logging.level": {
+          "type": "string",
+          "enum": ["error", "warn", "info", "debug", "trace"],
+          "default": "info",
+          "description": "Logging level for the Listing Generator Output channel."
+        },
         "lg.mode": {
           "type": "string",
           "enum": [

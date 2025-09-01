@@ -2,6 +2,7 @@ import * as vscode from "vscode";
 import { spawnToString, spawnToResult } from "../runner/LgProcess";
 import { ensureManagedCli, resolveManagedCliBin } from "../runner/LgInstaller";
 import { findPython } from "../runner/PythonFind";
+import { logDebug, logError, logTrace, withDuration } from "../logging/log";
 
 export type RunSpec = { cmd: string; args: string[] };
 
@@ -68,7 +69,21 @@ export async function runCli(cliArgs: string[], opts: { timeoutMs?: number } = {
   const spec = await resolveCliRunSpec();
   if (!spec) throw new Error("CLI is not available. Configure `lg.python.interpreter` or `lg.cli.path`, or use managed venv.");
   const args = [...spec.args, ...cliArgs];
-  return spawnToString(spec.cmd, args, { cwd: effectiveWorkspaceRoot(), timeoutMs: opts.timeoutMs ?? 120_000 });
+  const cwd = effectiveWorkspaceRoot();
+  logDebug(`[CLI] ${spec.cmd} ${args.join(" ")}`);
+  return withDuration(`[CLI] ${cliArgs.join(" ")}`, async () => {
+    try {
+      const out = await spawnToString(spec.cmd, args, { cwd, timeoutMs: opts.timeoutMs ?? 120_000 });
+      logDebug(`[CLI] stdout bytes: ${out?.length ?? 0}`);
+      return out;
+    } catch (e: any) {
+      const stderr = String(e?.message || e || "");
+      const brief = briefFromStderr(stderr);
+      logError(`[CLI] ${cliArgs.join(" ")} — failed: ${brief}`);
+      if (stderr) logTrace(stderr);
+      throw e;
+    }
+  });
 }
 
 /** Запуск CLI с возвратом stdout+stderr (нужно для diag --bundle). */
@@ -79,7 +94,22 @@ export async function runCliResult(
   const spec = await resolveCliRunSpec();
   if (!spec) throw new Error("CLI is not available. Configure `lg.python.interpreter` or `lg.cli.path`, or use managed venv.");
   const args = [...spec.args, ...cliArgs];
-  return spawnToResult(spec.cmd, args, { cwd: effectiveWorkspaceRoot(), timeoutMs: opts.timeoutMs ?? 120_000 });
+  const cwd = effectiveWorkspaceRoot();
+  logDebug(`[CLI] ${spec.cmd} ${args.join(" ")} (result)`);
+  return withDuration(`[CLI] ${cliArgs.join(" ")} (result)`, async () => {
+    try {
+      const res = await spawnToResult(spec.cmd, args, { cwd, timeoutMs: opts.timeoutMs ?? 120_000 });
+      // полезно видеть stderr даже при коде 0 (некоторые утилиты пишут варнинги)
+      if (res.stderr?.trim()) logDebug("[CLI] stderr (non-empty)", res.stderr.trim().slice(0, 4000));
+      return res;
+    } catch (e: any) {
+      const stderr = String(e?.message || e || "");
+      const brief = briefFromStderr(stderr);
+      logError(`[CLI] ${cliArgs.join(" ")} (result) — failed: ${brief}`);
+      if (stderr) logTrace(stderr);
+      throw e;
+    }
+  });
 }
 
 /** Быстрая проверка наличия CLI, с предложением автоустановки. */
@@ -99,4 +129,21 @@ export async function locateCliOrOfferInstall(ctx: vscode.ExtensionContext): Pro
     return again?.cmd;
   }
   return undefined;
+}
+
+function stripAnsi(s: string): string {
+  return s.replace(/\x1B\[[0-9;]*[A-Za-z]/g, "");
+}
+function briefFromStderr(stderr: string): string {
+  const text = stripAnsi(String(stderr || "")).trim();
+  if (!text) return "(no stderr)";
+  const lines = text.split(/\r?\n/).map(l => l.trim()).filter(Boolean);
+  if (!lines.length) return "(no stderr)";
+  const hasTrace = lines.some(l => /^Traceback\b/.test(l));
+  if (hasTrace) {
+    // В пайтоновском трейсбэке последний осмысленный рядок — "<Type>Error: message"
+    const errLine = [...lines].reverse().find(l => /\b(Error|Exception|SyntaxError|SystemExit)\b/.test(l));
+    return errLine || lines[lines.length - 1];
+  }
+  return lines[0];
 }

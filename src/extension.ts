@@ -15,6 +15,7 @@ import { listContextsJson, listSectionsJson } from "./services/CatalogService";
 import { runListIncludedJson, runListing } from "./services/ListingService";
 import { runContext } from "./services/ContextService";
 import { runStatsJson } from "./services/StatsService";
+import { initLogging, showLogs, logInfo } from "./logging/log";
 
 
 let virtualProvider: VirtualDocProvider;
@@ -22,6 +23,8 @@ let includedTree: IncludedTree;
 
 export function activate(context: vscode.ExtensionContext) {
   setExtensionContext(context);
+  initLogging(context);
+  logInfo("Extension activated");
 
   // 1) Провайдер виртуальных документов (lg://listing, lg://context)
   virtualProvider = new VirtualDocProvider();
@@ -48,6 +51,9 @@ export function activate(context: vscode.ExtensionContext) {
   context.subscriptions.push(
     vscode.commands.registerCommand("lg.createStarterConfig", async () => {
       await runInitWizard();
+    }),
+    vscode.commands.registerCommand("lg.showLogs", async () => {
+      showLogs();
     }),
 
     vscode.commands.registerCommand("lg.generateListing", async () => {
