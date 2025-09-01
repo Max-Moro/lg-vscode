@@ -26,38 +26,6 @@
     },
     "commands": [
       {
-        "command": "lg.generateListing",
-        "title": "LG: Generate Listing (Section)"
-      },
-      {
-        "command": "lg.generateContext",
-        "title": "LG: Generate Context (Template)"
-      },
-      {
-        "command": "lg.showIncluded",
-        "title": "LG: Show Included Paths"
-      },
-      {
-        "command": "lg.showStats",
-        "title": "LG: Show Stats"
-      },
-      {
-        "command": "lg.openConfig",
-        "title": "LG: Open Config (lg-cfg/sections.yaml)"
-      },
-      {
-        "command": "lg.createStarterConfig",
-        "title": "LG: Create Starter Config"
-      },
-      {
-        "command": "lg.runDoctor",
-        "title": "LG: Doctor (Self Check)"
-      },
-      {
-        "command": "lg.resetCache",
-        "title": "LG: Reset Cache"
-      },
-      {
         "command": "lg.toggleIncludedViewMode",
         "title": "Toggle Tree/Flat View",
         "icon": "$(list-tree)"

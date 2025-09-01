@@ -1,5 +1,5 @@
 import { cliDiag } from "../cli/CliClient";
-import { runCliResult } from "../cli/CliResolver";
+import { runCli, runCliResult } from "../cli/CliResolver";
 import type { DiagReport } from "../models/diag_report";
 
 /** JSON-диагностика (без bundle) */
@@ -23,4 +23,9 @@ export async function runDoctorBundle(): Promise<{ data: DiagReport; bundlePath?
   const m = re.exec(stderr || "");
   const bundlePath = m ? m[1].trim() : undefined;
   return { data, bundlePath };
+}
+
+/** Сброс кэша LG через CLI. */
+export async function resetCache(): Promise<void> {
+  await runCli(["diag", "--rebuild-cache"], { timeoutMs: 60_000 });
 }

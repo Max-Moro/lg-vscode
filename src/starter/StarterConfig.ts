@@ -95,6 +95,28 @@ export async function runInitWizard(): Promise<void> {
 
 // ----------------------------- internals ----------------------------- //
 
+/** Открыть lg-cfg/sections.yaml, при отсутствии — предложить создать стартовую конфигурацию. */
+export async function openConfigOrInit(): Promise<void> {
+  const root = effectiveWorkspaceRoot();
+  if (!root) {
+    vscode.window.showErrorMessage("Open a folder to create or open lg-cfg.");
+    return;
+  }
+  const uri = vscode.Uri.file(path.join(root, "lg-cfg", "sections.yaml"));
+  try {
+    await vscode.workspace.fs.stat(uri);
+  } catch {
+    const choice = await vscode.window.showInformationMessage(
+      "lg-cfg/sections.yaml not found. Create a starter config?",
+      "Create",
+      "Cancel"
+    );
+    if (choice !== "Create") return;
+    await runInitWizard();
+  }
+  await openSectionsYaml(root);
+}
+
 async function listPresetsSafe(): Promise<string[]> {
   try {
     const raw = await runCli(["init", "--list-presets"], { timeoutMs: 20_000 });

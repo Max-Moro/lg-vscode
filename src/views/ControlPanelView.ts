@@ -5,6 +5,9 @@ import { runListIncludedJson, runListing } from "../services/ListingService";
 import { runContext, runContextStatsJson } from "../services/ContextService";
 import { runStatsJson } from "../services/StatsService";
 import { listContextsJson, listModelsJson, listSectionsJson } from "../services/CatalogService";
+import { resetCache } from "../services/DoctorService";
+import { runDoctor } from "../diagnostics/Doctor";
+import { openConfigOrInit, runInitWizard } from "../starter/StarterConfig";
 import { EXT_ID } from "../constants";
 
 type PanelState = {
@@ -63,16 +66,20 @@ export class ControlPanelView implements vscode.WebviewViewProvider {
             await this.onShowStats();
             break;
           case "resetCache":
-            vscode.commands.executeCommand("lg.resetCache");
+            await vscode.window.withProgress(
+              { location: vscode.ProgressLocation.Notification, title: "LG: Resetting cache…", cancellable: false },
+              async () => resetCache()
+            );
+            vscode.window.showInformationMessage("LG cache has been reset.");
             break;
           case "createStarter":
-            vscode.commands.executeCommand("lg.createStarterConfig");
+            await runInitWizard();
             break;
           case "openConfig":
-            vscode.commands.executeCommand("lg.openConfig");
+            await openConfigOrInit();
             break;
           case "doctor":
-            vscode.commands.executeCommand("lg.runDoctor");
+            await runDoctor(this.context);
             break;
           case "openSettings":
             vscode.commands.executeCommand("workbench.action.openSettings", `@ext:${EXT_ID}`);
