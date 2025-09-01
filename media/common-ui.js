@@ -3,28 +3,6 @@
   function qs(sel, root) { return (root || document).querySelector(sel); }
   function qsa(sel, root) { return Array.from((root || document).querySelectorAll(sel)); }
 
-  // Create element: h('div', { class:'x', dataset:{k:'v'}, style:{gap:'8px'} }, childOrHtml...)
-  function h(tag, props, ...children) {
-    const el = document.createElement(tag);
-    if (props && typeof props === "object") {
-      for (const [k, v] of Object.entries(props)) {
-        if (v == null) continue;
-        if (k === "class" || k === "className") el.className = String(v);
-        else if (k === "dataset" && v && typeof v === "object") {
-          for (const [dk, dv] of Object.entries(v)) el.dataset[dk] = String(dv);
-        } else if (k === "style" && v && typeof v === "object") {
-          for (const [sk, sv] of Object.entries(v)) el.style[sk] = sv;
-        } else if (k in el) { try { el[k] = v; } catch { el.setAttribute(k, String(v)); } }
-        else el.setAttribute(k, String(v));
-      }
-    }
-    for (const ch of children.flat()) {
-      if (ch == null) continue;
-      el.append(ch.nodeType ? ch : document.createTextNode(String(ch)));
-    }
-    return el;
-  }
-
   // ——————————————————— Events ———————————————————
   function on(el, type, handler, opts) {
     el.addEventListener(type, handler, opts);

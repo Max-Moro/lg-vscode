@@ -2,22 +2,11 @@
 (function () {
   const vscode = UI.acquire();
 
-  // ---- local state cache for instant restore (sessionStorage) ----
-  const STORE_KEY = "lg.control.uiState";
-  const store = {
-    load() {
-      try { return JSON.parse(sessionStorage.getItem(STORE_KEY) || "{}"); }
-      catch { return {}; }
-    },
-    save(partial) {
-      const next = { ...this.load(), ...partial };
-      try { sessionStorage.setItem(STORE_KEY, JSON.stringify(next)); } catch {}
-      return next;
-    }
-  };
+  // ---- unified state cache (session) ----
+  const store = UI.stateStore.session("lg.control.uiState");
 
   // Try to instantly restore last selections (before TS sends data)
-  const cached = store.load();
+  const cached = store.get();
   if (cached && Object.keys(cached).length) {
     UI.setState(cached);
   }
@@ -42,7 +31,7 @@
       value = /** @type {HTMLSelectElement|HTMLInputElement} */(el).value;
     }
     const patch = { [key]: value };
-    store.save(patch);
+    store.patch(patch);
     UI.post(vscode, "setState", { state: patch });
   });
 
@@ -78,7 +67,7 @@
     if (s.mode !== undefined) next["mode"] = (s.mode === "changes") ? "changes" : "all";
     if (Object.keys(next).length) {
       UI.setState(next);
-      store.save(next); // keep cache in sync with authoritative state
+      store.patch(next); // keep cache in sync with authoritative state
     }
   }
 })();
