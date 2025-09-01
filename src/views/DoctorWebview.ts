@@ -1,6 +1,6 @@
 import * as vscode from "vscode";
 import * as fs from "fs";
-import { runDoctorJson, runDoctorBundle } from "../runner/LgLocator";
+import { runDoctorBundle, runDoctorJson } from "../services/DoctorService";
 
 export async function showDoctorWebview(report: any) {
   const panel = vscode.window.createWebviewPanel(

@@ -3,8 +3,8 @@
  */
 import * as vscode from "vscode";
 import * as fs from "fs";
-import type { RunResult } from "../runner/LgLocator";
 import { getVirtualProvider } from "./virtualBus";
+import { RunResult } from "../protocol";
 
 export async function showStatsWebview(
   data: RunResult,

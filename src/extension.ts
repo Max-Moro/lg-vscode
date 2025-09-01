@@ -9,18 +9,12 @@ import { IncludedTree } from "./views/IncludedTree";
 import { showStatsWebview } from "./views/StatsWebview";
 import { runDoctor } from "./diagnostics/Doctor";
 import { runInitWizard } from "./starter/StarterConfig";
-import {
-  locateCliOrOfferInstall,
-  runListing,
-  runContext,
-  setExtensionContext,
-  listSectionsJson,
-  listContextsJson,
-  runListIncludedJson,
-  runStatsJson,
-  effectiveWorkspaceRoot
-} from "./runner/LgLocator";
 import { ControlPanelView } from "./views/ControlPanelView";
+import { effectiveWorkspaceRoot, locateCliOrOfferInstall, runCli, setExtensionContext } from "./cli/CliResolver";
+import { listContextsJson, listSectionsJson } from "./services/CatalogService";
+import { runListIncludedJson, runListing } from "./services/ListingService";
+import { runContext } from "./services/ContextService";
+import { runStatsJson } from "./services/StatsService";
 
 
 let virtualProvider: VirtualDocProvider;
@@ -202,7 +196,6 @@ export function activate(context: vscode.ExtensionContext) {
         await vscode.window.withProgress(
           { location: vscode.ProgressLocation.Notification, title: "LG: Resetting cache…", cancellable: false },
           async () => {
-            const { runCli } = await import("./runner/LgLocator");
             await runCli(["diag", "--rebuild-cache"], { timeoutMs: 60_000 });
           }
         );

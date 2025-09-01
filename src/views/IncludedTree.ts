@@ -4,7 +4,7 @@
 import * as vscode from "vscode";
 import * as path from "path";
 import * as fs from "fs";
-import { effectiveWorkspaceRoot } from "../runner/LgLocator";
+import { effectiveWorkspaceRoot } from "../cli/CliResolver";
 
 type ViewMode = "flat" | "tree";
 const STATE_KEY = "lg.included.viewMode";

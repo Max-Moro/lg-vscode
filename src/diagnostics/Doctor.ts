@@ -2,8 +2,8 @@
  * Doctor — теперь через Webview с интерактивным UI.
  */
 import * as vscode from "vscode";
-import { runDoctorJson } from "../runner/LgLocator";
 import { showDoctorWebview } from "../views/DoctorWebview";
+import { runDoctorJson } from "../services/DoctorService";
 
 export async function runDoctor(_ctx: vscode.ExtensionContext) {
   const wf = vscode.workspace.workspaceFolders?.[0];

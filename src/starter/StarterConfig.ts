@@ -7,7 +7,7 @@
  */
 import * as vscode from "vscode";
 import * as path from "path";
-import { runCli, effectiveWorkspaceRoot } from "../runner/LgLocator";
+import { effectiveWorkspaceRoot } from "../cli/CliResolver";
 
 /** Public entry: interactive wizard to initialize lg-cfg via `lg init`. */
 export async function runInitWizard(): Promise<void> {

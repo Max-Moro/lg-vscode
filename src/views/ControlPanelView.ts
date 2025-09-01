@@ -1,16 +1,10 @@
 import * as vscode from "vscode";
-import {
-  listSectionsJson,
-  listContextsJson,
-  listModelsJson,
-  runListing,
-  runContext,
-  runListIncludedJson,
-  runStatsJson,
-  runContextStatsJson
-} from "../runner/LgLocator";
 import { VirtualDocProvider } from "./VirtualDocProvider";
 import { IncludedTree } from "./IncludedTree";
+import { runListIncludedJson, runListing } from "../services/ListingService";
+import { runContext, runContextStatsJson } from "../services/ContextService";
+import { runStatsJson } from "../services/StatsService";
+import { listContextsJson, listModelsJson, listSectionsJson } from "../services/CatalogService";
 
 type PanelState = {
   section: string;
@@ -93,7 +87,7 @@ export class ControlPanelView implements vscode.WebviewViewProvider {
 
 
     // -------------------- watcher на lg-cfg -------------------- //
-    const { effectiveWorkspaceRoot } = require("../runner/LgLocator");
+    const { effectiveWorkspaceRoot } = require("../cli/CliResolver");
     const root = effectiveWorkspaceRoot();
     if (root) {
       const lgCfgUri = vscode.Uri.file(require("path").join(root, "lg-cfg"));
