@@ -3,7 +3,7 @@
   const vscode = UI.acquire();
 
   // ---- unified state cache (session) ----
-  const store = UI.stateStore.session("lg.control.uiState");
+  const store = UI.stateStore(vscode, "lg.control.uiState");
 
   // Try to instantly restore last selections (before TS sends data)
   const cached = store.get();
@@ -31,7 +31,7 @@
       value = /** @type {HTMLSelectElement|HTMLInputElement} */(el).value;
     }
     const patch = { [key]: value };
-    store.patch(patch);
+    store.merge(patch);
     UI.post(vscode, "setState", { state: patch });
   });
 
@@ -67,7 +67,7 @@
     if (s.mode !== undefined) next["mode"] = (s.mode === "changes") ? "changes" : "all";
     if (Object.keys(next).length) {
       UI.setState(next);
-      store.patch(next); // keep cache in sync with authoritative state
+      store.merge(next); // keep cache in sync with authoritative state
     }
   }
 })();

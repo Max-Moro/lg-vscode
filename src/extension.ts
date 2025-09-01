@@ -124,7 +124,6 @@ export function activate(context: vscode.ExtensionContext) {
         );
         includedTree.setPaths(files.map(f => f.path));
         await vscode.commands.executeCommand("workbench.view.explorer");
-        vscode.commands.executeCommand("lg.included.focus");
       } catch (e: any) {
         vscode.window.showErrorMessage(`LG: ${e?.message || e}`);
       }

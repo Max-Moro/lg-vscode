@@ -158,7 +158,7 @@
 
   global.UI = {
     // DOM
-    qs, qsa, h,
+    qs, qsa,
     // events
     on, delegate, once, debounce, throttle,
     // vscode bridge
