@@ -133,23 +133,16 @@
   function renderMigrations(cfg) {
     const applied = Array.isArray(cfg.applied) ? cfg.applied : [];
     if (!applied.length) return "";
-    const rows = (arr) =>
-      arr
-        .map((m) => `<tr><td class="right monosmall">${esc(String(m.id))}</td><td class="monosmall">${esc(m.title || "")}</td></tr>`)
-        .join("");
+    const rows = applied
+      .map((m) => `<tr><td class="right monosmall">${esc(String(m.id))}</td><td class="monosmall">${esc(m.title || "")}</td></tr>`)
+      .join("");
     return `
       <div class="section">
-        <h3>Migrations</h3>
-        <div class="row">
-          ${applied.length ? `
-            <div>
-              <h4>Applied (${applied.length})</h4>
-              <table>
-                <thead><tr><th class="right">#</th><th>Title</th></tr></thead>
-                <tbody>${rows(applied)}</tbody>
-              </table>
-            </div>` : ""}
-        </div>
+        <h3>Applied migrations (${applied.length})</h3>
+        <table>
+          <thead><tr><th class="right">#</th><th>Title</th></tr></thead>
+          <tbody>${rows}</tbody>
+        </table>
       </div>
     `;
   }
