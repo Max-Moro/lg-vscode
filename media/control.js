@@ -25,10 +25,10 @@
 
   // Events
   ui.section.addEventListener("change", () => post("setState", { state: { section: ui.section.value }}));
-  qsa('input[name="mode"]').forEach(r => r.addEventListener("change", () => {
-    const val = document.querySelector('input[name="mode"]:checked').value;
-    post("setState", { state: { mode: val }});
-  }));
+  UI.delegate(document, 'input[name="mode"]', 'change', () => {
+    const { mode } = UI.getState(['mode']);
+    post("setState", { state: { mode }});
+  });
   ui.template.addEventListener("change", () => post("setState", { state: { template: ui.template.value }}));
   ui.model.addEventListener("change", () => post("setState", { state: { model: ui.model.value }}));
 

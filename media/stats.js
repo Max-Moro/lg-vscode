@@ -114,7 +114,7 @@
 
     const files = (data.files || []).slice();
     const tbody = document.getElementById("stats-body");
-    const ths = Array.from(document.querySelectorAll("th.sortable"));
+    const thead = document.querySelector("thead");
     const flt = document.getElementById("flt");
 
     function cmpNum(a, b) { return sortDir === "asc" ? a - b : b - a; }
@@ -170,8 +170,9 @@
       tbody.innerHTML = rows || `<tr><td colspan="${cols}" class="muted">No files match the filter.</td></tr>`;
     }
 
-    ths.forEach(th => {
-      th.addEventListener("click", () => {
+    // Делегированная сортировка по клику в заголовке
+    if (thead) {
+      UI.delegate(thead, "th.sortable", "click", (th) => {
         const key = th.getAttribute("data-key") || "path";
         if (key === sortKey) {
           sortDir = (sortDir === "asc") ? "desc" : "asc";
@@ -181,21 +182,25 @@
         }
         sortData(); updateHeaders(); renderBody();
       });
-    });
-    flt && flt.addEventListener("input", (e) => {
-      filter = (e.target && e.target.value || "").trim();
-      renderBody();
-    });
+    }
+    // Дебаунс фильтра
+    if (flt) {
+      UI.on(flt, "input", UI.debounce((e) => {
+        filter = (e.target && e.target.value || "").trim();
+        renderBody();
+      }, 120));
+    }
 
     // initial
     sortData(); updateHeaders(); renderBody();
 
-    // delegate dblclick for copy (CSP-safe)
-    tbody.addEventListener("dblclick", (e) => {
-      const tr = e.target && /** @type {HTMLElement} */(e.target).closest("tr");
-      const p = tr && tr.getAttribute("data-path");
-      if (p && navigator.clipboard) navigator.clipboard.writeText(p);
-    });
+    // Копирование пути по double-click на строке
+    if (tbody) {
+      UI.delegate(tbody, "tr[data-path]", "dblclick", (tr) => {
+        const p = tr.getAttribute("data-path");
+        if (p) UI.clipboardCopy(p);
+      });
+    }
 
     // Adapter Metrics and Raw JSON (debug)
     const metricsHtml = renderMetaSummary(total.metaSummary) || "";
@@ -216,11 +221,11 @@
 
     // Hook refresh button
     const btn = document.getElementById("btn-refresh");
-    if (btn) btn.addEventListener("click", () => UI.post(vscode, "refresh"));
+    if (btn) UI.on(btn, "click", () => UI.post(vscode, "refresh"));
 
     // Hook generate button
     const gen = document.getElementById("btn-generate");
-    if (gen) gen.addEventListener("click", () => UI.post(vscode, "generate"));
+    if (gen) UI.on(gen, "click", () => UI.post(vscode, "generate"));
   }
 
   function card(title, valueHtml, tooltip) {

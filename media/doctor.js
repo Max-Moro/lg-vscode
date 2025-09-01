@@ -126,7 +126,7 @@
     $("btn-refresh")?.addEventListener("click", () => UI.post(vscode, "refresh"));
     $("btn-rebuild")?.addEventListener("click", () => UI.post(vscode, "rebuildCache"));
     $("btn-bundle")?.addEventListener("click", () => UI.post(vscode, "buildBundle"));
-    $("btn-bundle")?.addEventListener("click", () => UI.post(vscode, "copyJson", { lastJson }));
+    $("btn-copy")?.addEventListener("click", () => UI.post(vscode, "copyJson", { text: lastJson }));
   }
 
   // ------- helpers -------
