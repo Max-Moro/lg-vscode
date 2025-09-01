@@ -29,9 +29,4 @@ button:hover{background:var(--vscode-button-secondaryHoverBackground)}
 button:focus-visible{outline:1px solid var(--vscode-focusBorder);outline-offset:1px}
 
 .grow{flex:1 1 auto}
-[data-vscode-theme-kind="3"],[data-vscode-theme-kind="4"]{
-  .block{border-color:var(--vscode-contrastBorder,var(--vscode-editorWidget-border))}
-  select,button{border-color:var(--vscode-contrastBorder,var(--vscode-focusBorder))}
-  select:focus-visible,button:focus-visible{outline-color:var(--vscode-contrastActiveBorder,var(--vscode-focusBorder))}
-}
 @media (prefers-reduced-motion:reduce){*{transition:none!important;animation:none!important}}
