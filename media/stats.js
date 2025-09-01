@@ -198,7 +198,7 @@
     if (tbody) {
       UI.delegate(tbody, "tr[data-path]", "dblclick", (tr) => {
         const p = tr.getAttribute("data-path");
-        if (p) UI.clipboardCopy(p);
+        if (p) UI.post(vscode, "copy", { text: p });
       });
     }
 

@@ -88,6 +88,15 @@ export async function showStatsWebview(
       } catch (e: any) {
         vscode.window.showErrorMessage(`LG: ${e?.message || e}`);
       }
+    } else if (msg?.type === "copy") {
+      try {
+        const text = typeof msg.text === "string" ? msg.text : "";
+        if (!text) return;
+        await vscode.env.clipboard.writeText(text);
+        vscode.window.showInformationMessage("Copied to clipboard.");
+      } catch (e: any) {
+        vscode.window.showErrorMessage(`Copy failed: ${e?.message || e}`);
+      }
     }
   });
 }
