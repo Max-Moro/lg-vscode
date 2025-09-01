@@ -24,6 +24,8 @@ const DEFAULT_STATE: PanelState = {
 
 export class ControlPanelView implements vscode.WebviewViewProvider {
   private view?: vscode.WebviewView;
+  /** Гарантия, что стартовую загрузку списков/state делаем ровно один раз. */
+  private bootstrapped = false;
 
   constructor(
     private readonly context: vscode.ExtensionContext,
@@ -40,7 +42,7 @@ export class ControlPanelView implements vscode.WebviewViewProvider {
       try {
         switch (msg.type) {
           case "init":
-            await this.pushListsAndState();
+            await this.bootstrapOnce();
             break;
           case "setState":
             this.setState(msg.state as Partial<PanelState>);
@@ -81,8 +83,9 @@ export class ControlPanelView implements vscode.WebviewViewProvider {
       }
     });
 
-    // Первичная инициализация
-    this.pushListsAndState().catch(() => void 0);
+    // Первичная инициализация (возможен двойной триггер: здесь и по "init" из webview)
+    // Благодаря guard в bootstrapOnce() фактически выполнится ровно один раз.
+    this.bootstrapOnce().catch(() => void 0);
     // Отправим текущую тему сразу при инициализации
     this.postTheme(vscode.window.activeColorTheme.kind);
 
@@ -109,6 +112,13 @@ export class ControlPanelView implements vscode.WebviewViewProvider {
       watcher.onDidDelete(scheduleRefresh, this);
       this.context.subscriptions.push(watcher);
     }
+  }
+
+  /** Выполнить стартовую загрузку списков/состояния ровно один раз. */
+  private async bootstrapOnce(): Promise<void> {
+    if (this.bootstrapped) return;
+    this.bootstrapped = true;
+    await this.pushListsAndState();
   }
 
   /** Публичный метод: безопасно отправить в webview информацию о теме */
