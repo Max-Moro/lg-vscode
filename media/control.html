@@ -17,14 +17,14 @@
       <h3><span class="codicon codicon-run"></span>AI Contexts</h3>
       <div class="row">
         <span class="cluster">
-          <select class="grow" id="template" title="Контекст (.ctx.md) из lg-cfg/"></select>
-          <button class="btn-primary" id="btn-context" title="Сгенерировать контекст-промт по шаблону">
+          <select class="grow" data-state-key="template" title="Контекст (.ctx.md) из lg-cfg/"></select>
+          <button class="btn-primary" id="btn-context" data-action="generateContext" title="Сгенерировать контекст-промт по шаблону">
             <span class="codicon codicon-file-code"></span> Generate Context
           </button>
         </span>
         <span class="spacer"></span>
         <span class="cluster">
-          <button id="btn-context-stats" title="Показать суммарную статистику токенов для выбранного контекста">
+          <button data-action="showContextStats" title="Показать суммарную статистику токенов для выбранного контекста">
             <span class="codicon codicon-table"></span> Show Context Stats
           </button>
         </span>
@@ -36,29 +36,29 @@
       <div class="row">
         <span class="cluster" title="Секция из lg-cfg/sections.yaml или *.sec.yaml">
           <label>Section:</label>
-          <select id="section"></select>
+          <select data-state-key="section"></select>
         </span>
         <span class="spacer"></span>
         <span class="cluster" role="group" aria-label="Mode" title="Режим отбора файлов (все или измененные)">
           <label>Mode:</label>
-          <label class="cluster"><input type="radio" name="mode" value="all"> all</label>
-          <label class="cluster"><input type="radio" name="mode" value="changes"> changes</label>
+          <label class="cluster"><input type="radio" name="mode" value="all" data-state-key="mode"> all</label>
+          <label class="cluster"><input type="radio" name="mode" value="changes" data-state-key="mode"> changes</label>
         </span>
       </div>
       <div class="row">
         <span class="cluster">
-          <button id="btn-included" title="Показать какие файлы проходят фильтры">
+          <button data-action="showIncluded" title="Показать какие файлы проходят фильтры">
             <span class="codicon codicon-list-tree"></span> Show Included
           </button>
         </span>
         <span class="cluster">
-          <button id="btn-listing" title="Сшить исходники из выбранной секции в единый листинг">
-            <span class="codicon codicon-play"></span> Generate Listing
+          <button data-action="generateListing" title="Сшить исходники из выбранной секции в единый листинг">
+           <span class="codicon codicon-play"></span> Generate Listing
           </button>
         </span>
         <span class="spacer"></span>
         <span class="cluster">
-          <button id="btn-stats" title="Таблица размеров и токенов с долями контекста">
+          <button data-action="showStats" title="Таблица размеров и токенов с долями контекста">
             <span class="codicon codicon-table"></span> Show Stats
           </button>
         </span>
@@ -70,7 +70,7 @@
       <div class="row">
         <span class="cluster" title="Параметры для расчета статистики">
           <label class="muted">Model:</label>
-          <select id="model"></select>
+          <select data-state-key="model"></select>
         </span>
       </div>
     </div>
@@ -79,22 +79,22 @@
       <h3><span class="codicon codicon-tools"></span> Utilities</h3>
       <div class="row">
         <span class="cluster">
-          <button id="btn-starter" title="Создать lg-cfg/sections.yaml и примеры .tpl.md/.ctx.md">
-            <span class="codicon codicon-new-file"></span> Create Starter Config
+          <button data-action="createStarter" title="Создать lg-cfg/sections.yaml и примеры .tpl.md/.ctx.md">
+             <span class="codicon codicon-new-file"></span> Create Starter Config
           </button>
-          <button id="btn-open-config" title="Открыть lg-cfg/sections.yaml">
-            <span class="codicon codicon-file"></span> Open Config
+          <button data-action="openConfig" title="Открыть lg-cfg/sections.yaml">
+           <span class="codicon codicon-file"></span> Open Config
           </button>
         </span>
         <span class="spacer"></span>
         <span class="cluster">
-          <button id="btn-doctor" title="Проверка окружения и конфигурации">
+          <button data-action="doctor" title="Проверка окружения и конфигурации">
             <span class="codicon codicon-pulse"></span> Doctor
           </button>
-          <button id="btn-reset-cache" title="Сбросить кеш Listing Generator">
+          <button data-action="resetCache" title="Сбросить кеш Listing Generator">
             <span class="codicon codicon-trash"></span> Reset Cache
           </button>
-          <button id="btn-settings" title="Открыть настройки расширения">
+          <button data-action="openSettings" title="Открыть настройки расширения">
             <span class="codicon codicon-gear"></span> Settings
           </button>
         </span>

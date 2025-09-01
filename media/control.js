@@ -1,76 +1,84 @@
 /* global UI */
 (function () {
   const vscode = UI.acquire();
-  const { qs, qsa } = UI;
 
-  const ui = {
-    section: qs("#section"),
-    template: qs("#template"),
-    modeAll: () => qs('input[name="mode"][value="all"]'),
-    modeChanges: () => qs('input[name="mode"][value="changes"]'),
-    model: qs("#model"),
-    btnListing: qs("#btn-listing"),
-    btnContext: qs("#btn-context"),
-    btnContextStats: qs("#btn-context-stats"),
-    btnIncluded: qs("#btn-included"),
-    btnStats: qs("#btn-stats"),
-    btnStarter: qs("#btn-starter"),
-    btnOpenConfig: qs("#btn-open-config"),
-    btnDoctor: qs("#btn-doctor"),
-    btnResetCache: qs("#btn-reset-cache"),
-    btnSettings: qs("#btn-settings"),
+  // ---- local state cache for instant restore (sessionStorage) ----
+  const STORE_KEY = "lg.control.uiState";
+  const store = {
+    load() {
+      try { return JSON.parse(sessionStorage.getItem(STORE_KEY) || "{}"); }
+      catch { return {}; }
+    },
+    save(partial) {
+      const next = { ...this.load(), ...partial };
+      try { sessionStorage.setItem(STORE_KEY, JSON.stringify(next)); } catch {}
+      return next;
+    }
   };
 
-  const post = (type, payload) => UI.post(vscode, type, payload);
+  // Try to instantly restore last selections (before TS sends data)
+  const cached = store.load();
+  if (cached && Object.keys(cached).length) {
+    UI.setState(cached);
+  }
 
-  // Events
-  ui.section.addEventListener("change", () => post("setState", { state: { section: ui.section.value }}));
-  UI.delegate(document, 'input[name="mode"]', 'change', () => {
-    const { mode } = UI.getState(['mode']);
-    post("setState", { state: { mode }});
+  // ---- actions: one delegated handler for all buttons ----
+  UI.delegate(document, "[data-action]", "click", (el) => {
+    const type = el.getAttribute("data-action");
+    if (!type) return;
+    UI.post(vscode, type);
   });
-  ui.template.addEventListener("change", () => post("setState", { state: { template: ui.template.value }}));
-  ui.model.addEventListener("change", () => post("setState", { state: { model: ui.model.value }}));
 
-  ui.btnListing.addEventListener("click", () => post("generateListing"));
-  ui.btnContext.addEventListener("click", () => post("generateContext"));
-  ui.btnContextStats.addEventListener("click", () => post("showContextStats"));
-  ui.btnIncluded.addEventListener("click", () => post("showIncluded"));
-  ui.btnStats.addEventListener("click", () => post("showStats"));
-  ui.btnStarter.addEventListener("click", () => post("createStarter"));
-  ui.btnOpenConfig.addEventListener("click", () => post("openConfig"));
-  ui.btnDoctor.addEventListener("click", () => post("doctor"));
-  ui.btnResetCache.addEventListener("click", () => post("resetCache"));
-  ui.btnSettings.addEventListener("click", () => post("openSettings"));
+  // ---- state-bound controls (selects, radios) ----
+  UI.delegate(document, "[data-state-key]", "change", (el) => {
+    const key = el.getAttribute("data-state-key");
+    if (!key) return;
 
-  // Init handshake
-  post("init");
+    // Radios: читаем через UI.getState для корректной группировки по name
+    let value;
+    if (el instanceof HTMLInputElement && el.type === "radio") {
+      value = UI.getState([key])[key];
+    } else {
+      value = /** @type {HTMLSelectElement|HTMLInputElement} */(el).value;
+    }
+    const patch = { [key]: value };
+    store.save(patch);
+    UI.post(vscode, "setState", { state: patch });
+  });
 
-  // Runtime updates from extension
+  // ---- handshake ----
+  UI.post(vscode, "init");
+
+  // ---- runtime updates from extension ----
   window.addEventListener("message", (e) => {
     const msg = e.data;
     if (msg?.type === "data") {
-      UI.fillSelect(ui.section, msg.sections);
-      UI.fillSelect(ui.template, msg.contexts, { value: msg.state.template || "" });
-      UI.fillSelect(ui.model, msg.models || [], {
+      // fill selects with remote lists
+      UI.fillSelect(UI.qs("#section"), msg.sections, { value: msg.state.section || "" });
+      UI.fillSelect(UI.qs("#template"), msg.contexts, { value: msg.state.template || "" });
+      UI.fillSelect(UI.qs("#model"), msg.models || [], {
         getValue: it => (typeof it === "string" ? it : (it?.id ?? "")),
         getLabel: it => (typeof it === "string" ? it : (it?.label ?? it?.id ?? "")),
         value: msg.state.model || ""
       });
-      setState(msg.state);
+
+      applyState(msg.state);
     } else if (msg?.type === "state") {
-      setState(msg.state);
+      applyState(msg.state);
     } else if (msg?.type === "theme") {
       document.documentElement.dataset.vscodeThemeKind = String(msg.kind);
     }
   });
 
-  function setState(s){
+  function applyState(s) {
     const next = {};
     if (s.section !== undefined) next["section"] = s.section;
     if (s.template !== undefined) next["template"] = s.template;
     if (s.model !== undefined) next["model"] = s.model;
     if (s.mode !== undefined) next["mode"] = (s.mode === "changes") ? "changes" : "all";
-    UI.setState(next);
+    if (Object.keys(next).length) {
+      UI.setState(next);
+      store.save(next); // keep cache in sync with authoritative state
+    }
   }
 })();
