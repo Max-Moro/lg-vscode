@@ -18,7 +18,7 @@ export class IncludedTree implements vscode.TreeDataProvider<vscode.TreeItem> {
   private memento?: vscode.Memento;
 
   constructor(ctx?: vscode.ExtensionContext) {
-    this.memento = ctx?.globalState;
+    this.memento = ctx?.workspaceState;
     const saved = this.memento?.get<ViewMode>(STATE_KEY);
     if (saved === "flat" || saved === "tree") this.viewMode = saved;
   }

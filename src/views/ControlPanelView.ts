@@ -184,11 +184,11 @@ export class ControlPanelView implements vscode.WebviewViewProvider {
 
   // ——————————————— state & lists ——————————————— //
   private getState(): PanelState {
-    return { ...DEFAULT_STATE, ...(this.context.globalState.get<PanelState>(MKEY) || {}) };
+    return { ...DEFAULT_STATE, ...(this.context.workspaceState.get<PanelState>(MKEY) || {}) };
   }
   private setState(partial: Partial<PanelState>) {
     const next = { ...this.getState(), ...partial };
-    this.context.globalState.update(MKEY, next);
+    this.context.workspaceState.update(MKEY, next);
     this.post({ type: "state", state: next });
   }
 
@@ -206,13 +206,13 @@ export class ControlPanelView implements vscode.WebviewViewProvider {
         const state = this.getState();
         if (!sections.includes(state.section) && sections.length) {
           state.section = sections[0];
-          await this.context.globalState.update(MKEY, state);
+          await this.context.workspaceState.update(MKEY, state);
         }
         if (models.length) {
           const ids = models.map((m: any) => m.id);
           if (!ids.includes(state.model)) {
             state.model = models[0].id;
-            await this.context.globalState.update(MKEY, state);
+            await this.context.workspaceState.update(MKEY, state);
           }
         }
         this.post({ type: "data", sections, contexts, models, state });
