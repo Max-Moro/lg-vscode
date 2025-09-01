@@ -2,9 +2,9 @@
  * Webview под таблицу статистики.
  */
 import * as vscode from "vscode";
-import * as fs from "fs";
 import { getVirtualProvider } from "./virtualBus";
 import { RunResult } from "../protocol";
+import { buildHtml, getExtensionUri, mediaUri } from "../webview/webviewKit";
 
 export async function showStatsWebview(
   data: RunResult,
@@ -29,24 +29,12 @@ export async function showStatsWebview(
     }
   );
 
-  const extUri = getExtensionUri();
-  const media = (p: string) => vscode.Uri.joinPath(extUri, "media", p);
-  const cssUri = panel.webview.asWebviewUri(media("stats.css")).toString();
-  const baseCss = panel.webview.asWebviewUri(media("base.css")).toString();
-  const jsUri = panel.webview.asWebviewUri(media("stats.js")).toString();
-  const commonJs = panel.webview.asWebviewUri(media("common.js")).toString();
-  const htmlTplPath = vscode.Uri.joinPath(extUri, "media", "stats.html");
-  const cspSource = panel.webview.cspSource;
-  const nonce = makeNonce();
-
-  const rawHtml = fs.readFileSync(htmlTplPath.fsPath, "utf8");
-  panel.webview.html = rawHtml
-    .replace(/{{cspSource}}/g, cspSource)
-    .replace(/{{cssUri}}/g, cssUri)
-    .replace(/{{baseCssUri}}/g, baseCss)
-    .replace(/{{jsUri}}/g, jsUri)
-    .replace(/{{commonJsUri}}/g, commonJs)
-    .replace(/{{nonce}}/g, String(nonce));
+  panel.webview.html = buildHtml(panel.webview, "stats.html", {
+    cssUri:      mediaUri(panel.webview, "stats.css"),
+    baseCssUri:  mediaUri(panel.webview, "base.css"),
+    jsUri:       mediaUri(panel.webview, "stats.js"),
+    commonJsUri: mediaUri(panel.webview, "common.js"),
+  });
 
   // Текущее содержимое (обновляем после refresh)
   let current: RunResult = data;
@@ -101,19 +89,4 @@ export async function showStatsWebview(
       }
     }
   });
-}
-
-function getExtensionUri(): vscode.Uri {
-  const ext = vscode.extensions.getExtension("your-org.vscode-lg");
-  if (!ext) {
-    throw new Error("Cannot resolve extension URI (your-org.vscode-lg).");
-  }
-  return ext.extensionUri;
-}
-
-function makeNonce() {
-  const possible = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789";
-  let text = "";
-  for (let i = 0; i < 32; i++) text += possible.charAt(Math.floor(Math.random() * possible.length));
-  return text;
 }

@@ -5,6 +5,7 @@ import { runListIncludedJson, runListing } from "../services/ListingService";
 import { runContext, runContextStatsJson } from "../services/ContextService";
 import { runStatsJson } from "../services/StatsService";
 import { listContextsJson, listModelsJson, listSectionsJson } from "../services/CatalogService";
+import { EXT_ID } from "../constants";
 
 type PanelState = {
   section: string;
@@ -72,7 +73,7 @@ export class ControlPanelView implements vscode.WebviewViewProvider {
             vscode.commands.executeCommand("lg.runDoctor");
             break;
           case "openSettings":
-            vscode.commands.executeCommand("workbench.action.openSettings", "@ext:your-org.vscode-lg");
+            vscode.commands.executeCommand("workbench.action.openSettings", `@ext:${EXT_ID}`);
             break;
         }
       } catch (e: any) {
@@ -229,31 +230,14 @@ export class ControlPanelView implements vscode.WebviewViewProvider {
 
   // ——————————————— HTML ——————————————— //
   private buildHtml(view: vscode.WebviewView): string {
-    // читаем шаблон control.html и подставляем необходимые URI/значения
-    const tplUri = vscode.Uri.joinPath(this.context.extensionUri, "media", "control.html");
-    const raw = require("fs").readFileSync(tplUri.fsPath, "utf8");
-    // ВАЖНО: путь к codicon.css берём через require.resolve — это устойчиво к хоистингу node_modules
-    const codiconCssPath = require.resolve("@vscode/codicons/dist/codicon.css");
-    const codicons = view.webview.asWebviewUri(vscode.Uri.file(codiconCssPath)).toString();
-    const csp = view.webview.cspSource;
-    const media = (p: string) => vscode.Uri.joinPath(this.context.extensionUri, "media", p);
-    const baseCss = view.webview.asWebviewUri(media("base.css")).toString();
-    const controlCss = view.webview.asWebviewUri(media("control.css")).toString();
-    const controlJs = view.webview.asWebviewUri(media("control.js")).toString();
-    const nonce = makeNonce();
-    return raw
-      .replaceAll("{{codiconsUri}}", codicons)
-      .replaceAll("{{cspSource}}", csp)
-      .replaceAll("{{baseCssUri}}", baseCss)
-      .replaceAll("{{controlCssUri}}", controlCss)
-      .replaceAll("{{controlJsUri}}", controlJs)
-      .replaceAll("{{nonce}}", nonce);
+    const { buildHtml, mediaUri, toWebviewUri } = require("../webview/webviewKit") as typeof import("../webview/webviewKit");
+    // путь к codicons берём из node_modules
+    const codicons = toWebviewUri(view.webview, require.resolve("@vscode/codicons/dist/codicon.css"));
+    return buildHtml(view.webview, "control.html", {
+      codiconsUri: codicons,
+      baseCssUri:  mediaUri(view.webview, "base.css"),
+      controlCssUri: mediaUri(view.webview, "control.css"),
+      controlJsUri:  mediaUri(view.webview, "control.js"),
+    });
   }
-}
-
-function makeNonce() {
-  const possible = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789";
-  let text = "";
-  for (let i = 0; i < 32; i++) text += possible.charAt(Math.floor(Math.random() * possible.length));
-  return text;
 }

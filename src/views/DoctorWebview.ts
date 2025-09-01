@@ -1,6 +1,6 @@
 import * as vscode from "vscode";
-import * as fs from "fs";
 import { runDoctorBundle, runDoctorJson } from "../services/DoctorService";
+import { buildHtml, getExtensionUri, mediaUri } from "../webview/webviewKit";
 
 export async function showDoctorWebview(report: any) {
   const panel = vscode.window.createWebviewPanel(
@@ -14,24 +14,13 @@ export async function showDoctorWebview(report: any) {
     }
   );
 
-  const extUri = getExtensionUri();
-  const media = (p: string) => vscode.Uri.joinPath(extUri, "media", p);
-  const cssUri = panel.webview.asWebviewUri(media("doctor.css")).toString();
-  const baseCssUri = panel.webview.asWebviewUri(media("base.css")).toString();
-  const jsUri = panel.webview.asWebviewUri(media("doctor.js")).toString();
-  const commonJsUri = panel.webview.asWebviewUri(media("common.js")).toString();
-  const htmlTplPath = vscode.Uri.joinPath(extUri, "media", "doctor.html");
-  const cspSource = panel.webview.cspSource;
-  const nonce = makeNonce();
-
-  const rawHtml = fs.readFileSync(htmlTplPath.fsPath, "utf8");
-  panel.webview.html = rawHtml
-    .replace(/{{cspSource}}/g, cspSource)
-    .replace(/{{cssUri}}/g, cssUri)
-    .replace(/{{baseCssUri}}/g, baseCssUri)
-    .replace(/{{jsUri}}/g, jsUri)
-    .replace(/{{commonJsUri}}/g, commonJsUri)
-    .replace(/{{nonce}}/g, String(nonce));
+  // локальные ресурсы из media/
+  panel.webview.html = buildHtml(panel.webview, "doctor.html", {
+    cssUri:      mediaUri(panel.webview, "doctor.css"),
+    baseCssUri:  mediaUri(panel.webview, "base.css"),
+    jsUri:       mediaUri(panel.webview, "doctor.js"),
+    commonJsUri: mediaUri(panel.webview, "common.js"),
+  });
 
   panel.webview.onDidReceiveMessage(async (msg) => {
     try {
@@ -77,19 +66,4 @@ export async function showDoctorWebview(report: any) {
       vscode.window.showErrorMessage(`LG Doctor: ${e?.message || e}`);
     }
   });
-}
-
-function getExtensionUri(): vscode.Uri {
-  const ext = vscode.extensions.getExtension("your-org.vscode-lg");
-  if (!ext) {
-    throw new Error("Cannot resolve extension URI (your-org.vscode-lg).");
-  }
-  return ext.extensionUri;
-}
-
-function makeNonce() {
-  const possible = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789";
-  let text = "";
-  for (let i = 0; i < 32; i++) text += possible.charAt(Math.floor(Math.random() * possible.length));
-  return text;
 }
