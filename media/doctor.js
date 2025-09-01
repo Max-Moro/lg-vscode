@@ -4,9 +4,11 @@
   const vscode = typeof acquireVsCodeApi === "function" ? acquireVsCodeApi() : null;
   const app = document.getElementById("app");
   vscode && vscode.postMessage({ type: "ready" });
+  let lastJson = "";
   window.addEventListener("message", (ev) => {
     const msg = ev.data;
     if (msg?.type === "report") {
+      lastJson = JSON.stringify(msg.payload ?? {}, null, 2);
       render(msg.payload, msg.bundlePath);
     }
   });
@@ -114,7 +116,7 @@
       <div class="section">
         <details>
           <summary><span class="kv-summary">Raw JSON</span></summary>
-          <textarea class="rawjson">${esc(JSON.stringify(data, null, 2))}</textarea>
+          <textarea class="rawjson">${esc(lastJson)}</textarea>
         </details>
       </div>
     `;
@@ -124,11 +126,7 @@
     $("btn-refresh")?.addEventListener("click", () => vscode && vscode.postMessage({ type: "refresh" }));
     $("btn-rebuild")?.addEventListener("click", () => vscode && vscode.postMessage({ type: "rebuildCache" }));
     $("btn-bundle")?.addEventListener("click", () => vscode && vscode.postMessage({ type: "buildBundle" }));
-    $("btn-copy")?.addEventListener("click", () => {
-      const el = document.getElementById("json");
-      const text = (el && el.textContent) ? el.textContent : "";
-      vscode && vscode.postMessage({ type: "copyJson", text });
-    });
+    $("btn-copy")?.addEventListener("click", () => vscode && vscode.postMessage({ type: "copyJson", text: lastJson }));
   }
 
   // ------- helpers -------

@@ -153,7 +153,7 @@
         return f.path.toLowerCase().includes(s) || (s.startsWith(".") && f.path.toLowerCase().endsWith(s));
       }).map(f => {
         const warn = (f.ctxShare || 0) > 100 ? " warn" : "";
-        return `<tr title="Double-click to copy path" ondblclick="navigator.clipboard.writeText('${esc(f.path)}')">
+        return `<tr title="Double-click to copy path" data-path="${esc(f.path)}">
           <td class="monosmall">${esc(f.path)}</td>
           <td class="right">${hrSize(f.sizeBytes)}</td>
           <td class="right">${fmtInt(f.tokensRaw)}</td>
@@ -166,7 +166,8 @@
           <td class="right${warn}">${(f.ctxShare ?? 0).toFixed(1)}%</td>
         </tr>`;
       }).join("");
-      tbody.innerHTML = rows || '<tr><td colspan="8" class="muted">No files match the filter.</td></tr>';
+      const cols = !hideSaved ? 8 : 6;
+      tbody.innerHTML = rows || `<tr><td colspan="${cols}" class="muted">No files match the filter.</td></tr>`;
     }
 
     ths.forEach(th => {
@@ -188,6 +189,13 @@
 
     // initial
     sortData(); updateHeaders(); renderBody();
+
+    // delegate dblclick for copy (CSP-safe)
+    tbody.addEventListener("dblclick", (e) => {
+      const tr = e.target && /** @type {HTMLElement} */(e.target).closest("tr");
+      const p = tr && tr.getAttribute("data-path");
+      if (p && navigator.clipboard) navigator.clipboard.writeText(p);
+    });
 
     // Adapter Metrics and Raw JSON (debug)
     const metricsHtml = renderMetaSummary(total.metaSummary) || "";
