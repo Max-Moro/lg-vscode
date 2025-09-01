@@ -46,7 +46,7 @@
       <p class="muted">Scope: <b>${esc(scope)}</b> • Name: <b>${esc(name)}</b> • Model: <b>${esc(data.model)}</b> • Encoder: <b>${esc(data.encoder)}</b> • Ctx limit: <b>${fmtInt(data.ctxLimit)}</b> tokens</p>
       <div class="actions">
         <button id="btn-refresh" title="Re-run stats">Refresh</button>
-        <button id="btn-generate" title="Render the final prompt now">${esc(genLabel)}</button>
+        <button id="btn-generate" class="btn-primary" title="Render the final prompt now">${esc(genLabel)}</button>
       </div>
 
       <div class="cards">

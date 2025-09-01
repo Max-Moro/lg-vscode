@@ -24,8 +24,30 @@ th, td { padding: 6px 8px; border-bottom: 1px solid var(--vscode-editorIndentGui
 th { text-align: left; }
 .right { text-align: right; }
 .monosmall { font-family: var(--vscode-editor-font-family, monospace); font-size: 11px; }
-button { padding: 6px 10px; background: var(--vscode-button-background); color: var(--vscode-button-foreground); border: 0; border-radius: 6px; cursor: pointer; }
-button.secondary { background: var(--vscode-input-background); color: var(--vscode-foreground); border: 1px solid var(--vscode-editorIndentGuide-background); }
+
+/* Default buttons are neutral/secondary; use .btn-primary for main actions */
+button {
+  padding: 6px 10px;
+  background: var(--vscode-input-background);
+  color: var(--vscode-foreground);
+  border: 1px solid var(--vscode-editorIndentGuide-background);
+  border-radius: 6px;
+  cursor: pointer;
+}
+button[disabled]{
+  cursor: default;
+  opacity: .7;
+  color: var(--vscode-disabledForeground);
+}
+.btn-primary{
+  background: var(--vscode-button-background);
+  color: var(--vscode-button-foreground);
+  border: 1px solid var(--vscode-button-border, var(--vscode-button-background));
+}
+.btn-primary:hover{
+  background: var(--vscode-button-hoverBackground);
+}
+
 textarea.rawjson {
   width: 480px; height: 300px; resize: both;
   background: var(--vscode-editor-background);

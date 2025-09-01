@@ -36,10 +36,10 @@
       <p class="muted">Tool: <b>${esc(data.tool_version || "unknown")}</b> • Protocol: <b>${esc(data.protocol)}</b> • Root: <span class="monosmall">${esc(data.root)}</span></p>
 
       <div class="actions">
-        <button id="btn-refresh" title="Re-run diagnostics">Refresh</button>
-        <button id="btn-rebuild" class="secondary" title="Reset local LG cache and re-run">Rebuild cache</button>
-        <button id="btn-bundle" class="secondary" title="Build diagn. bundle (.zip) with lg-cfg and git metadata">Build bundle</button>
-        <button id="btn-copy" class="secondary" title="Copy raw JSON to clipboard">Copy JSON</button>
+        <button id="btn-refresh" class="btn-primary" title="Re-run diagnostics">Refresh</button>
+        <button id="btn-rebuild" title="Reset local LG cache and re-run">Rebuild cache</button>
+        <button id="btn-bundle" title="Build diagn. bundle (.zip) with diag.json, lg-cfg and git metadata">Build bundle</button>
+        <button id="btn-copy" title="Copy raw JSON to clipboard">Copy JSON</button>
       </div>
       ${bundlePath ? `<p class="note">Bundle: <span class="monosmall">${esc(bundlePath)}</span></p>` : ""}
 

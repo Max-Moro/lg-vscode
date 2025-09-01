@@ -17,7 +17,7 @@
       <h3><span class="codicon codicon-run"></span>AI Contexts</h3>
       <div class="row">
         <span class="cluster">
-          <select class="grow" data-state-key="template" title="Контекст (.ctx.md) из lg-cfg/"></select>
+          <select id="template" class="grow" data-state-key="template" title="Контекст (.ctx.md) из lg-cfg/"></select>
           <button class="btn-primary" id="btn-context" data-action="generateContext" title="Сгенерировать контекст-промт по шаблону">
             <span class="codicon codicon-file-code"></span> Generate Context
           </button>
@@ -36,7 +36,7 @@
       <div class="row">
         <span class="cluster" title="Секция из lg-cfg/sections.yaml или *.sec.yaml">
           <label>Section:</label>
-          <select data-state-key="section"></select>
+          <select id="section" data-state-key="section"></select>
         </span>
         <span class="spacer"></span>
         <span class="cluster" role="group" aria-label="Mode" title="Режим отбора файлов (все или измененные)">
@@ -70,7 +70,7 @@
       <div class="row">
         <span class="cluster" title="Параметры для расчета статистики">
           <label class="muted">Model:</label>
-          <select data-state-key="model"></select>
+          <select id="model" data-state-key="model"></select>
         </span>
       </div>
     </div>

@@ -6,16 +6,28 @@ h3{margin:4px 0;font-weight:600;font-size:12px;}
 .spacer{flex:1}
 .muted{color:var(--vscode-descriptionForeground)}
 .cluster{display:inline-flex;align-items:center;gap:4px;white-space:nowrap}
+
+/* Compact controls just for Control Panel */
+select,button,input[type="radio"]{font:inherit}
 select{max-width:100%;min-width:0;background:var(--vscode-dropdown-background);
        color:var(--vscode-dropdown-foreground);
        border:1px solid var(--vscode-dropdown-border,var(--vscode-editorWidget-border,transparent));
        border-radius:4px;padding:2px 6px}
 select:focus-visible{outline:1px solid var(--vscode-focusBorder);outline-offset:1px}
 select:disabled{color:var(--vscode-disabledForeground);opacity:.7}
-button{display:inline-flex;align-items:center;gap:6px;line-height:1.2}
-.btn-primary{background:var(--vscode-button-background);color:var(--vscode-button-foreground);
-             border-color:var(--vscode-button-border,var(--vscode-button-background))}
-.btn-primary:hover{background:var(--vscode-button-hoverBackground)}
+
+/* Override base.css to make buttons compact and use secondary palette by default */
+button{
+  display:inline-flex;align-items:center;gap:6px;
+  padding:2px 6px; line-height:1.2; border-radius:4px;
+  background:var(--vscode-button-secondaryBackground);
+  color:var(--vscode-button-secondaryForeground);
+  border:1px solid var(--vscode-dropdown-border,transparent);
+  cursor:pointer;
+}
+button:hover{background:var(--vscode-button-secondaryHoverBackground)}
+button:focus-visible{outline:1px solid var(--vscode-focusBorder);outline-offset:1px}
+
 .grow{flex:1 1 auto}
 [data-vscode-theme-kind="3"],[data-vscode-theme-kind="4"]{
   .block{border-color:var(--vscode-contrastBorder,var(--vscode-editorWidget-border))}
