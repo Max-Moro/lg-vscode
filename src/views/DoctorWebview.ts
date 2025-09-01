@@ -20,6 +20,7 @@ export async function showDoctorWebview(report: any) {
     baseCssUri:  mediaUri(panel.webview, "base.css"),
     jsUri:       mediaUri(panel.webview, "doctor.js"),
     commonJsUri: mediaUri(panel.webview, "common.js"),
+    commonUiJsUri: mediaUri(panel.webview, "common-ui.js"),
   });
 
   panel.webview.onDidReceiveMessage(async (msg) => {

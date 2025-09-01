@@ -1,8 +1,7 @@
-/* global acquireVsCodeApi */
+/* global UI */
 (function () {
-  const vscode = typeof acquireVsCodeApi === "function" ? acquireVsCodeApi() : null;
-  const qs = (s) => document.querySelector(s);
-  const qsa = (s) => Array.from(document.querySelectorAll(s));
+  const vscode = UI.acquire();
+  const { qs, qsa } = UI;
 
   const ui = {
     section: qs("#section"),
@@ -22,7 +21,7 @@
     btnSettings: qs("#btn-settings"),
   };
 
-  function post(type, payload){ vscode && vscode.postMessage({ type, ...payload }); }
+  const post = (type, payload) => UI.post(vscode, type, payload);
 
   // Events
   ui.section.addEventListener("change", () => post("setState", { state: { section: ui.section.value }}));
@@ -51,9 +50,13 @@
   window.addEventListener("message", (e) => {
     const msg = e.data;
     if (msg?.type === "data") {
-      fillSelect(ui.section, msg.sections);
-      fillSelect(ui.template, msg.contexts, msg.state.template || "");
-      fillSelect(ui.model, msg.models || [], msg.state.model || "");
+      UI.fillSelect(ui.section, msg.sections);
+      UI.fillSelect(ui.template, msg.contexts, { value: msg.state.template || "" });
+      UI.fillSelect(ui.model, msg.models || [], {
+        getValue: it => (typeof it === "string" ? it : (it?.id ?? "")),
+        getLabel: it => (typeof it === "string" ? it : (it?.label ?? it?.id ?? "")),
+        value: msg.state.model || ""
+      });
       setState(msg.state);
     } else if (msg?.type === "state") {
       setState(msg.state);
@@ -62,27 +65,12 @@
     }
   });
 
-  function fillSelect(sel, items, value){
-    const cur = sel.value;
-    sel.innerHTML = "";
-    for (const it of items){
-      const opt = document.createElement("option");
-      if (typeof it === "string") {
-        opt.value = it;
-        opt.textContent = it;
-      } else if (it && typeof it === "object") {
-        opt.value = it.id;
-        opt.textContent = it.label;
-      }
-      sel.appendChild(opt);
-    }
-    sel.value = (value !== undefined ? value : cur) || (items[0] ?? "");
-  }
-
   function setState(s){
-    if (s.section !== undefined) ui.section.value = s.section;
-    if (s.template !== undefined) ui.template.value = s.template;
-    if (s.model !== undefined) ui.model.value = s.model;
-    if (s.mode === "changes") ui.modeChanges().checked = true; else ui.modeAll().checked = true;
+    const next = {};
+    if (s.section !== undefined) next["section"] = s.section;
+    if (s.template !== undefined) next["template"] = s.template;
+    if (s.model !== undefined) next["model"] = s.model;
+    if (s.mode !== undefined) next["mode"] = (s.mode === "changes") ? "changes" : "all";
+    UI.setState(next);
   }
 })();

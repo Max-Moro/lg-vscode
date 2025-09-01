@@ -34,6 +34,7 @@ export async function showStatsWebview(
     baseCssUri:  mediaUri(panel.webview, "base.css"),
     jsUri:       mediaUri(panel.webview, "stats.js"),
     commonJsUri: mediaUri(panel.webview, "common.js"),
+    commonUiJsUri: mediaUri(panel.webview, "common-ui.js"),
   });
 
   // Текущее содержимое (обновляем после refresh)

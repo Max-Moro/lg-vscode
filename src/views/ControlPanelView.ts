@@ -238,6 +238,7 @@ export class ControlPanelView implements vscode.WebviewViewProvider {
       baseCssUri:  mediaUri(view.webview, "base.css"),
       controlCssUri: mediaUri(view.webview, "control.css"),
       controlJsUri:  mediaUri(view.webview, "control.js"),
+      commonUiJsUri: mediaUri(view.webview, "common-ui.js"),
     });
   }
 }

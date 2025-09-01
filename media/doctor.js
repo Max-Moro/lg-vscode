@@ -1,9 +1,9 @@
-/* global acquireVsCodeApi, LG */
+/* global UI, LG */
 (function () {
   const { esc, fmtInt, hrSize } = LG;
-  const vscode = typeof acquireVsCodeApi === "function" ? acquireVsCodeApi() : null;
+  const vscode = UI.acquire();
   const app = document.getElementById("app");
-  vscode && vscode.postMessage({ type: "ready" });
+  UI.post(vscode, "ready");
   let lastJson = "";
   window.addEventListener("message", (ev) => {
     const msg = ev.data;
@@ -123,10 +123,10 @@
 
     // Actions
     const $ = (id) => document.getElementById(id);
-    $("btn-refresh")?.addEventListener("click", () => vscode && vscode.postMessage({ type: "refresh" }));
-    $("btn-rebuild")?.addEventListener("click", () => vscode && vscode.postMessage({ type: "rebuildCache" }));
-    $("btn-bundle")?.addEventListener("click", () => vscode && vscode.postMessage({ type: "buildBundle" }));
-    $("btn-copy")?.addEventListener("click", () => vscode && vscode.postMessage({ type: "copyJson", text: lastJson }));
+    $("btn-refresh")?.addEventListener("click", () => UI.post(vscode, "refresh"));
+    $("btn-rebuild")?.addEventListener("click", () => UI.post(vscode, "rebuildCache"));
+    $("btn-bundle")?.addEventListener("click", () => UI.post(vscode, "buildBundle"));
+    $("btn-bundle")?.addEventListener("click", () => UI.post(vscode, "copyJson", { lastJson }));
   }
 
   // ------- helpers -------

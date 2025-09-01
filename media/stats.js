@@ -1,11 +1,11 @@
-/* global acquireVsCodeApi, LG */
+/* global UI, LG */
 (function () {
   const { esc, fmtInt, fmtPct, hrSize } = LG;
-  const vscode = typeof acquireVsCodeApi === "function" ? acquireVsCodeApi() : null;
+  const vscode = UI.acquire();
   const app = document.getElementById("app");
 
   // Handshake: ask TS side for data
-  vscode && vscode.postMessage({ type: "ready" });
+  UI.post(vscode, "ready");
   window.addEventListener("message", (ev) => {
     const msg = ev.data;
     if (msg && msg.type === "runResult") {
@@ -216,11 +216,11 @@
 
     // Hook refresh button
     const btn = document.getElementById("btn-refresh");
-    if (btn) btn.addEventListener("click", () => vscode && vscode.postMessage({ type: "refresh" }));
+    if (btn) btn.addEventListener("click", () => UI.post(vscode, "refresh"));
 
     // Hook generate button
     const gen = document.getElementById("btn-generate");
-    if (gen) gen.addEventListener("click", () => vscode && vscode.postMessage({ type: "generate" }));
+    if (gen) gen.addEventListener("click", () => UI.post(vscode, "generate"));
   }
 
   function card(title, valueHtml, tooltip) {
