@@ -1,5 +1,5 @@
 import * as vscode from "vscode";
-import { spawnToString } from "../runner/LgProcess";
+import { spawnToString, spawnToResult } from "../runner/LgProcess";
 import { ensureManagedCli, resolveManagedCliBin } from "../runner/LgInstaller";
 import { findPython } from "../runner/PythonFind";
 
@@ -69,6 +69,17 @@ export async function runCli(cliArgs: string[], opts: { timeoutMs?: number } = {
   if (!spec) throw new Error("CLI is not available. Configure `lg.python.interpreter` or `lg.cli.path`, or use managed venv.");
   const args = [...spec.args, ...cliArgs];
   return spawnToString(spec.cmd, args, { cwd: effectiveWorkspaceRoot(), timeoutMs: opts.timeoutMs ?? 120_000 });
+}
+
+/** Запуск CLI с возвратом stdout+stderr (нужно для diag --bundle). */
+export async function runCliResult(
+  cliArgs: string[],
+  opts: { timeoutMs?: number } = {}
+): Promise<{ stdout: string; stderr: string }> {
+  const spec = await resolveCliRunSpec();
+  if (!spec) throw new Error("CLI is not available. Configure `lg.python.interpreter` or `lg.cli.path`, or use managed venv.");
+  const args = [...spec.args, ...cliArgs];
+  return spawnToResult(spec.cmd, args, { cwd: effectiveWorkspaceRoot(), timeoutMs: opts.timeoutMs ?? 120_000 });
 }
 
 /** Быстрая проверка наличия CLI, с предложением автоустановки. */
