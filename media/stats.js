@@ -115,6 +115,8 @@
     const files = (data.files || []).slice();
     const tbody = document.getElementById("stats-body");
     const thead = document.querySelector("thead");
+    // Список сортируемых заголовков для обновления стрелок/классов
+    const ths = thead ? Array.from(thead.querySelectorAll("th.sortable")) : [];
     const flt = document.getElementById("flt");
 
     function cmpNum(a, b) { return sortDir === "asc" ? a - b : b - a; }
@@ -137,6 +139,7 @@
     }
 
     function updateHeaders() {
+      if (!ths || !ths.length) return;
       ths.forEach(th => {
         th.classList.remove("active");
         const key = th.getAttribute("data-key");
