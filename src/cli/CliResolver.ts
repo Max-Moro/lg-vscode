@@ -11,23 +11,17 @@ export function setExtensionContext(ctx: vscode.ExtensionContext) {
   _ctx = ctx;
 }
 
-/** Единое правило выбора корня: родитель lg-cfg, либо корень с lg-cfg/sections.yaml, иначе первый корень. */
+/** Единое правило выбора корня: родитель lg-cfg, иначе первый корень. */
 export function effectiveWorkspaceRoot(): string | undefined {
   const folders = vscode.workspace.workspaceFolders;
   if (!folders || folders.length === 0) return undefined;
 
   const cfgRoot = folders.find((f) => {
     const base = require("path").basename(f.uri.fsPath).toLowerCase();
-    return base === "lg-cfg" || f.name.toLowerCase().includes("lg config");
+    return base === "lg-cfg";
   });
   if (cfgRoot) return require("path").dirname(cfgRoot.uri.fsPath);
 
-  for (const f of folders) {
-    const p = require("path").join(f.uri.fsPath, "lg-cfg", "sections.yaml");
-    try {
-      if (require("fs").existsSync(p)) return f.uri.fsPath;
-    } catch { /* ignore */ }
-  }
   return folders[0]?.uri.fsPath;
 }
 

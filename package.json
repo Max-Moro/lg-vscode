@@ -12,7 +12,7 @@
   ],
   "main": "./dist/extension.js",
   "activationEvents": [
-    "workspaceContains:lg-cfg/sections.yaml"
+    "workspaceContains:lg-cfg"
   ],
   "contributes": {
     "viewsContainers": {
