@@ -1,6 +1,7 @@
 import { runCli } from "./CliResolver";
 import { assertProtocol } from "../protocol";
-export type RunResult = import("../protocol").RunResult;
+import type { RunResult } from "../models/run_result";
+import type { DiagReport } from "../models/diag_report";
 
 export async function cliRender(target: string, options?: { mode?: "all" | "changes" }): Promise<string> {
   const args: string[] = ["render", target];
@@ -23,10 +24,10 @@ export async function cliList(what: "sections" | "contexts" | "models") {
   return data?.[what] ?? [];
 }
 
-export async function cliDiag(rebuild?: boolean): Promise<any> {
+export async function cliDiag(rebuild?: boolean): Promise<DiagReport> {
   const args = ["diag"].concat(rebuild ? ["--rebuild-cache"] : []);
   const out = await runCli(args, { timeoutMs: rebuild ? 60_000 : 20_000 });
   const data = JSON.parse(out);
   assertProtocol(data, "diag");
-  return data;
+  return data as DiagReport;
 }

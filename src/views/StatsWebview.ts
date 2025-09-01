@@ -3,7 +3,7 @@
  */
 import * as vscode from "vscode";
 import { getVirtualProvider } from "./virtualBus";
-import { RunResult } from "../protocol";
+import type { RunResult } from "../models/run_result";
 import { buildHtml, getExtensionUri, mediaUri } from "../webview/webviewKit";
 
 export async function showStatsWebview(

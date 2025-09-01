@@ -1,18 +1,19 @@
 import { cliDiag } from "../cli/CliClient";
 import { runCliResult } from "../cli/CliResolver";
+import type { DiagReport } from "../models/diag_report";
 
 /** JSON-диагностика (без bundle) */
-export async function runDoctorJson(opts?: { rebuild?: boolean }): Promise<any> {
+export async function runDoctorJson(opts?: { rebuild?: boolean }): Promise<DiagReport> {
   return cliDiag(opts?.rebuild);
 }
 
 /** Диагностика с построением бандла — нужен stderr, поэтому здесь отдельный вызов процесса. */
-export async function runDoctorBundle(): Promise<{ data: any; bundlePath?: string }> {
+export async function runDoctorBundle(): Promise<{ data: DiagReport; bundlePath?: string }> {
   // Используем общий резолвер, который умеет возвращать stdout+stderr
   const { stdout, stderr } = await runCliResult(["diag", "--bundle"], { timeoutMs: 60_000 });
-  let data: any = {};
+  let data: DiagReport;
   try {
-    data = JSON.parse(stdout || "{}");
+    data = JSON.parse(stdout || "{}") as DiagReport;
   } catch (e) {
     // если JSON сломан, обернём ошибку с полезным stderr
     throw new Error(`LG Doctor: unexpected CLI output (not JSON). STDERR:\n${stderr || "(empty)"}`);

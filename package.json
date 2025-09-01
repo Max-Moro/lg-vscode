@@ -7,7 +7,9 @@
   "engines": {
     "vscode": "^1.85.0"
   },
-  "categories": ["Other"],
+  "categories": [
+    "Other"
+  ],
   "main": "./dist/extension.js",
   "activationEvents": [
     "workspaceContains:lg-cfg/sections.yaml"
@@ -23,15 +25,43 @@
       ]
     },
     "commands": [
-      { "command": "lg.generateListing", "title": "LG: Generate Listing (Section)" },
-      { "command": "lg.generateContext", "title": "LG: Generate Context (Template)" },
-      { "command": "lg.showIncluded", "title": "LG: Show Included Paths" },
-      { "command": "lg.showStats", "title": "LG: Show Stats" },
-      { "command": "lg.openConfig", "title": "LG: Open Config (lg-cfg/sections.yaml)" },
-      { "command": "lg.createStarterConfig", "title": "LG: Create Starter Config" },
-      { "command": "lg.runDoctor", "title": "LG: Doctor (Self Check)" },
-      { "command": "lg.resetCache", "title": "LG: Reset Cache" },
-      { "command": "lg.toggleIncludedViewMode", "title": "Toggle Tree/Flat View", "icon": "$(list-tree)" }
+      {
+        "command": "lg.generateListing",
+        "title": "LG: Generate Listing (Section)"
+      },
+      {
+        "command": "lg.generateContext",
+        "title": "LG: Generate Context (Template)"
+      },
+      {
+        "command": "lg.showIncluded",
+        "title": "LG: Show Included Paths"
+      },
+      {
+        "command": "lg.showStats",
+        "title": "LG: Show Stats"
+      },
+      {
+        "command": "lg.openConfig",
+        "title": "LG: Open Config (lg-cfg/sections.yaml)"
+      },
+      {
+        "command": "lg.createStarterConfig",
+        "title": "LG: Create Starter Config"
+      },
+      {
+        "command": "lg.runDoctor",
+        "title": "LG: Doctor (Self Check)"
+      },
+      {
+        "command": "lg.resetCache",
+        "title": "LG: Reset Cache"
+      },
+      {
+        "command": "lg.toggleIncludedViewMode",
+        "title": "Toggle Tree/Flat View",
+        "icon": "$(list-tree)"
+      }
     ],
     "views": {
       "lg": [
@@ -62,7 +92,10 @@
       "properties": {
         "lg.mode": {
           "type": "string",
-          "enum": ["all", "changes"],
+          "enum": [
+            "all",
+            "changes"
+          ],
           "default": "all",
           "description": "Default mode for listing generation."
         },
@@ -93,7 +126,11 @@
         },
         "lg.install.strategy": {
           "type": "string",
-          "enum": ["managedVenv", "pipx", "system"],
+          "enum": [
+            "managedVenv",
+            "pipx",
+            "system"
+          ],
           "default": "managedVenv",
           "description": "How to install/resolve the CLI."
         },
@@ -124,6 +161,7 @@
   "devDependencies": {
     "@types/node": "^20.11.30",
     "@types/vscode": "^1.85.0",
+    "json-schema-to-typescript": "^15.0.4",
     "ovsx": "^0.9.2",
     "typescript": "^5.4.0",
     "vsce": "^2.15.0"

@@ -1,8 +1,9 @@
 import * as vscode from "vscode";
 import { runDoctorBundle, runDoctorJson } from "../services/DoctorService";
 import { buildHtml, getExtensionUri, mediaUri } from "../webview/webviewKit";
+import type { DiagReport } from "../models/diag_report";
 
-export async function showDoctorWebview(report: any) {
+export async function showDoctorWebview(report: DiagReport) {
   const panel = vscode.window.createWebviewPanel(
     "lg.doctor",
     "Listing Generator — Doctor",

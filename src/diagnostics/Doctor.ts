@@ -1,9 +1,10 @@
 /**
- * Doctor — теперь через Webview с интерактивным UI.
+ * Doctor — через Webview с интерактивным UI.
  */
 import * as vscode from "vscode";
 import { showDoctorWebview } from "../views/DoctorWebview";
 import { runDoctorJson } from "../services/DoctorService";
+import type { DiagReport } from "../models/diag_report";
 
 export async function runDoctor(_ctx: vscode.ExtensionContext) {
   const wf = vscode.workspace.workspaceFolders?.[0];
@@ -12,7 +13,7 @@ export async function runDoctor(_ctx: vscode.ExtensionContext) {
     return;
   }
   try {
-    const data = await vscode.window.withProgress(
+    const data: DiagReport = await vscode.window.withProgress(
       { location: vscode.ProgressLocation.Notification, title: "LG: Running Doctor…", cancellable: false },
       async () => runDoctorJson()
     );
