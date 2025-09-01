@@ -82,7 +82,6 @@ npm install
 | `lg.python.interpreter` | `string`                              | `""`            | Путь к Python, если используете стратегию `system`.             |                  |
 | `lg.cli.path`           | `string`                              | `""`            | Явный путь к `listing-generator` (если хотите миновать Python). |                  |
 | `lg.install.strategy`   | `"managedVenv" \| "system" \| "pipx"` | `"managedVenv"` | Способ получения CLI.                                           |                  |
-| `lg.autoUpdateCli`      | `boolean`                             | `true`          | Автообновление CLI в managed-venv при обновлении расширения.    |                  |
 | `lg.telemetry`          | `boolean`                             | `false`         | Анонимная телеметрия (отключена по умолчанию).                  |                  |
 
 **Рекомендация для разработчиков CLI:**

@@ -144,11 +144,6 @@
           "default": "managedVenv",
           "description": "How to install/resolve the CLI."
         },
-        "lg.autoUpdateCli": {
-          "type": "boolean",
-          "default": true,
-          "description": "Auto-update managed CLI when extension updates."
-        },
         "lg.openAsEditable": {
           "type": "boolean",
           "default": false,
