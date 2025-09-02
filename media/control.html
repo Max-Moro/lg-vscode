@@ -18,11 +18,11 @@
       <div class="row">
         <span class="cluster">
           <select id="template" class="grow" data-state-key="template" title="Контекст (.ctx.md) из lg-cfg/"></select>
-          <button class="btn-primary" id="btn-context" data-action="generateContext" title="Сгенерировать контекст-промт по шаблону">
-            <span class="codicon codicon-file-code"></span> Generate Context
-          </button>
-          <button data-action="sendContextToAI" title="Сгенерировать контекст и отправить в AI">
+          <button class="btn-primary" data-action="sendContextToAI" title="Сгенерировать контекст и отправить в AI">
             <span class="codicon codicon-send"></span> Send to AI
+          </button>
+          <button id="btn-context" data-action="generateContext" title="Сгенерировать контекст-промт по шаблону">
+            <span class="codicon codicon-file-code"></span> Generate Context
           </button>
         </span>
         <span class="spacer"></span>
