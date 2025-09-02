@@ -41,31 +41,64 @@ export class CopilotProvider extends BaseAiProvider {
   /**
    * Очистка контекста редактора (выделение, фокус) чтобы избежать автоматического прикрепления к Copilot чату
    */
-  private async clearEditorContext(): Promise<void> {
+  private async clearEditorContext(): Promise<{ restore: () => Promise<void> }> {
+    const activeEditor = vscode.window.activeTextEditor;
+    const currentSelection = activeEditor?.selection;
+    
     try {
-      const activeEditor = vscode.window.activeTextEditor;
-      if (activeEditor) {
-        // Убираем выделение
-        activeEditor.selection = new vscode.Selection(
-          activeEditor.selection.active,
-          activeEditor.selection.active
-        );
-        logDebug(`[${this.id}] Selection cleared`);
-      }
+      // Создаем временный пустой документ и фокусируемся на нем
+      const tempDoc = await vscode.workspace.openTextDocument({
+        content: '', 
+        language: 'plaintext'
+      });
       
-      // Переводим фокус на Copilot панель, чтобы редактор не был активным при создании чата
+      await vscode.window.showTextDocument(tempDoc, {
+        preview: true,
+        viewColumn: vscode.ViewColumn.Active,
+        preserveFocus: false
+      });
+      
+      logDebug(`[${this.id}] Temporary empty document created and focused`);
+      
+      // Фокусируемся на Copilot панели
       try {
         await vscode.commands.executeCommand('workbench.action.chat.openInSidebar');
         logDebug(`[${this.id}] Focus moved to Copilot panel`);
       } catch (error) {
-        // Fallback: переводим фокус на explorer
         await vscode.commands.executeCommand('workbench.view.explorer');
         logDebug(`[${this.id}] Fallback: focus moved to explorer`);
       }
       
+      // Возвращаем функцию восстановления
+      return {
+        restore: async () => {
+          try {
+            // Закрываем временный документ
+            await vscode.commands.executeCommand('workbench.action.closeActiveEditor');
+            
+            // Восстанавливаем активный редактор и выделение
+            if (activeEditor) {
+              await vscode.window.showTextDocument(activeEditor.document, {
+                viewColumn: activeEditor.viewColumn,
+                preserveFocus: false
+              });
+              
+              if (currentSelection) {
+                vscode.window.activeTextEditor!.selection = currentSelection;
+              }
+              
+              logDebug(`[${this.id}] Original editor state restored`);
+            }
+          } catch (error) {
+            logDebug(`[${this.id}] Failed to restore editor state: ${error}`);
+          }
+        }
+      };
+      
     } catch (error) {
-      // Если не удалось очистить контекст, продолжаем без ошибки
       logDebug(`[${this.id}] Failed to clear editor context: ${error}`);
+      // Возвращаем пустую функцию восстановления
+      return { restore: async () => {} };
     }
   }
 
@@ -97,15 +130,28 @@ export class CopilotProvider extends BaseAiProvider {
 
       // Создаем новый чат если требуется
       if (copilotOptions.startNewChat) {
-        // Убираем выделение и фокус с активного редактора, чтобы избежать автоматического прикрепления контекста
-        await this.clearEditorContext();
         await vscode.commands.executeCommand('workbench.action.chat.newChat');
-        logDebug(`[${this.id}] New chat created without editor context`);
+        logDebug(`[${this.id}] New chat created`);
+        
+        // Небольшая задержка для стабилизации состояния чата
+        await new Promise(resolve => setTimeout(resolve, 100));
       }
 
-      // Отправляем контент напрямую
-      await vscode.commands.executeCommand('workbench.action.chat.open', { query: message });
-      logDebug(`[${this.id}] Content sent successfully`);
+      // Убираем выделение и фокус непосредственно перед отправкой
+      const { restore } = await this.clearEditorContext();
+      
+      // Еще одна небольшая задержка после очистки контекста
+      await new Promise(resolve => setTimeout(resolve, 50));
+
+      try {
+        // Отправляем контент напрямую
+        await vscode.commands.executeCommand('workbench.action.chat.open', { query: message });
+        logDebug(`[${this.id}] Content sent successfully`);
+      } finally {
+        // Восстанавливаем исходное состояние редактора
+        await new Promise(resolve => setTimeout(resolve, 200)); // небольшая задержка перед восстановлением
+        await restore();
+      }
       
     } catch (error: any) {
       const message = `[${this.id}] Failed to send content: ${error?.message || error}`;
