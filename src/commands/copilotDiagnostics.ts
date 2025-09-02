@@ -6,7 +6,7 @@
 
 import * as vscode from "vscode";
 import { AiProviderDetector } from "../services/ai/detector";
-import { CopilotProvider, CopilotExtensionService } from "../services/ai";
+import { CopilotProvider } from "../services/ai";
 import { logInfo } from "../logging/log";
 
 export async function runCopilotDiagnostics(): Promise<void> {
@@ -213,20 +213,14 @@ export async function runCopilotDiagnostics(): Promise<void> {
       };
     }
 
-    // 9. Тестирование улучшенной интеграции
+    // 9. Тестирование упрощенной интеграции
     try {
       const copilotProvider = new CopilotProvider();
-      const extensionService = new CopilotExtensionService();
       
       report.enhancedIntegration = {
         provider: {
           available: await copilotProvider.isAvailable(),
-          diagnostics: copilotProvider.getCopilotDiagnostics()
-        },
-        extensionService: {
-          available: extensionService.isAvailable(),
-          diagnostics: extensionService.getDiagnostics(),
-          availableTools: extensionService.getAvailableTools()
+          info: copilotProvider.info
         }
       };
     } catch (error: any) {
