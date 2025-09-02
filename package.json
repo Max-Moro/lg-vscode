@@ -158,6 +158,11 @@
           "type": "number",
           "default": 1000000,
           "description": "Maximum content length (in characters) before showing warnings."
+        },
+        "lg.ai.copilot.startNewChat": {
+          "type": "boolean",
+          "default": true,
+          "description": "Always start a new chat when sending content to Copilot instead of adding to current conversation. Ideal for fresh context discussions."
         }
       }
     }

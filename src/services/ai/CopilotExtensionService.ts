@@ -80,6 +80,7 @@ export class CopilotExtensionService {
    */
   async sendContentToCopilot(content: string, options?: {
     openPanel?: boolean;
+    startNewChat?: boolean;
   }): Promise<boolean> {
     if (!this.isAvailable()) {
       return false;
@@ -108,7 +109,7 @@ export class CopilotExtensionService {
       }
 
       // Fallback: используем workbench команды с параметрами
-      return await this.sendViaWorkbenchAPI(content, options?.openPanel);
+      return await this.sendViaWorkbenchAPI(content, options?.openPanel, options?.startNewChat);
 
     } catch (error) {
       logError(`[CopilotExtension] Failed to send content: ${error}`);
@@ -119,40 +120,194 @@ export class CopilotExtensionService {
   /**
    * Отправка через VS Code Workbench API
    */
-  private async sendViaWorkbenchAPI(content: string, openPanel: boolean = true): Promise<boolean> {
+  private async sendViaWorkbenchAPI(content: string, openPanel: boolean = true, startNewChat: boolean = false): Promise<boolean> {
     try {
-      const commands = [
-        // Пытаемся передать content как query
-        { cmd: 'workbench.action.chat.open', args: { query: content, isPartialQuery: false } },
-        { cmd: 'workbench.action.chat.openInSidebar', args: { query: content } },
-        
-        // Fallback: открываем панель без content
-        ...(openPanel ? [
-          { cmd: 'workbench.action.chat.open', args: {} },
-          { cmd: 'workbench.panel.chat.view.copilot.focus', args: {} }
-        ] : [])
-      ];
+      if (startNewChat) {
+        // Для нового диалога: пошаговый подход
+        return await this.sendToNewChat(content, openPanel);
+      } else {
+        // Старое поведение: добавляем в текущий диалог
+        return await this.sendToCurrentChat(content, openPanel);
+      }
+    } catch (error) {
+      logError(`[CopilotExtension] Workbench API failed: ${error}`);
+      return false;
+    }
+  }
 
-      for (const { cmd, args } of commands) {
+  /**
+   * Отправка контента в новый диалог (пошаговая логика)
+   */
+  private async sendToNewChat(content: string, openPanel: boolean): Promise<boolean> {
+    try {
+      // Шаг 1: Создаем новый диалог
+      let newChatSuccess = false;
+      const newChatCommands = ['workbench.action.chat.newChat', 'workbench.action.chat.clear'];
+      
+      for (const cmd of newChatCommands) {
         try {
-          await vscode.commands.executeCommand(cmd, args);
+          await vscode.commands.executeCommand(cmd);
           logDebug(`[CopilotExtension] Successfully executed: ${cmd}`);
-          
-          // Если открыли без query, копируем в clipboard
-          if (!args.query && openPanel) {
-            await vscode.env.clipboard.writeText(content);
-            logDebug('[CopilotExtension] Content copied to clipboard as fallback');
-          }
-          
-          return true;
+          newChatSuccess = true;
+          break;
         } catch (error) {
           logDebug(`[CopilotExtension] Command ${cmd} failed: ${error}`);
         }
       }
 
+      // Небольшая задержка для стабилизации UI
+      if (newChatSuccess) {
+        await new Promise(resolve => setTimeout(resolve, 200));
+      }
+
+      // Шаг 2: Отправляем контент в новый диалог
+      const success = await this.sendContentToChat(content, openPanel);
+      
+      // Если прямая отправка не сработала, попробуем вставить текст напрямую
+      if (!success) {
+        return await this.insertTextDirectly(content, openPanel);
+      }
+      
+      return success;
+    } catch (error) {
+      logError(`[CopilotExtension] Failed to send to new chat: ${error}`);
+      return false;
+    }
+  }
+
+  /**
+   * Отправка контента в текущий диалог
+   */
+  private async sendToCurrentChat(content: string, openPanel: boolean): Promise<boolean> {
+    return await this.sendContentToChat(content, openPanel);
+  }
+
+  /**
+   * Универсальная отправка контента в чат
+   */
+  private async sendContentToChat(content: string, openPanel: boolean): Promise<boolean> {
+    // Сначала пытаемся использовать команды с query параметром
+    const queryCommands = [
+      { cmd: 'workbench.action.chat.open', args: { query: content, isPartialQuery: false } },
+      { cmd: 'workbench.action.chat.openInSidebar', args: { query: content } },
+      { cmd: 'workbench.action.chat.sendQuery', args: { query: content } }
+    ];
+
+    // Попробуем команды с query
+    for (const { cmd, args } of queryCommands) {
+      try {
+        await vscode.commands.executeCommand(cmd, args);
+        logDebug(`[CopilotExtension] Successfully sent content via: ${cmd}`);
+        return true;
+      } catch (error) {
+        logDebug(`[CopilotExtension] Command ${cmd} with query failed: ${error}`);
+      }
+    }
+    
+    // Если команды с query не сработали, открываем панель и копируем в clipboard
+    const fallbackCommands = [
+      { cmd: 'workbench.action.chat.open', args: {} },
+      { cmd: 'workbench.action.chat.openInSidebar', args: {} },
+      { cmd: 'workbench.panel.chat.view.copilot.focus', args: {} }
+    ];
+
+    // Пытаемся открыть панель как fallback
+    if (openPanel) {
+      for (const { cmd, args } of fallbackCommands) {
+        try {
+          await vscode.commands.executeCommand(cmd, args);
+          logDebug(`[CopilotExtension] Successfully executed fallback: ${cmd}`);
+          
+          // Копируем контент в clipboard для ручной вставки
+          await vscode.env.clipboard.writeText(content);
+          logDebug('[CopilotExtension] Content copied to clipboard as fallback');
+          
+          return true;
+        } catch (error) {
+          logDebug(`[CopilotExtension] Fallback command ${cmd} failed: ${error}`);
+        }
+      }
+    }
+
+    return false;
+  }
+
+  /**
+   * Прямая вставка текста в активное поле ввода
+   */
+  private async insertTextDirectly(content: string, openPanel: boolean): Promise<boolean> {
+    try {
+      // Сначала убеждаемся что панель чата открыта
+      if (openPanel) {
+        const openCommands = [
+          'workbench.action.chat.open',
+          'workbench.action.chat.openInSidebar',
+          'workbench.panel.chat.view.copilot.focus'
+        ];
+        
+        for (const cmd of openCommands) {
+          try {
+            await vscode.commands.executeCommand(cmd);
+            logDebug(`[CopilotExtension] Opened chat panel via: ${cmd}`);
+            break;
+          } catch (error) {
+            logDebug(`[CopilotExtension] Failed to open via ${cmd}: ${error}`);
+          }
+        }
+        
+        // Короткая задержка для стабилизации UI
+        await new Promise(resolve => setTimeout(resolve, 300));
+      }
+      
+      // Копируем в буфер обмена
+      await vscode.env.clipboard.writeText(content);
+      logDebug(`[CopilotExtension] Content copied to clipboard for direct insertion`);
+      
+      // Пытаемся вставить через команду вставки
+      try {
+        await vscode.commands.executeCommand('editor.action.clipboardPasteAction');
+        logDebug(`[CopilotExtension] Successfully executed paste command`);
+        return true;
+      } catch (error) {
+        logDebug(`[CopilotExtension] Paste command failed: ${error}`);
+      }
+      
+      // Если вставка не сработала, просто оставляем в буфере обмена
+      logDebug(`[CopilotExtension] Content available in clipboard for manual paste`);
+      return true;
+      
+    } catch (error) {
+      logError(`[CopilotExtension] Failed to insert text directly: ${error}`);
+      return false;
+    }
+  }
+
+  /**
+   * Создание нового диалога в Copilot Chat
+   */
+  async startNewChatDialog(): Promise<boolean> {
+    try {
+      // Пытаемся различные команды для создания нового диалога
+      const newChatCommands = [
+        'workbench.action.chat.newChat',
+        'workbench.action.chat.clear',
+        'workbench.action.chat.clearHistory'
+      ];
+      
+      for (const command of newChatCommands) {
+        try {
+          await vscode.commands.executeCommand(command);
+          logDebug(`[CopilotExtension] New chat started with command: ${command}`);
+          return true;
+        } catch (error) {
+          logDebug(`[CopilotExtension] Command ${command} failed: ${error}`);
+        }
+      }
+      
+      logDebug('[CopilotExtension] No new chat commands worked, continuing with regular flow');
       return false;
     } catch (error) {
-      logError(`[CopilotExtension] Workbench API failed: ${error}`);
+      logError(`[CopilotExtension] Failed to start new chat: ${error}`);
       return false;
     }
   }

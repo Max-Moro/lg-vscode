@@ -18,3 +18,8 @@ src:
         mode: block
         block:
           - "/stats**"
+      src:
+        mode: block
+        block:
+          - "/commands/copilotDiagnostics.ts"
+          - "/commands/cursorDiagnostics.ts"
