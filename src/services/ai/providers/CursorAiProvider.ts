@@ -72,21 +72,21 @@ export class CursorAiProvider extends BaseAiProvider {
    * Получение детальных инструкций для пользователя
    */
   protected getDetailedInstructions(): string {
-    return "1. Open Cursor AI Pane (Ctrl+L or Cmd+L)\n" +
+    return "1. Open Cursor AI Chat (usually accessible via Chat panel or Ctrl+L)\n" +
            "2. Paste content (Ctrl+V or Cmd+V)\n" +
-           "3. Start your conversation!";
+           "3. Start your conversation with Cursor AI!";
   }
 
   /**
    * Попытка автоматического открытия Cursor AI панели
    */
   protected async tryAutoOpenPanel(): Promise<boolean> {
+    // Основываемся на реальных командах из диагностики
     const possibleCommands = [
-      'cursor.openAIPane',
-      'cursor.showAIChat',
-      'cursor.ai.open',
-      'workbench.action.chat.open',
-      'workbench.panel.chat.view.copilot.focus', // fallback для случаев с Copilot в Cursor
+      'workbench.panel.chat.view.copilot.focus',
+      'workbench.action.quickOpen', // fallback - открывает Quick Open
+      'workbench.action.showCommands', // fallback - Command Palette
+      'inlineChat.showHint', // может показать hint об AI
     ];
     
     for (const command of possibleCommands) {
@@ -96,11 +96,10 @@ export class CursorAiProvider extends BaseAiProvider {
         return true;
       } catch (error) {
         logDebug(`[${this.id}] Command ${command} failed: ${error}`);
-        // Продолжаем пробовать следующие команды
       }
     }
     
-    logDebug(`[${this.id}] Failed to auto-open Cursor AI Pane via any known command`);
+    logDebug(`[${this.id}] Failed to auto-open Cursor AI via any known command`);
     return false;
   }
 

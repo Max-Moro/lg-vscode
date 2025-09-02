@@ -52,19 +52,19 @@ export class AiProviderDetector {
    * Детекция Cursor AI
    */
   private static async detectCursor(): Promise<boolean> {
-    // 1. Проверяем среду выполнения (Cursor vs обычный VS Code)
+    // 1. Проверяем среду выполнения Cursor
     const isCursorEnv = this.isCursorEnvironment();
     
-    // 2. Проверяем доступность команд Cursor AI
-    const hasCursorCommands = await this.checkCursorCommands();
-    
-    // 3. Проверяем настройки Cursor
+    // 2. Проверяем наличие конфигурации Cursor (надежный индикатор)
     const hasCursorConfig = this.hasCursorConfiguration();
-
-    logTrace(`[AiDetector] Cursor checks: env=${isCursorEnv}, commands=${hasCursorCommands}, config=${hasCursorConfig}`);
     
-    // Cursor считается доступным если хотя бы 2 из 3 проверок прошли
-    return [isCursorEnv, hasCursorCommands, hasCursorConfig].filter(Boolean).length >= 2;
+    // 3. Проверяем наличие расширений Cursor
+    const hasCursorExtensions = this.hasCursorExtensions();
+
+    logTrace(`[AiDetector] Cursor checks: env=${isCursorEnv}, config=${hasCursorConfig}, extensions=${hasCursorExtensions}`);
+    
+    // Cursor считается доступным если есть среда И (конфиг ИЛИ расширения)
+    return isCursorEnv && (hasCursorConfig || hasCursorExtensions);
   }
 
   /**
@@ -90,12 +90,14 @@ export class AiProviderDetector {
    * Проверка среды Cursor
    */
   private static isCursorEnvironment(): boolean {
-    // Cursor обычно имеет специфичные переменные окружения или модификации VS Code
+    // Проверяем по appName и uriScheme (самые надежные индикаторы из диагностики)
     const envIndicators = [
+      (vscode.env as any).appName?.toLowerCase().includes('cursor'),
+      vscode.env.uriScheme === 'cursor',
+      (vscode.env as any).appRoot?.toLowerCase().includes('cursor'),
+      // Оставляем старые проверки как fallback
       process.env.CURSOR_APP_NAME,
       process.env.CURSOR_SESSION_ID,
-      (vscode.env as any).appName?.toLowerCase().includes('cursor'),
-      (vscode.env as any).appRoot?.toLowerCase().includes('cursor'),
     ];
     
     return envIndicators.some(Boolean);
@@ -105,11 +107,14 @@ export class AiProviderDetector {
    * Проверка команд Cursor AI
    */
   private static async checkCursorCommands(): Promise<boolean> {
+    // Используем реальные команды из диагностики
     const cursorCommands = [
-      'cursor.openAIPane',
-      'cursor.showAIChat', 
-      'cursor.ai.open',
-      'workbench.action.chat.open'
+      'workbench.panel.chat.view.copilot.focus', // это работает в Cursor
+      'inlineChat.showHint',
+      'inlineChat.hideHint',
+      // Добавляем общие команды, которые могут работать
+      'workbench.action.quickOpen',
+      'workbench.action.showCommands'
     ];
 
     for (const command of cursorCommands) {
@@ -132,12 +137,41 @@ export class AiProviderDetector {
     
     // Ищем настройки, специфичные для Cursor
     const cursorSettings = [
-      'cursor.ai.enabled',
-      'cursor.ai.model',
-      'cursor.chat.enabled'
+      'cursor.chat',
+      'cursor.composer', 
+      'cursor.terminal',
+      'cursor.general',
+      'cursor.cpp',
+      'cursor.cmdk'
     ];
     
-    return cursorSettings.some(setting => config.has(setting));
+    return cursorSettings.some(setting => {
+      const inspection = config.inspect(setting);
+      return inspection && (
+        inspection.defaultValue !== undefined ||
+        inspection.globalValue !== undefined ||
+        inspection.workspaceValue !== undefined
+      );
+    });
+  }
+
+  /**
+   * Проверка наличия расширений Cursor
+   */
+  private static hasCursorExtensions(): boolean {
+    const cursorExtensions = [
+      'anysphere.cursor-always-local',
+      'anysphere.cursor-deeplink',
+      'anysphere.cursor-retrieval',
+      'anysphere.cursor-shadow-workspace',
+      'anysphere.cursor-tokenize',
+      'anysphere.cursorpyright'
+    ];
+    
+    return cursorExtensions.some(id => {
+      const ext = vscode.extensions.getExtension(id);
+      return ext && ext.isActive;
+    });
   }
 
   /**

@@ -57,6 +57,12 @@ export function activate(context: vscode.ExtensionContext) {
     // Диагностика AI-провайдеров
     vscode.commands.registerCommand("lg.aiDiagnostics", async () => {
       await runAiDiagnostics();
+    }),
+
+    // Временная диагностика Cursor (для отладки)
+    vscode.commands.registerCommand("lg.cursorDiagnostics", async () => {
+      const { runCursorDiagnostics } = await import("./commands/cursorDiagnostics");
+      await runCursorDiagnostics();
     })
   );
 

@@ -37,6 +37,10 @@
       {
         "command": "lg.aiDiagnostics",
         "title": "LG: AI Providers Diagnostics"
+      },
+      {
+        "command": "lg.cursorDiagnostics",
+        "title": "LG: Cursor Diagnostics (Debug)"
       }
     ],
     "views": {
