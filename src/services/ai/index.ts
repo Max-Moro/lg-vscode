@@ -7,6 +7,7 @@ export { AiProviderDetector } from './detector';
 export { BaseAiProvider } from './BaseAiProvider';
 export { CursorAiProvider } from './providers/CursorAiProvider';
 export { CopilotProvider } from './providers/CopilotProvider';
+export { CopilotExtensionService } from './CopilotExtensionService';
 
 export type {
   AiProvider,

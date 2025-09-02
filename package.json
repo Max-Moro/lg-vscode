@@ -41,6 +41,10 @@
       {
         "command": "lg.cursorDiagnostics",
         "title": "LG: Cursor Diagnostics (Debug)"
+      },
+      {
+        "command": "lg.copilotDiagnostics",
+        "title": "LG: Copilot Diagnostics (Debug)"
       }
     ],
     "views": {

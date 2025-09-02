@@ -7,22 +7,29 @@
 import * as vscode from "vscode";
 import { BaseAiProvider } from "../BaseAiProvider";
 import { AiProviderDetector } from "../detector";
+import { CopilotExtensionService } from "../CopilotExtensionService";
 import { logDebug, logError } from "../../../logging/log";
 import type { AiContent, AiProviderOptions, AiProviderInfo } from "../types";
 
 export class CopilotProvider extends BaseAiProvider {
   readonly id = 'copilot' as const;
+  private copilotService: CopilotExtensionService;
   
   readonly info: AiProviderInfo = {
     name: 'GitHub Copilot Chat',
     available: false, // будет обновлено в isAvailable()
     capabilities: {
       supportsAutoOpen: true,
-      supportsDirectSend: true, // Copilot поддерживает прямую отправку через API
+      supportsDirectSend: true, // Поддержка через VS Code Chat API и Copilot API
       preferredMethod: 'api',
       recommendedMaxLength: 800000, // GitHub Copilot имеет меньший лимит контекста
     }
   };
+
+  constructor() {
+    super();
+    this.copilotService = new CopilotExtensionService();
+  }
 
   /**
    * Проверка доступности GitHub Copilot
@@ -35,23 +42,30 @@ export class CopilotProvider extends BaseAiProvider {
   }
 
   /**
-   * Отправка контента в GitHub Copilot Chat
+   * Отправка контента в GitHub Copilot Chat (полностью переработанная)
    */
   async sendContent(content: AiContent, options?: AiProviderOptions): Promise<void> {
     const configOptions = this.getConfigOptions();
     const finalOptions = this.mergeOptions(configOptions, options);
     
     try {
-      // Сначала пытаемся прямую отправку через API
-      if (this.info.capabilities.supportsDirectSend) {
-        const success = await this.tryDirectSend(content, finalOptions);
-        if (success) {
-          await this.showNotification(content, finalOptions, true);
-          return;
-        }
+      // Попробуем разные методы интеграции в порядке приоритета
+      
+      // 1. Прямая интеграция через Copilot Chat API
+      const apiSuccess = await this.tryCopilotChatAPI(content, finalOptions);
+      if (apiSuccess) {
+        await this.showNotification(content, finalOptions, true);
+        return;
       }
       
-      // Fallback на метод clipboard
+      // 2. Интеграция через VS Code Chat Workbench API
+      const workbenchSuccess = await this.tryWorkbenchChatAPI(content, finalOptions);
+      if (workbenchSuccess) {
+        await this.showNotification(content, finalOptions, true);
+        return;
+      }
+      
+      // 3. Fallback на метод clipboard + автооткрытие
       await this.sendViaClipboard(content, finalOptions);
       
     } catch (error: any) {
@@ -63,70 +77,85 @@ export class CopilotProvider extends BaseAiProvider {
   }
 
   /**
-   * Попытка прямой отправки через Copilot API
+   * Попытка интеграции через Copilot Chat API
    */
-  private async tryDirectSend(content: AiContent, options: AiProviderOptions): Promise<boolean> {
+  private async tryCopilotChatAPI(content: AiContent, options: AiProviderOptions): Promise<boolean> {
     try {
-      // Подготавливаем сообщение для Copilot
+      if (!this.copilotService.isAvailable()) {
+        return false;
+      }
+      
+      // Подготавливаем сообщение
       let message = content.content;
       if (options.addPrefix) {
         const prefix = this.createContentPrefix(content);
         message = `${prefix}\n\n${content.content}`;
       }
       
-      // Пытаемся отправить через Copilot Chat API
-      const result = await this.sendToCopilotChat(message);
+      // Используем сервис для отправки
+      const success = await this.copilotService.sendContentToCopilot(message, {
+        openPanel: options.autoOpenPanel,
+        addContextHint: content.type !== 'generic'
+      });
       
-      if (result) {
-        // Открываем панель Copilot для отображения результата
-        if (options.autoOpenPanel) {
-          await this.tryAutoOpenPanel();
-        }
+      if (success) {
+        logDebug(`[${this.id}] Successfully sent content via CopilotExtensionService`);
         return true;
       }
       
       return false;
     } catch (error) {
-      logDebug(`[${this.id}] Direct send failed, falling back to clipboard: ${error}`);
+      logDebug(`[${this.id}] Copilot Chat API failed: ${error}`);
       return false;
     }
   }
 
   /**
-   * Отправка сообщения в Copilot Chat
+   * Попытка интеграции через VS Code Workbench Chat API
    */
-  private async sendToCopilotChat(message: string): Promise<boolean> {
+  private async tryWorkbenchChatAPI(content: AiContent, options: AiProviderOptions): Promise<boolean> {
     try {
-      // Метод 1: Попробовать через команду с параметрами
-      const result = await vscode.commands.executeCommand(
-        'github.copilot.chat.sendMessage',
-        message
-      );
-      
-      if (result) {
-        return true;
+      // Подготавливаем сообщение
+      let message = content.content;
+      if (options.addPrefix) {
+        const prefix = this.createContentPrefix(content);
+        message = `${prefix}\n\n${content.content}`;
       }
+      
+      // Пытаемся открыть chat с предзаполненным сообщением
+      // Используем реально работающие команды из диагностики
+      const chatCommands = [
+        // Попробуем передать query как параметр
+        { command: 'workbench.action.chat.open', args: { query: message } },
+        { command: 'workbench.action.chat.openInSidebar', args: { query: message } },
+        // Fallback - просто открыть панель
+        { command: 'workbench.action.chat.open', args: {} }
+      ];
+      
+      for (const { command, args } of chatCommands) {
+        try {
+          await vscode.commands.executeCommand(command, args);
+          logDebug(`[${this.id}] Successfully opened chat with command: ${command}`);
+          
+          // Если открыли без query, пытаемся скопировать в clipboard для ручной вставки
+          if (!args.query) {
+            await this.copyToClipboard(message);
+          }
+          
+          return true;
+        } catch (error) {
+          logDebug(`[${this.id}] Workbench command ${command} failed: ${error}`);
+        }
+      }
+      
+      return false;
     } catch (error) {
-      logDebug(`[${this.id}] sendMessage command failed: ${error}`);
+      logDebug(`[${this.id}] Workbench Chat API failed: ${error}`);
+      return false;
     }
-
-    try {
-      // Метод 2: Попробовать через вставку в активный чат
-      await vscode.commands.executeCommand('github.copilot.chat.focus');
-      
-      // Небольшая задержка для фокуса
-      await new Promise(resolve => setTimeout(resolve, 100));
-      
-      // Попробовать вставить текст в активный элемент
-      await vscode.commands.executeCommand('type', { text: message });
-      
-      return true;
-    } catch (error) {
-      logDebug(`[${this.id}] Chat focus and type failed: ${error}`);
-    }
-
-    return false;
   }
+
+
 
   /**
    * Отправка через буфер обмена (fallback метод)
@@ -163,12 +192,11 @@ export class CopilotProvider extends BaseAiProvider {
    * Попытка автоматического открытия Copilot панели
    */
   protected async tryAutoOpenPanel(): Promise<boolean> {
+    // Используем только реально работающие команды из диагностики
     const possibleCommands = [
-      'github.copilot.chat.open',
-      'workbench.panel.chat.view.copilot.focus',
-      'github.copilot.chat.focus',
       'workbench.action.chat.open',
-      'github.copilot.openChat'
+      'workbench.action.chat.openInSidebar',
+      'workbench.panel.chat.view.copilot.focus'
     ];
     
     for (const command of possibleCommands) {
@@ -192,25 +220,49 @@ export class CopilotProvider extends BaseAiProvider {
   getContentRecommendations(content: AiContent): { warnings: string[]; suggestions: string[] } {
     const base = super.getContentRecommendations(content);
     
-    // Добавляем специфичные для Copilot рекомендации
+    // Добавляем специфичные для Copilot рекомендации на основе реальных возможностей
     if (content.content.length > 400000) { // 400KB
-      base.warnings.push('GitHub Copilot has smaller context limits compared to other AI providers');
-      base.suggestions.push('Consider breaking content into smaller, focused chunks for better results');
+      base.warnings.push('GitHub Copilot Chat has smaller context limits than other AI providers');
+      base.suggestions.push('Break content into focused chunks using specific sections');
     }
     
-    if (content.type === 'context' && content.metadata.fileCount && content.metadata.fileCount > 50) {
-      base.warnings.push('Large contexts may exceed Copilot\'s context window');
-      base.suggestions.push('Focus on specific modules or components for better assistance');
+    if (content.type === 'context' && content.metadata.fileCount && content.metadata.fileCount > 30) {
+      base.warnings.push('Large contexts with 30+ files may overwhelm Copilot Chat');
+      base.suggestions.push('Use specific sections or filter by file types for better results');
     }
     
-    // Copilot лучше работает с конкретными вопросами
+    // Copilot хорошо работает с инструментами и конкретными задачами
     if (content.type === 'listing') {
-      base.suggestions.push('Ask specific questions about the code after sending for best results');
-      base.suggestions.push('Copilot excels at explaining specific functions or suggesting improvements');
+      base.suggestions.push('Ask specific questions: "Explain this function", "Find bugs", "Suggest improvements"');
+      base.suggestions.push('Use @workspace for codebase-wide questions');
+      base.suggestions.push('Copilot Chat has powerful tools for file editing and code analysis');
+    }
+    
+    if (content.type === 'context') {
+      base.suggestions.push('Start with specific questions about the architecture or patterns');
+      base.suggestions.push('Copilot can use tools to search, edit, and create files based on context');
     }
     
     return base;
   }
 
+  /**
+   * Получение расширенной диагностики Copilot
+   */
+  getCopilotDiagnostics(): {
+    service: ReturnType<CopilotExtensionService['getDiagnostics']>;
+    availableTools: ReturnType<CopilotExtensionService['getAvailableTools']>;
+  } {
+    return {
+      service: this.copilotService.getDiagnostics(),
+      availableTools: this.copilotService.getAvailableTools()
+    };
+  }
 
+  /**
+   * Обновление состояния сервиса
+   */
+  refreshCopilotService(): void {
+    this.copilotService.refresh();
+  }
 }

@@ -178,9 +178,12 @@ export class AiProviderDetector {
    * Проверка наличия расширения GitHub Copilot Chat
    */
   private static hasCopilotExtension(): boolean {
+    // Используем точные ID из диагностики (с учетом регистра)
     const copilotExtensions = [
-      'github.copilot-chat',
-      'github.copilot',
+      'GitHub.copilot-chat',  // Основное расширение Chat
+      'GitHub.copilot',       // Основное расширение Copilot
+      'github.copilot-chat',  // Fallback (старый формат)
+      'github.copilot',       // Fallback (старый формат)
       'github.copilot-nightly'
     ];
     
@@ -194,10 +197,11 @@ export class AiProviderDetector {
    * Проверка команд GitHub Copilot
    */
   private static async checkCopilotCommands(): Promise<boolean> {
+    // Используем реально работающие команды из диагностики
     const copilotCommands = [
-      'github.copilot.chat.open',
-      'workbench.panel.chat.view.copilot.focus',
-      'github.copilot.chat.focus'
+      'workbench.action.chat.open',
+      'workbench.action.chat.openInSidebar', 
+      'workbench.panel.chat.view.copilot.focus'
     ];
 
     for (const command of copilotCommands) {
@@ -213,15 +217,24 @@ export class AiProviderDetector {
   }
 
   /**
-   * Проверка статуса GitHub Copilot (активен ли)
+   * Проверка статуса GitHub Copilot
    */
   private static async checkCopilotStatus(): Promise<boolean> {
     try {
-      // Попробуем получить статус через команду
-      const status = await vscode.commands.executeCommand('github.copilot.getStatus');
-      return status === 'SignedIn' || status === 'OK';
+      // Попробуем через API расширения
+      const copilotExt = vscode.extensions.getExtension('GitHub.copilot-chat') || 
+                        vscode.extensions.getExtension('GitHub.copilot');
+      
+      if (copilotExt && copilotExt.isActive && copilotExt.exports) {
+        // Если расширение активно и имеет экспорты, считаем что все в порядке
+        return true;
+      }
+      
+      // Fallback: проверяем доступность команды signIn (она есть в диагностике)
+      const commands = await vscode.commands.getCommands();
+      return commands.includes('github.copilot.signIn');
     } catch {
-      // Если команда недоступна, считаем что статус неизвестен
+      // Если ничего не работает, считаем недоступным
       return false;
     }
   }
