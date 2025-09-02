@@ -39,6 +39,37 @@ export class CopilotProvider extends BaseAiProvider {
   }
 
   /**
+   * Очистка контекста редактора (выделение, фокус) чтобы избежать автоматического прикрепления к Copilot чату
+   */
+  private async clearEditorContext(): Promise<void> {
+    try {
+      const activeEditor = vscode.window.activeTextEditor;
+      if (activeEditor) {
+        // Убираем выделение
+        activeEditor.selection = new vscode.Selection(
+          activeEditor.selection.active,
+          activeEditor.selection.active
+        );
+        logDebug(`[${this.id}] Selection cleared`);
+      }
+      
+      // Переводим фокус на Copilot панель, чтобы редактор не был активным при создании чата
+      try {
+        await vscode.commands.executeCommand('workbench.action.chat.openInSidebar');
+        logDebug(`[${this.id}] Focus moved to Copilot panel`);
+      } catch (error) {
+        // Fallback: переводим фокус на explorer
+        await vscode.commands.executeCommand('workbench.view.explorer');
+        logDebug(`[${this.id}] Fallback: focus moved to explorer`);
+      }
+      
+    } catch (error) {
+      // Если не удалось очистить контекст, продолжаем без ошибки
+      logDebug(`[${this.id}] Failed to clear editor context: ${error}`);
+    }
+  }
+
+  /**
    * Проверка доступности GitHub Copilot
    */
   async isAvailable(): Promise<boolean> {
@@ -66,8 +97,10 @@ export class CopilotProvider extends BaseAiProvider {
 
       // Создаем новый чат если требуется
       if (copilotOptions.startNewChat) {
+        // Убираем выделение и фокус с активного редактора, чтобы избежать автоматического прикрепления контекста
+        await this.clearEditorContext();
         await vscode.commands.executeCommand('workbench.action.chat.newChat');
-        logDebug(`[${this.id}] New chat created`);
+        logDebug(`[${this.id}] New chat created without editor context`);
       }
 
       // Отправляем контент напрямую
