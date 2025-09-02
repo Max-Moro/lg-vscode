@@ -39,11 +39,18 @@ export class CopilotProvider extends BaseAiProvider {
   }
 
   /**
-   * Очистка контекста редактора (выделение, фокус) чтобы избежать автоматического прикрепления к Copilot чату
+   * Очистка контекста редактора чтобы избежать автоматического прикрепления к Copilot чату
    */
   private async clearEditorContext(): Promise<{ restore: () => Promise<void> }> {
     const activeEditor = vscode.window.activeTextEditor;
-    const currentSelection = activeEditor?.selection;
+    
+    // Если нет активного редактора (например, активен webview), ничего делать не нужно
+    if (!activeEditor) {
+      logDebug(`[${this.id}] No active text editor, skipping context clearing`);
+      return { restore: async () => {} };
+    }
+    
+    const currentSelection = activeEditor.selection;
     
     try {
       // Создаем временный пустой документ и фокусируемся на нем
@@ -61,13 +68,8 @@ export class CopilotProvider extends BaseAiProvider {
       logDebug(`[${this.id}] Temporary empty document created and focused`);
       
       // Фокусируемся на Copilot панели
-      try {
-        await vscode.commands.executeCommand('workbench.action.chat.openInSidebar');
-        logDebug(`[${this.id}] Focus moved to Copilot panel`);
-      } catch (error) {
-        await vscode.commands.executeCommand('workbench.view.explorer');
-        logDebug(`[${this.id}] Fallback: focus moved to explorer`);
-      }
+      await vscode.commands.executeCommand('workbench.action.chat.openInSidebar');
+      logDebug(`[${this.id}] Focus moved to Copilot panel`);
       
       // Возвращаем функцию восстановления
       return {
@@ -77,18 +79,16 @@ export class CopilotProvider extends BaseAiProvider {
             await vscode.commands.executeCommand('workbench.action.closeActiveEditor');
             
             // Восстанавливаем активный редактор и выделение
-            if (activeEditor) {
-              await vscode.window.showTextDocument(activeEditor.document, {
-                viewColumn: activeEditor.viewColumn,
-                preserveFocus: false
-              });
-              
-              if (currentSelection) {
-                vscode.window.activeTextEditor!.selection = currentSelection;
-              }
-              
-              logDebug(`[${this.id}] Original editor state restored`);
+            await vscode.window.showTextDocument(activeEditor.document, {
+              viewColumn: activeEditor.viewColumn,
+              preserveFocus: false
+            });
+            
+            if (currentSelection) {
+              vscode.window.activeTextEditor!.selection = currentSelection;
             }
+            
+            logDebug(`[${this.id}] Original editor state restored`);
           } catch (error) {
             logDebug(`[${this.id}] Failed to restore editor state: ${error}`);
           }
@@ -97,7 +97,6 @@ export class CopilotProvider extends BaseAiProvider {
       
     } catch (error) {
       logDebug(`[${this.id}] Failed to clear editor context: ${error}`);
-      // Возвращаем пустую функцию восстановления
       return { restore: async () => {} };
     }
   }
@@ -173,7 +172,6 @@ export class CopilotProvider extends BaseAiProvider {
    * Попытка автоматического открытия Copilot панели
    */
   protected async tryAutoOpenPanel(): Promise<boolean> {
-    // Не нужно - уже открывается через workbench.action.chat.open в sendContent
     return true;
   }
 
