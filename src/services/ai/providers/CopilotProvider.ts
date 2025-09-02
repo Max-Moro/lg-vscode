@@ -94,8 +94,7 @@ export class CopilotProvider extends BaseAiProvider {
       
       // Используем сервис для отправки
       const success = await this.copilotService.sendContentToCopilot(message, {
-        openPanel: options.autoOpenPanel,
-        addContextHint: content.type !== 'generic'
+        openPanel: options.autoOpenPanel
       });
       
       if (success) {

@@ -80,42 +80,35 @@ export class CopilotExtensionService {
    */
   async sendContentToCopilot(content: string, options?: {
     openPanel?: boolean;
-    addContextHint?: boolean;
   }): Promise<boolean> {
     if (!this.isAvailable()) {
       return false;
     }
 
     try {
-      // Добавляем контекстную подсказку если нужно
-      let finalContent = content;
-      if (options?.addContextHint) {
-        finalContent = `Please analyze the following code context from Listing Generator:\n\n${content}`;
-      }
-
       // Пытаемся разные методы API
       if (this.api) {
         if (typeof this.api.sendMessage === 'function') {
-          await this.api.sendMessage(finalContent);
+          await this.api.sendMessage(content);
           logInfo('[CopilotExtension] Content sent via API.sendMessage');
           return true;
         }
         
         if (typeof this.api.chat === 'function') {
-          await this.api.chat(finalContent);
+          await this.api.chat(content);
           logInfo('[CopilotExtension] Content sent via API.chat');
           return true;
         }
         
         if (typeof this.api.openWithMessage === 'function') {
-          await this.api.openWithMessage(finalContent);
+          await this.api.openWithMessage(content);
           logInfo('[CopilotExtension] Content sent via API.openWithMessage');
           return true;
         }
       }
 
       // Fallback: используем workbench команды с параметрами
-      return await this.sendViaWorkbenchAPI(finalContent, options?.openPanel);
+      return await this.sendViaWorkbenchAPI(content, options?.openPanel);
 
     } catch (error) {
       logError(`[CopilotExtension] Failed to send content: ${error}`);
