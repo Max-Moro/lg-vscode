@@ -28,14 +28,11 @@ This feature allows you to send generated contexts and listings directly to Curs
 ## User Experience
 
 1. **Click "Send to AI" button** → Content is generated and copied to clipboard
-2. **Detailed notification appears** with:
-   - Content size information (e.g., "42.3K chars")
-   - Step-by-step instructions
-   - "Open Cursor AI" button (attempts to open Cursor AI Pane)
-3. **User follows instructions**:
-   - Open Cursor AI Pane (Ctrl+L or Cmd+L)
-   - Paste content (Ctrl+V or Cmd+V)
-   - Start conversation
+2. **Extension automatically attempts** to open Cursor AI Pane
+3. **Simple notification appears** with content size information (e.g., "42.3K chars")
+4. **User pastes content** (Ctrl+V or Cmd+V) and starts conversation
+
+The experience is streamlined - no manual steps required in most cases.
 
 ## Technical Implementation
 
@@ -99,7 +96,21 @@ When Cursor provides official AI Pane API:
 
 ## Configuration
 
-No additional configuration required. The integration works with existing LG settings and respects:
+### New Settings
+
+**`lg.cursorAI.addPrefix`** (default: `false`)
+- When enabled, adds descriptive prefix to content sent to Cursor AI
+- Prefixes include context/section name and generation info
+- Can be useful for AI to understand content source and purpose
+
+**`lg.cursorAI.showDetailedNotifications`** (default: `false`)  
+- When enabled, shows detailed notifications with step-by-step instructions
+- Useful for first-time users or when automatic Cursor AI opening fails
+- When disabled, shows simple "Content copied" notifications
+
+### Existing Settings Compatibility
+
+The integration works with existing LG settings and respects:
 
 - Selected templates and sections
 - Model configurations for size reporting

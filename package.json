@@ -116,6 +116,16 @@
           "type": "boolean",
           "default": false,
           "description": "Open generated listings/contexts as editable Markdown files instead of read-only virtual documents."
+        },
+        "lg.cursorAI.addPrefix": {
+          "type": "boolean",
+          "default": false,
+          "description": "Add descriptive prefix to content when sending to Cursor AI."
+        },
+        "lg.cursorAI.showDetailedNotifications": {
+          "type": "boolean", 
+          "default": false,
+          "description": "Show detailed notifications with instructions when sending to Cursor AI."
         }
       }
     }
