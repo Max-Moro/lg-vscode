@@ -39,6 +39,21 @@ export class CopilotProvider extends BaseAiProvider {
   }
 
   /**
+   * Проверка настройки chat.implicitContext для panel
+   */
+  private isImplicitContextDisabled(): boolean {
+    const config = vscode.workspace.getConfiguration();
+    const implicitContext = config.get<any>('chat.implicitContext.enabled');
+    
+    // Если настройка явно отключает implicit context для panel, то создавать пустышку не нужно
+    if (implicitContext && typeof implicitContext === 'object') {
+      return implicitContext.panel === 'never';
+    }
+    
+    return false;
+  }
+
+  /**
    * Очистка контекста редактора чтобы избежать автоматического прикрепления к Copilot чату
    */
   private async clearEditorContext(): Promise<{ restore: () => Promise<void> }> {
@@ -47,6 +62,19 @@ export class CopilotProvider extends BaseAiProvider {
     // Если нет активного редактора (например, активен webview), ничего делать не нужно
     if (!activeEditor) {
       logDebug(`[${this.id}] No active text editor, skipping context clearing`);
+      return { restore: async () => {} };
+    }
+
+    // Если у пользователя отключен implicit context для panel, пустышка не нужна
+    if (this.isImplicitContextDisabled()) {
+      logDebug(`[${this.id}] Implicit context disabled for panel, skipping context clearing`);
+      // Просто фокусируемся на Copilot панели без создания пустышки
+      try {
+        await vscode.commands.executeCommand('workbench.action.chat.openInSidebar');
+        logDebug(`[${this.id}] Focus moved to Copilot panel (no temp doc needed)`);
+      } catch (error) {
+        logDebug(`[${this.id}] Failed to focus Copilot panel: ${error}`);
+      }
       return { restore: async () => {} };
     }
     
