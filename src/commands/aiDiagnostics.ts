@@ -48,7 +48,7 @@ export async function runAiDiagnostics(): Promise<void> {
       report.push('**Suggestions:**');
       report.push('- Make sure you\'re using Cursor or have GitHub Copilot Chat extension installed');
       report.push('- Check that the AI services are properly authenticated');
-      report.push('- Try restarting VS Code if providers were recently installed');
+      report.push('- Try restarting VS Code/Cursor if providers were recently installed');
     }
     
     // Показываем отчет в новом документе
