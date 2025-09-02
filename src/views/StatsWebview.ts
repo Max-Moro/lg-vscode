@@ -3,7 +3,7 @@
  */
 import * as vscode from "vscode";
 import { getVirtualProvider } from "./virtualBus";
-import { CursorAiService } from "../services/CursorAiService";
+import { AiIntegrationService } from "../services/ai";
 import type { RunResult } from "../models/run_result";
 import { buildHtml, getExtensionUri, mediaUri } from "../webview/webviewKit";
 
@@ -12,6 +12,7 @@ export async function showStatsWebview(
   refetch?: () => Promise<RunResult>,
   generate?: () => Promise<string> // returns rendered markdown text
 ) {
+  const aiService = new AiIntegrationService();
   const scope = data.scope === "context" ? "Context" : "Section";
   const name = data.target.startsWith("ctx:")
     ? data.target.slice(4)
@@ -99,14 +100,14 @@ export async function showStatsWebview(
           { location: vscode.ProgressLocation.Notification, title: "LG: Generating for AI…", cancellable: false },
           () => generate()
         );
-        // Определяем тип контента и отправляем в Cursor AI
+        // Определяем тип контента и отправляем в AI
         if (current.scope === "context") {
-          await CursorAiService.sendContext(name, text);
+          await aiService.sendContext(name, text);
         } else {
           const mode = current.target.includes("(") 
             ? current.target.slice(current.target.indexOf("(") + 1, current.target.lastIndexOf(")"))
             : "all";
-          await CursorAiService.sendListing(name, mode, text);
+          await aiService.sendListing(name, mode, text);
         }
       } catch (e: any) {
         vscode.window.showErrorMessage(`LG: ${e?.message || e}`);

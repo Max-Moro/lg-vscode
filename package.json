@@ -33,6 +33,10 @@
       {
         "command": "lg.showLogs",
         "title": "LG: Show Logs"
+      },
+      {
+        "command": "lg.aiDiagnostics",
+        "title": "LG: AI Providers Diagnostics"
       }
     ],
     "views": {
@@ -117,15 +121,35 @@
           "default": false,
           "description": "Open generated listings/contexts as editable Markdown files instead of read-only virtual documents."
         },
-        "lg.cursorAI.addPrefix": {
+        "lg.ai.provider": {
+          "type": "string",
+          "enum": [
+            "auto",
+            "cursor", 
+            "copilot"
+          ],
+          "default": "auto",
+          "description": "AI provider to use for 'Send to AI' functionality. 'auto' detects the best available provider."
+        },
+        "lg.ai.addPrefix": {
           "type": "boolean",
           "default": false,
-          "description": "Add descriptive prefix to content when sending to Cursor AI."
+          "description": "Add descriptive prefix to content when sending to AI."
         },
-        "lg.cursorAI.showDetailedNotifications": {
+        "lg.ai.showDetailedNotifications": {
           "type": "boolean", 
           "default": false,
-          "description": "Show detailed notifications with instructions when sending to Cursor AI."
+          "description": "Show detailed notifications with instructions when sending to AI."
+        },
+        "lg.ai.autoOpenPanel": {
+          "type": "boolean",
+          "default": true,
+          "description": "Automatically open AI panel when sending content."
+        },
+        "lg.ai.maxContentLength": {
+          "type": "number",
+          "default": 1000000,
+          "description": "Maximum content length (in characters) before showing warnings."
         }
       }
     }

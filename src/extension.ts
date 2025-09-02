@@ -9,6 +9,7 @@ import { IncludedTree } from "./views/IncludedTree";
 import { ControlPanelView } from "./views/ControlPanelView";
 import { locateCliOrOfferInstall, setExtensionContext } from "./cli/CliResolver";
 import { initLogging, showLogs, logInfo } from "./logging/log";
+import { runAiDiagnostics } from "./commands/aiDiagnostics";
 
 
 let virtualProvider: VirtualDocProvider;
@@ -51,6 +52,11 @@ export function activate(context: vscode.ExtensionContext) {
       includedTree.toggleViewMode();
       const mode = includedTree.getMode();
       vscode.window.setStatusBarMessage(`LG Included: ${mode === "tree" ? "Tree" : "Flat"} view`, 2000);
+    }),
+
+    // Диагностика AI-провайдеров
+    vscode.commands.registerCommand("lg.aiDiagnostics", async () => {
+      await runAiDiagnostics();
     })
   );
 

@@ -8,7 +8,7 @@ import { listContextsJson, listModelsJson, listSectionsJson } from "../services/
 import { resetCache } from "../services/DoctorService";
 import { runDoctor } from "../diagnostics/Doctor";
 import { openConfigOrInit, runInitWizard } from "../starter/StarterConfig";
-import { CursorAiService } from "../services/CursorAiService";
+import { AiIntegrationService } from "../services/ai";
 import { EXT_ID } from "../constants";
 
 type PanelState = {
@@ -30,6 +30,8 @@ export class ControlPanelView implements vscode.WebviewViewProvider {
   private view?: vscode.WebviewView;
   /** Гарантия, что стартовую загрузку списков/state делаем ровно один раз. */
   private bootstrapped = false;
+  /** Универсальный AI-сервис */
+  private aiService = new AiIntegrationService();
 
   constructor(
     private readonly context: vscode.ExtensionContext,
@@ -217,7 +219,7 @@ export class ControlPanelView implements vscode.WebviewViewProvider {
       { location: vscode.ProgressLocation.Notification, title: `LG: Generating context '${s.template}' for AI…`, cancellable: false },
       () => runContext(s.template)
     );
-    await CursorAiService.sendContext(s.template, content);
+    await this.aiService.sendContext(s.template, content);
   }
 
   private async onSendListingToAI() {
@@ -226,7 +228,7 @@ export class ControlPanelView implements vscode.WebviewViewProvider {
       { location: vscode.ProgressLocation.Notification, title: `LG: Generating listing '${s.section}' for AI…`, cancellable: false },
       () => runListing({ section: s.section, mode: s.mode })
     );
-    await CursorAiService.sendListing(s.section, s.mode, content);
+    await this.aiService.sendListing(s.section, s.mode, content);
   }
 
   // ——————————————— state & lists ——————————————— //
