@@ -46,6 +46,7 @@
       <p class="muted">Scope: <b>${esc(scope)}</b> • Name: <b>${esc(name)}</b> • Model: <b>${esc(data.model)}</b> • Encoder: <b>${esc(data.encoder)}</b> • Ctx limit: <b>${fmtInt(data.ctxLimit)}</b> tokens</p>
       <div class="actions">
         <button id="btn-refresh" title="Re-run stats">Refresh</button>
+        <button id="btn-send-ai" title="Generate and send directly to Cursor AI Pane">Send to AI</button>
         <button id="btn-generate" class="btn-primary" title="Render the final prompt now">${esc(genLabel)}</button>
       </div>
 
@@ -229,6 +230,10 @@
     // Hook generate button
     const gen = document.getElementById("btn-generate");
     if (gen) UI.on(gen, "click", () => UI.post(vscode, "generate"));
+
+    // Hook send to AI button
+    const sendAi = document.getElementById("btn-send-ai");
+    if (sendAi) UI.on(sendAi, "click", () => UI.post(vscode, "sendToAI"));
   }
 
   function card(title, valueHtml, tooltip) {

@@ -13,4 +13,8 @@ src:
       - "/src/"
       - "/media/"
       - "/package.json"
-      - "/tsconfig.json"
+    children:
+      media:
+        mode: block
+        block:
+          - "/stats**"

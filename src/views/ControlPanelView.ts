@@ -8,6 +8,7 @@ import { listContextsJson, listModelsJson, listSectionsJson } from "../services/
 import { resetCache } from "../services/DoctorService";
 import { runDoctor } from "../diagnostics/Doctor";
 import { openConfigOrInit, runInitWizard } from "../starter/StarterConfig";
+import { CursorAiService } from "../services/CursorAiService";
 import { EXT_ID } from "../constants";
 
 type PanelState = {
@@ -53,8 +54,14 @@ export class ControlPanelView implements vscode.WebviewViewProvider {
           case "generateListing":
             await this.onGenerateListing();
             break;
+          case "sendListingToAI":
+            await this.onSendListingToAI();
+            break;
           case "generateContext":
             await this.onGenerateContext();
+            break;
+          case "sendContextToAI":
+            await this.onSendContextToAI();
             break;
           case "showContextStats":
             await this.onShowContextStats();
@@ -198,6 +205,28 @@ export class ControlPanelView implements vscode.WebviewViewProvider {
       () => runStatsJson({ section: s.section, mode: s.mode, model: modelId }),
       () => runListing({ section: s.section, mode: s.mode })
     );
+  }
+
+  private async onSendContextToAI() {
+    const s = this.getState();
+    if (!s.template) {
+      vscode.window.showWarningMessage("Select a template first.");
+      return;
+    }
+    const content = await vscode.window.withProgress(
+      { location: vscode.ProgressLocation.Notification, title: `LG: Generating context '${s.template}' for AI…`, cancellable: false },
+      () => runContext(s.template)
+    );
+    await CursorAiService.sendContext(s.template, content);
+  }
+
+  private async onSendListingToAI() {
+    const s = this.getState();
+    const content = await vscode.window.withProgress(
+      { location: vscode.ProgressLocation.Notification, title: `LG: Generating listing '${s.section}' for AI…`, cancellable: false },
+      () => runListing({ section: s.section, mode: s.mode })
+    );
+    await CursorAiService.sendListing(s.section, s.mode, content);
   }
 
   // ——————————————— state & lists ——————————————— //
