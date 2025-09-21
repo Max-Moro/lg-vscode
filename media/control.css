@@ -142,8 +142,6 @@ button .btn-text {
   text-overflow: ellipsis;
   white-space: nowrap;
   min-width: 0;
-  flex: 1 1 auto;
-  text-align: left;
 }
 
 /* ADAPTIVE BREAKPOINTS */
