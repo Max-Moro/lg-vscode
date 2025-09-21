@@ -17,6 +17,9 @@ h3 {
   margin: 4px 0;
   font-weight: 600;
   font-size: 12px;
+  display: flex;
+  align-items: center;
+  gap: 6px;
 }
 
 /* Block containers */
