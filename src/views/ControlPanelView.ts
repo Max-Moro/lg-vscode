@@ -188,7 +188,7 @@ export class ControlPanelView implements vscode.WebviewViewProvider {
     const s = this.getState();
     const files = await vscode.window.withProgress(
       { location: vscode.ProgressLocation.Notification, title: "LG: Collecting included paths…", cancellable: false },
-      () => runListIncludedJson({ section: s.section, mode: s.mode })
+      () => runListIncludedJson({ section: s.section, mode: s.mode, model: s.model })
     );
     this.included.setPaths(files.map(f => f.path));
     await vscode.commands.executeCommand("lg.included.focus");
