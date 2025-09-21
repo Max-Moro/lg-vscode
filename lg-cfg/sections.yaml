@@ -18,6 +18,7 @@ src:
         mode: block
         block:
           - "/stats**"
+          - "/doctor**"
       src:
         mode: block
         block:
