@@ -90,7 +90,7 @@ select:disabled {
   opacity: 0.7;
 }
 
-/* Button styles with text overflow protection */
+/* Button styles - back to original working version */
 button {
   display: inline-flex;
   align-items: center;
@@ -103,13 +103,6 @@ button {
   border: 1px solid var(--vscode-dropdown-border, transparent);
   cursor: pointer;
   min-width: 0;
-  
-  /* Text overflow handling */
-  text-overflow: ellipsis;
-  white-space: nowrap;
-  overflow: hidden;
-  
-  /* Prevent button from growing too much */
   max-width: 100%;
 }
 
@@ -125,6 +118,15 @@ button:focus-visible {
 /* Ensure codicons don't get cut off */
 button .codicon {
   flex-shrink: 0;
+}
+
+/* Text wrapper for proper ellipsis handling */
+button .btn-text {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  min-width: 0;
+  flex: 1 1 auto;
 }
 
 /* ADAPTIVE BREAKPOINTS */

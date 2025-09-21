@@ -19,15 +19,15 @@
         <span class="cluster">
           <select id="template" class="grow" data-state-key="template" title="Контекст (.ctx.md) из lg-cfg/"></select>
           <button class="btn-primary" data-action="sendContextToAI" title="Сгенерировать контекст и отправить в AI">
-            <span class="codicon codicon-send"></span> Send to AI
+            <span class="codicon codicon-send"></span><span class="btn-text">Send to AI</span>
           </button>
           <button id="btn-context" data-action="generateContext" title="Сгенерировать контекст-промт по шаблону">
-            <span class="codicon codicon-file-code"></span> Generate Context
+            <span class="codicon codicon-file-code"></span><span class="btn-text">Generate Context</span>
           </button>
         </span>
         <span class="cluster">
           <button data-action="showContextStats" title="Показать суммарную статистику токенов для выбранного контекста">
-            <span class="codicon codicon-table"></span> Show Context Stats
+            <span class="codicon codicon-table"></span><span class="btn-text">Show Context Stats</span>
           </button>
         </span>
       </div>
@@ -49,20 +49,20 @@
       <div class="row">
         <span class="cluster">
           <button data-action="showIncluded" title="Показать какие файлы проходят фильтры">
-            <span class="codicon codicon-list-tree"></span> Show Included
+            <span class="codicon codicon-list-tree"></span><span class="btn-text">Show Included</span>
           </button>
         </span>
         <span class="cluster">
           <button data-action="generateListing" title="Сшить исходники из выбранной секции в единый листинг">
-           <span class="codicon codicon-file-code"></span> Generate Listing
+           <span class="codicon codicon-file-code"></span><span class="btn-text">Generate Listing</span>
           </button>
           <button data-action="sendListingToAI" title="Сгенерировать листинг и отправить в AI">
-            <span class="codicon codicon-send"></span> Send to AI
+            <span class="codicon codicon-send"></span><span class="btn-text">Send to AI</span>
           </button>
         </span>
         <span class="cluster">
           <button data-action="showStats" title="Таблица размеров и токенов с долями контекста">
-            <span class="codicon codicon-table"></span> Show Stats
+            <span class="codicon codicon-table"></span><span class="btn-text">Show Stats</span>
           </button>
         </span>
       </div>
@@ -83,21 +83,21 @@
       <div class="row">
         <span class="cluster">
           <button data-action="createStarter" title="Создать lg-cfg/sections.yaml и примеры .tpl.md/.ctx.md">
-             <span class="codicon codicon-new-file"></span> Create Starter Config
+             <span class="codicon codicon-new-file"></span><span class="btn-text">Create Starter Config</span>
           </button>
           <button data-action="openConfig" title="Открыть lg-cfg/sections.yaml">
-           <span class="codicon codicon-file"></span> Open Config
+           <span class="codicon codicon-file"></span><span class="btn-text">Open Config</span>
           </button>
         </span>
         <span class="cluster">
           <button data-action="doctor" title="Проверка окружения и конфигурации">
-            <span class="codicon codicon-pulse"></span> Doctor
+            <span class="codicon codicon-pulse"></span><span class="btn-text">Doctor</span>
           </button>
           <button data-action="resetCache" title="Сбросить кеш Listing Generator">
-            <span class="codicon codicon-trash"></span> Reset Cache
+            <span class="codicon codicon-trash"></span><span class="btn-text">Reset Cache</span>
           </button>
           <button data-action="openSettings" title="Открыть настройки расширения">
-            <span class="codicon codicon-gear"></span> Settings
+            <span class="codicon codicon-gear"></span><span class="btn-text">Settings</span>
           </button>
         </span>
       </div>
