@@ -3,5 +3,6 @@ dist/
 *.vsix
 .vscode-test/
 .vscode/ipch/
-.ai-chat
+.idea/
+.ai-chat/
 .lg-cache/
