@@ -46,7 +46,7 @@ h3 {
   align-items: center;
   gap: 4px;
   min-width: 0;
-  flex-shrink: 1;
+  flex: 1 1 auto;
 }
 
 /* Utility classes */
@@ -57,6 +57,11 @@ h3 {
 .grow {
   flex: 1 1 auto;
   min-width: 0;
+}
+
+/* Labels should not grow */
+label {
+  flex-shrink: 0;
 }
 
 /* Base form controls */
@@ -73,6 +78,7 @@ select {
   padding: 2px 6px;
   min-width: 0;
   max-width: 100%;
+  flex: 1 1 auto;
   
   /* Prevent text overflow in selects */
   text-overflow: ellipsis;
@@ -104,6 +110,7 @@ button {
   cursor: pointer;
   min-width: 0;
   max-width: 100%;
+  flex: 1 1 auto;
 }
 
 button:hover {
@@ -136,6 +143,15 @@ button .btn-text {
 @container control-panel (min-width: 300px) {
   .cluster {
     white-space: nowrap;
+  }
+  
+  /* Radio groups should not grow excessively in normal mode */
+  .cluster[role="group"] {
+    flex: 0 1 auto;
+  }
+  
+  .cluster[role="group"] label {
+    flex: none;
   }
 }
 
@@ -185,6 +201,12 @@ button .btn-text {
   /* Special handling for input labels in radio groups */
   .cluster[role="group"] label.cluster input {
     width: auto;
+    flex: none;
+  }
+  
+  /* Radio button labels should not grow excessively */
+  .cluster[role="group"] label.cluster {
+    flex: 0 1 auto;
   }
   
   /* Reduce padding in narrow mode */
