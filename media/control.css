@@ -49,12 +49,6 @@ h3 {
   flex-shrink: 1;
 }
 
-/* Spacer for flexible layouts */
-.spacer {
-  flex: 1;
-  min-width: 8px; /* Minimum breathing room */
-}
-
 /* Utility classes */
 .muted {
   color: var(--vscode-descriptionForeground);
@@ -160,15 +154,10 @@ button .codicon {
     width: 100%;
   }
   
-  /* Remove spacers in narrow mode */
-  .spacer {
-    display: none;
-  }
-  
   /* Full-width controls */
   select, button {
     width: 100%;
-    justify-content: center;
+    justify-content: flex-start;
   }
   
   /* Labels above controls */
