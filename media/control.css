@@ -127,6 +127,7 @@ button .btn-text {
   white-space: nowrap;
   min-width: 0;
   flex: 1 1 auto;
+  text-align: left;
 }
 
 /* ADAPTIVE BREAKPOINTS */
