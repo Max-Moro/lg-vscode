@@ -45,8 +45,8 @@
       <h2>${esc(scopeLabel)}: ${esc(name)} — Statistics</h2>
       <p class="muted">Scope: <b>${esc(scope)}</b> • Name: <b>${esc(name)}</b> • Model: <b>${esc(data.model)}</b> • Encoder: <b>${esc(data.encoder)}</b> • Ctx limit: <b>${fmtInt(data.ctxLimit)}</b> tokens</p>
       <div class="actions">
-        <button class="btn-primary" id="btn-send-ai" title="Generate and send directly to Cursor AI Pane">Send to AI</button>
-        <button id="btn-generate" title="Render the final prompt now">${esc(genLabel)}</button>
+        <button class="btn-primary" id="btn-generate" title="Render the final prompt now">${esc(genLabel)}</button>
+        <button id="btn-send-ai" title="Generate and send directly to Cursor AI Pane">Send to AI</button>
         <button id="btn-refresh" title="Re-run stats">Refresh</button>
       </div>
 

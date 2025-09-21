@@ -33,7 +33,7 @@ h3 {
 /* Row layout - adaptive flex container */
 .row {
   display: flex;
-  gap: 6px;
+  gap: 6px 24px;
   align-items: center;
   margin: 4px 0;
   flex-wrap: wrap;

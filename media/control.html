@@ -18,7 +18,7 @@
       <div class="row">
         <span class="cluster">
           <select id="template" class="grow" data-state-key="template" title="Контекст (.ctx.md) из lg-cfg/"></select>
-          <button class="btn-primary" data-action="sendContextToAI" title="Сгенерировать контекст и отправить в AI">
+          <button data-action="sendContextToAI" title="Сгенерировать контекст и отправить в AI">
             <span class="codicon codicon-send"></span><span class="btn-text">Send to AI</span>
           </button>
           <button id="btn-context" data-action="generateContext" title="Сгенерировать контекст-промт по шаблону">
@@ -26,7 +26,7 @@
           </button>
         </span>
         <span class="cluster">
-          <button data-action="showContextStats" title="Показать суммарную статистику токенов для выбранного контекста">
+          <button class="btn-primary" data-action="showContextStats" title="Показать суммарную статистику токенов для выбранного контекста">
             <span class="codicon codicon-table"></span><span class="btn-text">Show Context Stats</span>
           </button>
         </span>
