@@ -115,12 +115,6 @@
       select.dataset.modeSet = modeSet.id;
       select.className = "mode-select";
       
-      // Add empty option
-      const emptyOption = document.createElement("option");
-      emptyOption.value = "";
-      emptyOption.textContent = "— Not set —";
-      select.appendChild(emptyOption);
-      
       // Add mode options
       (modeSet.modes || []).forEach(mode => {
         const option = document.createElement("option");
@@ -199,8 +193,16 @@
   function applyModesState(modes) {
     currentModeSets.forEach(modeSet => {
       const select = UI.qs(`#mode-${modeSet.id}`);
-      if (select) {
-        select.value = modes[modeSet.id] || "";
+      if (select && modeSet.modes && modeSet.modes.length > 0) {
+        // Use saved mode or default to first available mode
+        const savedMode = modes[modeSet.id];
+        const defaultMode = modeSet.modes[0].id;
+        select.value = savedMode || defaultMode;
+        
+        // If we're using the default, save it to state
+        if (!savedMode) {
+          onModeChangeInternal(modeSet.id, defaultMode);
+        }
       }
     });
   }
@@ -218,23 +220,23 @@
     });
   }
 
+  function onModeChangeInternal(modeSetId, modeId) {
+    const cached = store.get();
+    const modes = cached.modes || {};
+    
+    modes[modeSetId] = modeId;
+    
+    const patch = { modes };
+    store.merge(patch);
+    UI.post(vscode, "setState", { state: patch });
+  }
+
   function onModeChange(event) {
     const select = event.target;
     const modeSetId = select.dataset.modeSet;
     const modeId = select.value;
     
-    const cached = store.get();
-    const modes = cached.modes || {};
-    
-    if (modeId) {
-      modes[modeSetId] = modeId;
-    } else {
-      delete modes[modeSetId];
-    }
-    
-    const patch = { modes };
-    store.merge(patch);
-    UI.post(vscode, "setState", { state: patch });
+    onModeChangeInternal(modeSetId, modeId);
   }
 
   function onTagChange() {
