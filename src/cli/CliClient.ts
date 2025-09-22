@@ -57,6 +57,13 @@ export async function cliReport(target: string, options: CliOptions = {}): Promi
 export async function cliList(what: "sections" | "contexts" | "models" | "mode-sets" | "tag-sets") {
   const out = await runCli(["list", what], { timeoutMs: 20_000 });
   const data = JSON.parse(out);
+  
+  // For the new commands, return the full object structure
+  if (what === "mode-sets" || what === "tag-sets") {
+    return data;
+  }
+  
+  // For legacy commands, extract the array
   return data?.[what] ?? data ?? [];
 }
 
