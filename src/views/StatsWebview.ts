@@ -4,7 +4,7 @@
 import * as vscode from "vscode";
 import { getVirtualProvider } from "./virtualBus";
 import { AiIntegrationService } from "../services/ai";
-import type { RunResult } from "../models/run_result";
+import type { RunResult } from "../models/report";
 import { buildHtml, getExtensionUri, mediaUri } from "../webview/webviewKit";
 
 export async function showStatsWebview(

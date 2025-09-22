@@ -1,5 +1,5 @@
 import { runCli } from "./CliResolver";
-import type { RunResult } from "../models/run_result";
+import type { RunResult } from "../models/report";
 import type { DiagReport } from "../models/diag_report";
 
 export async function cliRender(target: string): Promise<string> {

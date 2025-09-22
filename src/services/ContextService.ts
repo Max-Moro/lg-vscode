@@ -1,5 +1,5 @@
 import { cliRender, cliReport } from "../cli/CliClient";
-import type { RunResult } from "../models/run_result";
+import type { RunResult } from "../models/report";
 
 export async function runContext(templateName: string): Promise<string> {
   const target = `ctx:${templateName}`;
