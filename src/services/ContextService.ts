@@ -1,12 +1,24 @@
-import { cliRender, cliReport } from "../cli/CliClient";
+import { cliRender, cliReport, type CliOptions } from "../cli/CliClient";
 import type { RunResult } from "../models/report";
 
-export async function runContext(templateName: string): Promise<string> {
-  const target = `ctx:${templateName}`;
-  return cliRender(target);
+export interface ContextParams {
+  template: string;
+  model?: string;
+  modes?: Record<string, string>;
+  tags?: string[];
 }
 
-export async function runContextStatsJson(params: { template: string; model?: string }): Promise<RunResult> {
+export async function runContext(templateName: string, options: CliOptions = {}): Promise<string> {
+  const target = `ctx:${templateName}`;
+  return cliRender(target, options);
+}
+
+export async function runContextStatsJson(params: ContextParams): Promise<RunResult> {
   const target = `ctx:${params.template}`;
-  return cliReport(target, params.model ?? "o3");
+  const options: CliOptions = {
+    model: params.model ?? "o3",
+    modes: params.modes,
+    tags: params.tags
+  };
+  return cliReport(target, options);
 }

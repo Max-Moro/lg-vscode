@@ -1,10 +1,12 @@
 import * as vscode from "vscode";
 import { VirtualDocProvider } from "./VirtualDocProvider";
 import { IncludedTree } from "./IncludedTree";
-import { runListIncludedJson, runListing } from "../services/ListingService";
-import { runContext, runContextStatsJson } from "../services/ContextService";
-import { runStatsJson } from "../services/StatsService";
-import { listContextsJson, listModelsJson, listSectionsJson } from "../services/CatalogService";
+import { runListIncludedJson, runListing, type ListingParams } from "../services/ListingService";
+import { runContext, runContextStatsJson, type ContextParams } from "../services/ContextService";
+import { runStatsJson, type StatsParams } from "../services/StatsService";
+import { listContextsJson, listModelsJson, listSectionsJson, listModeSetsJson, listTagSetsJson } from "../services/CatalogService";
+import type { ModeSetsList } from "../models/mode_sets_list";
+import type { TagSetsList } from "../models/tag_sets_list";
 import { resetCache } from "../services/DoctorService";
 import { runDoctor } from "../diagnostics/Doctor";
 import { openConfigOrInit, runInitWizard } from "../starter/StarterConfig";
@@ -15,13 +17,18 @@ type PanelState = {
   section: string;
   template: string;
   model: string;
+  // Адаптивные возможности
+  modes: Record<string, string>; // modeset_id -> mode_id
+  tags: string[]; // активные теги
 };
 
 const MKEY = "lg.control.state";
 const DEFAULT_STATE: PanelState = {
   section: "all-src",
   template: "",
-  model: "o3"
+  model: "o3",
+  modes: {},
+  tags: []
 };
 
 export class ControlPanelView implements vscode.WebviewViewProvider {
@@ -91,6 +98,9 @@ export class ControlPanelView implements vscode.WebviewViewProvider {
           case "openSettings":
             vscode.commands.executeCommand("workbench.action.openSettings", `@ext:${EXT_ID}`);
             break;
+          case "toggleTags":
+            // Tags panel is handled purely on the client side
+            break;
         }
       } catch (e: any) {
         vscode.window.showErrorMessage(`LG: ${e?.message || e}`);
@@ -143,9 +153,14 @@ export class ControlPanelView implements vscode.WebviewViewProvider {
   // ——————————————— handlers ——————————————— //
   private async onGenerateListing() {
     const s = this.getState();
+    const params: ListingParams = {
+      section: s.section,
+      model: s.model,
+      ...this.getAdaptiveParams(s)
+    };
     const content = await vscode.window.withProgress(
       { location: vscode.ProgressLocation.Notification, title: "LG: Generating listing…", cancellable: false },
-      () => runListing({ section: s.section })
+      () => runListing(params)
     );
     await this.vdocs.open("listing", `Listing — ${s.section}.md`, content);
   }
@@ -156,9 +171,13 @@ export class ControlPanelView implements vscode.WebviewViewProvider {
       vscode.window.showWarningMessage("Select a template first.");
       return;
     }
+    const options = {
+      model: s.model,
+      ...this.getAdaptiveParams(s)
+    };
     const content = await vscode.window.withProgress(
       { location: vscode.ProgressLocation.Notification, title: `LG: Generating context '${s.template}'…`, cancellable: false },
-      () => runContext(s.template)
+      () => runContext(s.template, options)
     );
     await this.vdocs.open("context", `Context — ${s.template}.md`, content);
   }
@@ -169,24 +188,33 @@ export class ControlPanelView implements vscode.WebviewViewProvider {
       vscode.window.showWarningMessage("Select a template first.");
       return;
     }
-    const modelId = s.model || "o3";
+    const params: ContextParams = {
+      template: s.template,
+      model: s.model || "o3",
+      ...this.getAdaptiveParams(s)
+    };
     const data = await vscode.window.withProgress(
       { location: vscode.ProgressLocation.Notification, title: `LG: Computing stats for context '${s.template}'…`, cancellable: false },
-      () => runContextStatsJson({ template: s.template, model: modelId })
+      () => runContextStatsJson(params)
     );
     const { showStatsWebview } = await import("./StatsWebview");
     await showStatsWebview(
       data,
-      () => runContextStatsJson({ template: s.template, model: modelId }),
-      () => runContext(s.template)
+      () => runContextStatsJson(params),
+      () => runContext(s.template, { model: s.model, ...this.getAdaptiveParams(s) })
     );
   }
 
   private async onShowIncluded() {
     const s = this.getState();
+    const params: ListingParams = {
+      section: s.section,
+      model: s.model,
+      ...this.getAdaptiveParams(s)
+    };
     const files = await vscode.window.withProgress(
       { location: vscode.ProgressLocation.Notification, title: "LG: Collecting included paths…", cancellable: false },
-      () => runListIncludedJson({ section: s.section, model: s.model })
+      () => runListIncludedJson(params)
     );
     this.included.setPaths(files.map(f => f.path));
     await vscode.commands.executeCommand("lg.included.focus");
@@ -194,16 +222,20 @@ export class ControlPanelView implements vscode.WebviewViewProvider {
 
   private async onShowStats() {
     const s = this.getState();
-    const modelId = s.model || "o3";
+    const params: StatsParams = {
+      section: s.section,
+      model: s.model || "o3",
+      ...this.getAdaptiveParams(s)
+    };
     const data = await vscode.window.withProgress(
       { location: vscode.ProgressLocation.Notification, title: "LG: Computing stats…", cancellable: false },
-      () => runStatsJson({ section: s.section, model: modelId })
+      () => runStatsJson(params)
     );
     const { showStatsWebview } = await import("./StatsWebview");
     await showStatsWebview(
       data,
-      () => runStatsJson({ section: s.section, model: modelId }),
-      () => runListing({ section: s.section })
+      () => runStatsJson(params),
+      () => runListing(params)
     );
   }
 
@@ -213,18 +245,27 @@ export class ControlPanelView implements vscode.WebviewViewProvider {
       vscode.window.showWarningMessage("Select a template first.");
       return;
     }
+    const options = {
+      model: s.model,
+      ...this.getAdaptiveParams(s)
+    };
     const content = await vscode.window.withProgress(
       { location: vscode.ProgressLocation.Notification, title: `LG: Generating context '${s.template}' for AI…`, cancellable: false },
-      () => runContext(s.template)
+      () => runContext(s.template, options)
     );
     await this.aiService.sendContext(s.template, content);
   }
 
   private async onSendListingToAI() {
     const s = this.getState();
+    const params: ListingParams = {
+      section: s.section,
+      model: s.model,
+      ...this.getAdaptiveParams(s)
+    };
     const content = await vscode.window.withProgress(
       { location: vscode.ProgressLocation.Notification, title: `LG: Generating listing '${s.section}' for AI…`, cancellable: false },
-      () => runListing({ section: s.section })
+      () => runListing(params)
     );
     await this.aiService.sendListing(s.section, content);
   }
@@ -239,6 +280,13 @@ export class ControlPanelView implements vscode.WebviewViewProvider {
     this.post({ type: "state", state: next });
   }
 
+  private getAdaptiveParams(state: PanelState): { modes?: Record<string, string>; tags?: string[] } {
+    return {
+      modes: Object.keys(state.modes || {}).length > 0 ? state.modes : undefined,
+      tags: Array.isArray(state.tags) && state.tags.length > 0 ? state.tags : undefined
+    };
+  }
+
   // Очередь для последовательного выполнения listSectionsJson / listContextsJson / listModelsJson
   private listsChain: Promise<void> = Promise.resolve();
 
@@ -249,20 +297,28 @@ export class ControlPanelView implements vscode.WebviewViewProvider {
         const sections = await listSectionsJson().catch(() => [] as string[]);
         const contexts = await listContextsJson().catch(() => [] as string[]);
         const models = await listModelsJson().catch(() => [] as any[]);
+        const modeSets = await listModeSetsJson().catch(() => ({ "mode-sets": [] } as ModeSetsList));
+        const tagSets = await listTagSetsJson().catch(() => ({ "tag-sets": [] } as TagSetsList));
 
         const state = this.getState();
+        let stateChanged = false;
+        
         if (!sections.includes(state.section) && sections.length) {
           state.section = sections[0];
-          await this.context.workspaceState.update(MKEY, state);
+          stateChanged = true;
         }
         if (models.length) {
           const ids = models.map((m: any) => m.id);
           if (!ids.includes(state.model)) {
             state.model = models[0].id;
-            await this.context.workspaceState.update(MKEY, state);
+            stateChanged = true;
           }
         }
-        this.post({ type: "data", sections, contexts, models, state });
+        
+        if (stateChanged) {
+          await this.context.workspaceState.update(MKEY, state);
+        }
+        this.post({ type: "data", sections, contexts, models, modeSets, tagSets, state });
       })
       .catch(() => {
         // Гасим ошибку, чтобы не «сломать» цепочку последующих вызовов

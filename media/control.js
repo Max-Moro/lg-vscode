@@ -40,6 +40,10 @@
   // ---- handshake ----
   UI.post(vscode, "init");
 
+  // ---- adaptive settings state ----
+  let currentModeSets = [];
+  let currentTagSets = [];
+
   // ---- runtime updates from extension ----
   window.addEventListener("message", (e) => {
     const msg = e.data;
@@ -52,6 +56,10 @@
         getLabel: it => (typeof it === "string" ? it : (it?.label ?? it?.id ?? "")),
         value: msg.state.model || ""
       });
+
+      // populate adaptive settings
+      populateModeSets(msg.modeSets);
+      populateTagSets(msg.tagSets);
 
       applyState(msg.state);
     } else if (msg?.type === "state") {
@@ -66,9 +74,205 @@
     if (s.section !== undefined) next["section"] = s.section;
     if (s.template !== undefined) next["template"] = s.template;
     if (s.model !== undefined) next["model"] = s.model;
+    
+    // Apply modes state
+    if (s.modes) {
+      applyModesState(s.modes);
+    }
+    
+    // Apply tags state
+    if (s.tags) {
+      applyTagsState(s.tags);
+    }
+    
     if (Object.keys(next).length) {
       UI.setState(next);
       store.merge(next); // keep cache in sync with authoritative state
     }
   }
+
+  // ---- adaptive settings functions ----
+  function populateModeSets(modeSetsData) {
+    currentModeSets = modeSetsData?.["mode-sets"] || [];
+    const container = UI.qs("#mode-sets-container");
+    container.innerHTML = "";
+    
+    if (!currentModeSets.length) {
+      container.innerHTML = '<div class="empty-state">No mode sets available</div>';
+      return;
+    }
+    
+    currentModeSets.forEach(modeSet => {
+      const div = document.createElement("div");
+      div.className = "mode-set";
+      
+      const label = document.createElement("label");
+      label.className = "mode-set-label";
+      label.textContent = modeSet.title || modeSet.id;
+      
+      const select = document.createElement("select");
+      select.id = `mode-${modeSet.id}`;
+      select.dataset.modeSet = modeSet.id;
+      select.className = "mode-select";
+      
+      // Add empty option
+      const emptyOption = document.createElement("option");
+      emptyOption.value = "";
+      emptyOption.textContent = "— Not set —";
+      select.appendChild(emptyOption);
+      
+      // Add mode options
+      (modeSet.modes || []).forEach(mode => {
+        const option = document.createElement("option");
+        option.value = mode.id;
+        option.textContent = mode.title || mode.id;
+        if (mode.description) {
+          option.title = mode.description;
+        }
+        select.appendChild(option);
+      });
+      
+      // Add change listener
+      select.addEventListener("change", onModeChange);
+      
+      div.appendChild(label);
+      div.appendChild(select);
+      container.appendChild(div);
+    });
+  }
+
+  function populateTagSets(tagSetsData) {
+    currentTagSets = tagSetsData?.["tag-sets"] || [];
+    const container = UI.qs("#tag-sets-container");
+    container.innerHTML = "";
+    
+    if (!currentTagSets.length) {
+      container.innerHTML = '<div class="empty-state">No tag sets available</div>';
+      return;
+    }
+    
+    currentTagSets.forEach(tagSet => {
+      const div = document.createElement("div");
+      div.className = "tag-set";
+      
+      const title = document.createElement("h4");
+      title.className = "tag-set-title";
+      title.innerHTML = `<span class="codicon codicon-folder"></span>${tagSet.title || tagSet.id}`;
+      
+      const tagsContainer = document.createElement("div");
+      tagsContainer.className = "tag-set-tags";
+      
+      (tagSet.tags || []).forEach(tag => {
+        const itemDiv = document.createElement("div");
+        itemDiv.className = "tag-item";
+        
+        const checkbox = document.createElement("input");
+        checkbox.type = "checkbox";
+        checkbox.id = `tag-${tag.id}`;
+        checkbox.value = tag.id;
+        checkbox.addEventListener("change", onTagChange);
+        
+        const label = document.createElement("label");
+        label.className = "tag-item-label";
+        label.htmlFor = `tag-${tag.id}`;
+        label.textContent = tag.title || tag.id;
+        
+        itemDiv.appendChild(checkbox);
+        itemDiv.appendChild(label);
+        
+        if (tag.description) {
+          const desc = document.createElement("div");
+          desc.className = "tag-item-description";
+          desc.textContent = tag.description;
+          itemDiv.appendChild(desc);
+        }
+        
+        tagsContainer.appendChild(itemDiv);
+      });
+      
+      div.appendChild(title);
+      div.appendChild(tagsContainer);
+      container.appendChild(div);
+    });
+  }
+
+  function applyModesState(modes) {
+    currentModeSets.forEach(modeSet => {
+      const select = UI.qs(`#mode-${modeSet.id}`);
+      if (select) {
+        select.value = modes[modeSet.id] || "";
+      }
+    });
+  }
+
+  function applyTagsState(tags) {
+    const tagIds = Array.isArray(tags) ? tags : [];
+    
+    currentTagSets.forEach(tagSet => {
+      (tagSet.tags || []).forEach(tag => {
+        const checkbox = UI.qs(`#tag-${tag.id}`);
+        if (checkbox) {
+          checkbox.checked = tagIds.includes(tag.id);
+        }
+      });
+    });
+  }
+
+  function onModeChange(event) {
+    const select = event.target;
+    const modeSetId = select.dataset.modeSet;
+    const modeId = select.value;
+    
+    const cached = store.get();
+    const modes = cached.modes || {};
+    
+    if (modeId) {
+      modes[modeSetId] = modeId;
+    } else {
+      delete modes[modeSetId];
+    }
+    
+    const patch = { modes };
+    store.merge(patch);
+    UI.post(vscode, "setState", { state: patch });
+  }
+
+  function onTagChange() {
+    const selectedTags = [];
+    
+    currentTagSets.forEach(tagSet => {
+      (tagSet.tags || []).forEach(tag => {
+        const checkbox = UI.qs(`#tag-${tag.id}`);
+        if (checkbox && checkbox.checked) {
+          selectedTags.push(tag.id);
+        }
+      });
+    });
+    
+    const patch = { tags: selectedTags };
+    store.merge(patch);
+    UI.post(vscode, "setState", { state: patch });
+  }
+
+  // ---- tags panel management ----
+  function showTagsPanel() {
+    const panel = UI.qs("#tags-panel");
+    panel.style.display = "flex";
+  }
+
+  function hideTagsPanel() {
+    const panel = UI.qs("#tags-panel");
+    panel.style.display = "none";
+  }
+
+  // ---- additional action handlers ----
+  UI.delegate(document, "#tags-toggle", "click", showTagsPanel);
+  UI.delegate(document, "#tags-close", "click", hideTagsPanel);
+  
+  // Close tags panel when clicking outside (but not on the button)
+  UI.delegate(document, "#tags-panel", "click", (el, event) => {
+    if (event.target === el) {
+      hideTagsPanel();
+    }
+  });
 })();
