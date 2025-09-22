@@ -66,7 +66,6 @@
     if (s.section !== undefined) next["section"] = s.section;
     if (s.template !== undefined) next["template"] = s.template;
     if (s.model !== undefined) next["model"] = s.model;
-    if (s.mode !== undefined) next["mode"] = (s.mode === "changes") ? "changes" : "all";
     if (Object.keys(next).length) {
       UI.setState(next);
       store.merge(next); // keep cache in sync with authoritative state

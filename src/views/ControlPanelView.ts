@@ -13,7 +13,6 @@ import { EXT_ID } from "../constants";
 
 type PanelState = {
   section: string;
-  mode: "all" | "changes";
   template: string;
   model: string;
 };
@@ -21,7 +20,6 @@ type PanelState = {
 const MKEY = "lg.control.state";
 const DEFAULT_STATE: PanelState = {
   section: "all-src",
-  mode: "all",
   template: "",
   model: "o3"
 };
@@ -147,7 +145,7 @@ export class ControlPanelView implements vscode.WebviewViewProvider {
     const s = this.getState();
     const content = await vscode.window.withProgress(
       { location: vscode.ProgressLocation.Notification, title: "LG: Generating listing…", cancellable: false },
-      () => runListing({ section: s.section, mode: s.mode })
+      () => runListing({ section: s.section })
     );
     await this.vdocs.open("listing", `Listing — ${s.section}.md`, content);
   }
@@ -188,7 +186,7 @@ export class ControlPanelView implements vscode.WebviewViewProvider {
     const s = this.getState();
     const files = await vscode.window.withProgress(
       { location: vscode.ProgressLocation.Notification, title: "LG: Collecting included paths…", cancellable: false },
-      () => runListIncludedJson({ section: s.section, mode: s.mode, model: s.model })
+      () => runListIncludedJson({ section: s.section, model: s.model })
     );
     this.included.setPaths(files.map(f => f.path));
     await vscode.commands.executeCommand("lg.included.focus");
@@ -199,13 +197,13 @@ export class ControlPanelView implements vscode.WebviewViewProvider {
     const modelId = s.model || "o3";
     const data = await vscode.window.withProgress(
       { location: vscode.ProgressLocation.Notification, title: "LG: Computing stats…", cancellable: false },
-      () => runStatsJson({ section: s.section, mode: s.mode, model: modelId })
+      () => runStatsJson({ section: s.section, model: modelId })
     );
     const { showStatsWebview } = await import("./StatsWebview");
     await showStatsWebview(
       data,
-      () => runStatsJson({ section: s.section, mode: s.mode, model: modelId }),
-      () => runListing({ section: s.section, mode: s.mode })
+      () => runStatsJson({ section: s.section, model: modelId }),
+      () => runListing({ section: s.section })
     );
   }
 
@@ -226,9 +224,9 @@ export class ControlPanelView implements vscode.WebviewViewProvider {
     const s = this.getState();
     const content = await vscode.window.withProgress(
       { location: vscode.ProgressLocation.Notification, title: `LG: Generating listing '${s.section}' for AI…`, cancellable: false },
-      () => runListing({ section: s.section, mode: s.mode })
+      () => runListing({ section: s.section })
     );
-    await this.aiService.sendListing(s.section, s.mode, content);
+    await this.aiService.sendListing(s.section, content);
   }
 
   // ——————————————— state & lists ——————————————— //

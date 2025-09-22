@@ -17,8 +17,6 @@ export interface AiContent {
   metadata: {
     /** Имя шаблона/секции */
     name: string;
-    /** Режим генерации (для листингов) */
-    mode?: string;
     /** Размер контента */
     size: number;
     /** Количество файлов (если применимо) */

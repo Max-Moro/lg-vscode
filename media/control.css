@@ -24,6 +24,9 @@ h3 {
 
 /* Block containers */
 .block {
+  display: flex;
+  flex-direction: column;
+  gap: 6px 0px;
   border: 1px solid var(--vscode-editorWidget-border, var(--vscode-editorIndentGuide-background));
   background: var(--vscode-editorWidget-background, transparent);
   border-radius: 6px;
@@ -38,7 +41,6 @@ h3 {
   display: flex;
   gap: 6px 24px;
   align-items: center;
-  margin: 4px 0;
   flex-wrap: wrap;
   min-width: 0;
 }
@@ -50,11 +52,6 @@ h3 {
   gap: 4px;
   min-width: 0;
   flex: 1 1 auto;
-}
-
-/* Ensure radio button groups have consistent spacing */
-.cluster[role="group"] {
-  margin: 2px 0;
 }
 
 /* Utility classes */
@@ -165,10 +162,14 @@ button .btn-text {
 /* NARROW PANEL MODE: 200px and below */
 @container control-panel (max-width: 200px) {
   /* Switch to single column layout */
+  .block {
+    gap: 4px 0;
+  }
+
   .row {
     flex-direction: column;
     align-items: stretch;
-    gap: 4px;
+    gap: 4px 0;
   }
   
   /* Clusters become full-width stacks */
@@ -176,7 +177,7 @@ button .btn-text {
     display: flex;
     flex-direction: column;
     align-items: stretch;
-    gap: 4px;
+    gap: 4px 0;
     width: 100%;
   }
   
@@ -223,10 +224,6 @@ button .btn-text {
   
   /* Smaller gaps */
   h3 {
-    margin: 2px 0;
-  }
-  
-  .row {
     margin: 2px 0;
   }
 }

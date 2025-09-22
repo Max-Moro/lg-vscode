@@ -104,10 +104,7 @@ export async function showStatsWebview(
         if (current.scope === "context") {
           await aiService.sendContext(name, text);
         } else {
-          const mode = current.target.includes("(") 
-            ? current.target.slice(current.target.indexOf("(") + 1, current.target.lastIndexOf(")"))
-            : "all";
-          await aiService.sendListing(name, mode, text);
+          await aiService.sendListing(name, text);
         }
       } catch (e: any) {
         vscode.window.showErrorMessage(`LG: ${e?.message || e}`);

@@ -80,15 +80,7 @@
           "default": "info",
           "description": "Logging level for the Listing Generator Output channel."
         },
-        "lg.mode": {
-          "type": "string",
-          "enum": [
-            "all",
-            "changes"
-          ],
-          "default": "all",
-          "description": "Default mode for listing generation."
-        },
+
         "lg.defaultSection": {
           "type": "string",
           "default": "all-src",

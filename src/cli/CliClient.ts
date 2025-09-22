@@ -2,15 +2,13 @@ import { runCli } from "./CliResolver";
 import type { RunResult } from "../models/run_result";
 import type { DiagReport } from "../models/diag_report";
 
-export async function cliRender(target: string, options?: { mode?: "all" | "changes" }): Promise<string> {
+export async function cliRender(target: string): Promise<string> {
   const args: string[] = ["render", target];
-  if (options?.mode) args.push("--mode", options.mode);
   return runCli(args, { timeoutMs: 120_000 });
 }
 
-export async function cliReport(target: string, model?: string, mode?: "all" | "changes"): Promise<RunResult> {
+export async function cliReport(target: string, model?: string): Promise<RunResult> {
   const args: string[] = ["report", target, "--model", model ?? "o3"];
-  if (mode) args.push("--mode", mode);
   const out = await runCli(args, { timeoutMs: 120_000 });
   const data = JSON.parse(out);
   return data as RunResult;

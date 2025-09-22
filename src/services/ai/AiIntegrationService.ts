@@ -74,20 +74,19 @@ export class AiIntegrationService {
   /**
    * Отправка листинга в AI
    */
-  async sendListing(sectionName: string, mode: string, content: string, options?: AiProviderOptions): Promise<void> {
+  async sendListing(sectionName: string, content: string, options?: AiProviderOptions): Promise<void> {
     const aiContent: AiContent = {
       content,
       type: 'listing',
       metadata: {
         name: sectionName,
-        mode,
         size: content.length,
         fileCount: this.estimateFileCount(content)
       }
     };
 
     await this.sendContent(aiContent, options);
-    logInfo(`[AiIntegration] Listing sent: ${sectionName} (${mode}), size: ${content.length}`);
+    logInfo(`[AiIntegration] Listing sent: ${sectionName}, size: ${content.length}`);
   }
 
   /**
