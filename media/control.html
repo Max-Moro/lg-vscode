@@ -34,6 +34,33 @@
     </div>
 
     <div class="block">
+      <h3><span class="codicon codicon-settings-gear"></span> Adaptive Settings</h3>
+      <div id="mode-sets-container" class="mode-sets-container">
+        <!-- Mode sets will be populated here -->
+      </div>
+      <div class="row">
+        <span class="cluster">
+          <button id="tags-toggle" data-action="toggleTags" title="Configure tags">
+            <span class="codicon codicon-tag"></span><span class="btn-text">Configure Tags</span>
+          </button>
+        </span>
+      </div>
+    </div>
+
+    <!-- Tags panel (initially hidden) -->
+    <div id="tags-panel" class="tags-panel" style="display: none;">
+      <div class="tags-panel-header">
+        <h3><span class="codicon codicon-tag"></span> Tags Configuration</h3>
+        <button id="tags-close" class="tags-close" title="Close tags panel">
+          <span class="codicon codicon-close"></span>
+        </button>
+      </div>
+      <div id="tag-sets-container" class="tag-sets-container">
+        <!-- Tag sets will be populated here -->
+      </div>
+    </div>
+
+    <div class="block">
       <h3><span class="codicon codicon-graph"></span> Inspect</h3>
       <div class="row">
         <span class="cluster" title="Секция из lg-cfg/sections.yaml или *.sec.yaml">
@@ -71,33 +98,6 @@
           <label class="muted">Model:</label>
           <select id="model" data-state-key="model"></select>
         </span>
-      </div>
-    </div>
-
-    <div class="block">
-      <h3><span class="codicon codicon-settings-gear"></span> Adaptive Settings</h3>
-      <div id="mode-sets-container" class="mode-sets-container">
-        <!-- Mode sets will be populated here -->
-      </div>
-      <div class="row">
-        <span class="cluster">
-          <button id="tags-toggle" data-action="toggleTags" title="Configure tags">
-            <span class="codicon codicon-tag"></span><span class="btn-text">Configure Tags</span>
-          </button>
-        </span>
-      </div>
-    </div>
-
-    <!-- Tags panel (initially hidden) -->
-    <div id="tags-panel" class="tags-panel" style="display: none;">
-      <div class="tags-panel-header">
-        <h3><span class="codicon codicon-tag"></span> Tags Configuration</h3>
-        <button id="tags-close" class="tags-close" title="Close tags panel">
-          <span class="codicon codicon-close"></span>
-        </button>
-      </div>
-      <div id="tag-sets-container" class="tag-sets-container">
-        <!-- Tag sets will be populated here -->
       </div>
     </div>
 
