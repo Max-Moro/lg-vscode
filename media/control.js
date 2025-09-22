@@ -136,7 +136,8 @@
   }
 
   function populateTagSets(tagSetsData) {
-    currentTagSets = tagSetsData?.["tag-sets"] || [];
+    // Filter out global tags as they are already handled by modes and shouldn't be configured separately
+    currentTagSets = (tagSetsData?.["tag-sets"] || []).filter(tagSet => tagSet.id !== "global");
     const container = UI.qs("#tag-sets-container");
     container.innerHTML = "";
     
