@@ -57,3 +57,56 @@ textarea.rawjson {
   font-family: var(--vscode-editor-font-family, monospace);
   font-size: 11px; white-space: pre;
 }
+
+/* ========== TASK CONTEXT FIELD ========== */
+
+/* Chat-like Task Context Field for Control Panel and Stats */
+.task-context-wrapper {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  width: 100%;
+}
+
+.task-context-field {
+  width: 100%;
+  min-height: 42px;
+  max-height: 120px;
+  padding: 10px 12px;
+  background: var(--vscode-input-background);
+  color: var(--vscode-input-foreground);
+  border: 1px solid var(--vscode-input-border, var(--vscode-editorWidget-border));
+  border-radius: 8px;
+  font-family: var(--vscode-font-family);
+  font-size: 13px;
+  line-height: 1.5;
+  box-sizing: border-box;
+  
+  /* Auto-resize without scrollbars or resize handle */
+  resize: none;
+  overflow-y: auto;
+  overflow-x: hidden;
+  scrollbar-width: none; /* Firefox */
+  
+  /* Auto-grow on content (when supported) */
+  field-sizing: content;
+  
+  /* Smooth transitions */
+  transition: border-color 0.15s ease, box-shadow 0.15s ease, height 0.1s ease;
+}
+
+/* Hide scrollbar for Chrome/Safari */
+.task-context-field::-webkit-scrollbar {
+  display: none;
+}
+
+.task-context-field:focus {
+  outline: none;
+  border-color: var(--vscode-focusBorder);
+  box-shadow: 0 0 0 1px var(--vscode-focusBorder);
+}
+
+.task-context-field::placeholder {
+  color: var(--vscode-input-placeholderForeground);
+  opacity: 0.6;
+}

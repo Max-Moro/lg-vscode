@@ -39,42 +39,8 @@ input[type="search"] { width: 320px; padding: 6px 8px; background: var(--vscode-
 
 /* ========== TASK CONTEXT FIELD IN STATS ========== */
 
-/* Task Context Field in Stats Webview */
-.stats-task-context-wrapper {
-  display: flex;
-  flex-direction: column;
-  gap: 4px;
-  max-width: 800px;
-}
-
-.stats-task-context-label {
-  font-size: 11px;
-  font-weight: 600;
-  color: var(--vscode-descriptionForeground);
-  margin: 0;
-}
-
-.stats-task-context-field {
-  width: 100%;
-  min-height: 48px;
-  max-height: 240px;
-  padding: 6px 8px;
-  background: var(--vscode-input-background);
-  color: var(--vscode-input-foreground);
-  border: 1px solid var(--vscode-input-border, var(--vscode-editorWidget-border));
-  border-radius: 4px;
-  font-family: var(--vscode-editor-font-family, monospace);
-  font-size: 12px;
-  resize: vertical;
-  box-sizing: border-box;
-}
-
-.stats-task-context-field:focus {
-  outline: 1px solid var(--vscode-focusBorder);
-  outline-offset: 1px;
-}
-
-.stats-task-context-field::placeholder {
-  color: var(--vscode-input-placeholderForeground);
+/* Stats-specific wrapper adjustments */
+.task-context-wrapper {
+  margin: 12px 0 16px;
 }
 

@@ -22,7 +22,7 @@
 ┌─ AI Contexts ────────────────────────────────────┐
 │ ┌─ Task Context ──────────────────────────────┐  │
 │ │ [Многострочное текстовое поле (textarea)]   │  │
-│ │ [Placeholder: "Describe current task..."]   │  │
+│ │ [Placeholder: "Describe current task"]   │  │
 │ │ [Auto-resize: 2-10 строк]                   │  │
 │ └─────────────────────────────────────────────┘  │
 │                                                   │

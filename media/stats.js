@@ -23,13 +23,21 @@
     }
   });
 
-  // обработчик изменений в textarea
-  const textarea = document.getElementById("statsTaskText");
-  if (textarea) {
+  // Setup task text field after render
+  function setupTaskTextField() {
+    const textarea = document.getElementById("statsTaskText");
+    if (!textarea) return;
+    
+    // Set current value
+    if (textarea instanceof HTMLTextAreaElement) {
+      textarea.value = currentTaskText;
+    }
+    
+    // Handle input changes
     UI.on(textarea, "input", UI.debounce(() => {
       const newText = textarea instanceof HTMLTextAreaElement ? textarea.value : "";
       currentTaskText = newText;
-      // отправка обновления обратно в extension host
+      // Send update to extension host
       UI.post(vscode, "updateTaskText", { taskText: newText });
     }, 500));
   }
@@ -65,6 +73,15 @@
     app.innerHTML = `
       <h2>${esc(scopeLabel)}: ${esc(name)} — Statistics</h2>
       <p class="muted">Scope: <b>${esc(scope)}</b> • Name: <b>${esc(name)}</b> • Model: <b>${esc(data.model)}</b> • Encoder: <b>${esc(data.encoder)}</b> • Ctx limit: <b>${fmtInt(data.ctxLimit)}</b> tokens</p>
+      
+      <div class="task-context-wrapper">
+        <textarea 
+          id="statsTaskText" 
+          class="task-context-field"
+          placeholder="Describe current task"
+          rows="1"></textarea>
+      </div>
+      
       <div class="actions">
         <button class="btn-primary" id="btn-generate" title="Render the final prompt now">${esc(genLabel)}</button>
         <button id="btn-send-ai" title="Generate and send directly to Cursor AI Pane">Send to AI</button>
@@ -243,6 +260,9 @@
         ${rawJsonHtml}
       </div>`;
     app.insertAdjacentHTML("beforeend", debugRowHtml);
+
+    // Setup task text field
+    setupTaskTextField();
 
     // Hook refresh button
     const btn = document.getElementById("btn-refresh");
