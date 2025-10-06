@@ -59,15 +59,22 @@ async function resolveCliRunSpec(): Promise<RunSpec | undefined> {
 }
 
 /** Унифицированный запуск CLI. Возвращает stdout. */
-export async function runCli(cliArgs: string[], opts: { timeoutMs?: number } = {}): Promise<string> {
+export async function runCli(cliArgs: string[], opts: { timeoutMs?: number; stdinData?: string } = {}): Promise<string> {
   const spec = await resolveCliRunSpec();
   if (!spec) throw new Error("CLI is not available. Configure `lg.python.interpreter` or `lg.cli.path`, or use managed venv.");
   const args = [...spec.args, ...cliArgs];
   const cwd = effectiveWorkspaceRoot();
-  logDebug(`[CLI] ${spec.cmd} ${args.join(" ")}`);
+  const cmdDisplay = opts.stdinData !== undefined 
+    ? `${spec.cmd} ${args.join(" ")} (with stdin)`
+    : `${spec.cmd} ${args.join(" ")}`;
+  logDebug(`[CLI] ${cmdDisplay}`);
   return withDuration(`[CLI] ${cliArgs.join(" ")}`, async () => {
     try {
-      const out = await spawnToString(spec.cmd, args, { cwd, timeoutMs: opts.timeoutMs ?? 120_000 });
+      const out = await spawnToString(spec.cmd, args, { 
+        cwd, 
+        timeoutMs: opts.timeoutMs ?? 120_000,
+        stdinData: opts.stdinData
+      });
       logDebug(`[CLI] stdout bytes: ${out?.length ?? 0}`);
       return out;
     } catch (e: any) {
@@ -83,16 +90,23 @@ export async function runCli(cliArgs: string[], opts: { timeoutMs?: number } = {
 /** Запуск CLI с возвратом stdout+stderr (нужно для diag --bundle). */
 export async function runCliResult(
   cliArgs: string[],
-  opts: { timeoutMs?: number } = {}
+  opts: { timeoutMs?: number; stdinData?: string } = {}
 ): Promise<{ stdout: string; stderr: string }> {
   const spec = await resolveCliRunSpec();
   if (!spec) throw new Error("CLI is not available. Configure `lg.python.interpreter` or `lg.cli.path`, or use managed venv.");
   const args = [...spec.args, ...cliArgs];
   const cwd = effectiveWorkspaceRoot();
-  logDebug(`[CLI] ${spec.cmd} ${args.join(" ")} (result)`);
+  const cmdDisplay = opts.stdinData !== undefined 
+    ? `${spec.cmd} ${args.join(" ")} (result, with stdin)`
+    : `${spec.cmd} ${args.join(" ")} (result)`;
+  logDebug(`[CLI] ${cmdDisplay}`);
   return withDuration(`[CLI] ${cliArgs.join(" ")} (result)`, async () => {
     try {
-      const res = await spawnToResult(spec.cmd, args, { cwd, timeoutMs: opts.timeoutMs ?? 120_000 });
+      const res = await spawnToResult(spec.cmd, args, { 
+        cwd, 
+        timeoutMs: opts.timeoutMs ?? 120_000,
+        stdinData: opts.stdinData
+      });
       // полезно видеть stderr даже при коде 0 (некоторые утилиты пишут варнинги)
       if (res.stderr?.trim()) logDebug("[CLI] stderr (non-empty)", res.stderr.trim().slice(0, 4000));
       return res;

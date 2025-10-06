@@ -4,7 +4,12 @@
  */
 import * as cp from "child_process";
 
-export function spawnToString(cmd: string, args: string[], options: cp.SpawnOptions & { timeoutMs?: number } = {}): Promise<string> {
+export interface SpawnOptions extends cp.SpawnOptions {
+  timeoutMs?: number;
+  stdinData?: string; // данные для передачи через stdin
+}
+
+export function spawnToString(cmd: string, args: string[], options: SpawnOptions = {}): Promise<string> {
   return new Promise((resolve, reject) => {
     const env = {
       ...process.env,
@@ -18,6 +23,17 @@ export function spawnToString(cmd: string, args: string[], options: cp.SpawnOpti
 
     child.stdout?.on("data", (d) => (out += d.toString()));
     child.stderr?.on("data", (d) => (err += d.toString()));
+
+    // Передаем данные через stdin, если указаны
+    if (options.stdinData !== undefined && child.stdin) {
+      try {
+        child.stdin.write(options.stdinData, "utf8");
+        child.stdin.end();
+      } catch (e) {
+        reject(new Error(`Failed to write to stdin: ${e}`));
+        return;
+      }
+    }
 
     const killTimer = options.timeoutMs
       ? setTimeout(() => {
@@ -39,7 +55,7 @@ export function spawnToString(cmd: string, args: string[], options: cp.SpawnOpti
 export function spawnToResult(
   cmd: string,
   args: string[],
-  options: cp.SpawnOptions & { timeoutMs?: number } = {}
+  options: SpawnOptions = {}
 ): Promise<{ stdout: string; stderr: string }> {
   return new Promise((resolve, reject) => {
     const env = {
@@ -52,6 +68,18 @@ export function spawnToResult(
     let err = "";
     child.stdout?.on("data", (d) => (out += d.toString()));
     child.stderr?.on("data", (d) => (err += d.toString()));
+    
+    // Передаем данные через stdin, если указаны
+    if (options.stdinData !== undefined && child.stdin) {
+      try {
+        child.stdin.write(options.stdinData, "utf8");
+        child.stdin.end();
+      } catch (e) {
+        reject(new Error(`Failed to write to stdin: ${e}`));
+        return;
+      }
+    }
+    
     const killTimer = options.timeoutMs
       ? setTimeout(() => {
           child.kill("SIGKILL");
