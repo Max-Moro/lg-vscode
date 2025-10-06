@@ -17,7 +17,6 @@ src:
       media:
         mode: block
         block:
-          - "/stats**"
           - "/doctor**"
       src:
         mode: block
@@ -25,6 +24,5 @@ src:
           - "/commands/copilotDiagnostics.ts"
           - "/commands/cursorDiagnostics.ts"
           - "/services/ai/"
-          - "**stats**"
           - "**doctor**"
           - "**diag**"

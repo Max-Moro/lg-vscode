@@ -3,15 +3,36 @@
   const { esc, fmtInt, fmtPct, hrSize } = LG;
   const vscode = UI.acquire();
   const app = document.getElementById("app");
+  
+  let currentTaskText = ""; // локальное состояние task text
 
   // Handshake: ask TS side for data
   UI.post(vscode, "ready");
   window.addEventListener("message", (ev) => {
     const msg = ev.data;
     if (msg && msg.type === "runResult") {
+      // получение task text из сообщения
+      if (msg.taskText !== undefined) {
+        currentTaskText = msg.taskText;
+        const textarea = document.getElementById("statsTaskText");
+        if (textarea && textarea instanceof HTMLTextAreaElement) {
+          textarea.value = currentTaskText;
+        }
+      }
       render(msg.payload);
     }
   });
+
+  // обработчик изменений в textarea
+  const textarea = document.getElementById("statsTaskText");
+  if (textarea) {
+    UI.on(textarea, "input", UI.debounce(() => {
+      const newText = textarea instanceof HTMLTextAreaElement ? textarea.value : "";
+      currentTaskText = newText;
+      // отправка обновления обратно в extension host
+      UI.post(vscode, "updateTaskText", { taskText: newText });
+    }, 500));
+  }
 
   function pillClass(p) { return p>100?"pill crit":(p>=80?"pill warn":"pill good"); }
 

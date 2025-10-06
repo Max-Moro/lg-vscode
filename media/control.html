@@ -15,6 +15,19 @@
   <body data-vscode-theme-kind="">
     <div class="block">
       <h3><span class="codicon codicon-run"></span>AI Contexts</h3>
+      
+      <!-- Task Context Field -->
+      <div class="row task-context-row">
+        <div class="task-context-wrapper">
+          <textarea 
+            id="taskText" 
+            class="task-context-field"
+            data-state-key="taskText"
+            placeholder="Describe current task"
+            rows="2"></textarea>
+        </div>
+      </div>
+      
       <div class="row">
         <span class="cluster">
           <select id="template" class="grow" data-state-key="template" title="Контекст (.ctx.md) из lg-cfg/"></select>

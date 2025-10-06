@@ -6,6 +6,7 @@ export interface StatsParams {
   model?: string;
   modes?: Record<string, string>;
   tags?: string[];
+  taskText?: string;
 }
 
 export async function runStatsJson(params: StatsParams): Promise<RunResult> {
@@ -13,7 +14,8 @@ export async function runStatsJson(params: StatsParams): Promise<RunResult> {
   const options: CliOptions = {
     model: params.model ?? "o3",
     modes: params.modes,
-    tags: params.tags
+    tags: params.tags,
+    taskText: params.taskText
   };
   return cliReport(target, options);
 }

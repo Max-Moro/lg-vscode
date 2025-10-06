@@ -10,6 +10,15 @@
     <link rel="stylesheet" href="{{baseCssUri}}" />
   </head>
   <body>
+    <!-- Task Context Field for Stats -->
+    <div class="stats-task-context-wrapper" style="margin-bottom: 16px;">
+      <textarea 
+        id="statsTaskText" 
+        class="stats-task-context-field"
+        placeholder="Describe current task"
+        rows="2"></textarea>
+    </div>
+
     <div id="app"></div>
     <script nonce="{{nonce}}" src="{{commonJsUri}}"></script>
     <script nonce="{{nonce}}" src="{{commonUiJsUri}}"></script>

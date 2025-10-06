@@ -20,6 +20,7 @@ type PanelState = {
   // Адаптивные возможности
   modes: Record<string, string>; // modeset_id -> mode_id
   tags: string[]; // активные теги
+  taskText: string; // текст текущей задачи
 };
 
 const MKEY = "lg.control.state";
@@ -28,7 +29,8 @@ const DEFAULT_STATE: PanelState = {
   template: "",
   model: "o3",
   modes: {},
-  tags: []
+  tags: [],
+  taskText: ""
 };
 
 export class ControlPanelView implements vscode.WebviewViewProvider {
@@ -201,7 +203,8 @@ export class ControlPanelView implements vscode.WebviewViewProvider {
     await showStatsWebview(
       data,
       () => runContextStatsJson(params),
-      () => runContext(s.template, { model: s.model, ...this.getAdaptiveParams(s) })
+      () => runContext(s.template, { model: s.model, ...this.getAdaptiveParams(s) }),
+      s.taskText
     );
   }
 
@@ -235,7 +238,8 @@ export class ControlPanelView implements vscode.WebviewViewProvider {
     await showStatsWebview(
       data,
       () => runStatsJson(params),
-      () => runListing(params)
+      () => runListing(params),
+      s.taskText
     );
   }
 
@@ -280,10 +284,15 @@ export class ControlPanelView implements vscode.WebviewViewProvider {
     this.post({ type: "state", state: next });
   }
 
-  private getAdaptiveParams(state: PanelState): { modes?: Record<string, string>; tags?: string[] } {
+  private getAdaptiveParams(state: PanelState): { 
+    modes?: Record<string, string>; 
+    tags?: string[];
+    taskText?: string;
+  } {
     return {
       modes: Object.keys(state.modes || {}).length > 0 ? state.modes : undefined,
-      tags: Array.isArray(state.tags) && state.tags.length > 0 ? state.tags : undefined
+      tags: Array.isArray(state.tags) && state.tags.length > 0 ? state.tags : undefined,
+      taskText: state.taskText && state.taskText.trim() ? state.taskText.trim() : undefined
     };
   }
 

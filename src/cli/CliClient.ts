@@ -6,6 +6,7 @@ export interface CliOptions {
   model?: string;
   modes?: Record<string, string>; // modeset -> mode
   tags?: string[]; // active tags
+  taskText?: string; // text of the current task
 }
 
 export async function cliRender(target: string, options: CliOptions = {}): Promise<string> {
@@ -25,6 +26,10 @@ export async function cliRender(target: string, options: CliOptions = {}): Promi
   
   if (options.tags && options.tags.length > 0) {
     args.push("--tags", options.tags.join(","));
+  }
+  
+  if (options.taskText && options.taskText.trim()) {
+    args.push("--task", options.taskText.trim());
   }
   
   return runCli(args, { timeoutMs: 120_000 });
@@ -47,6 +52,10 @@ export async function cliReport(target: string, options: CliOptions = {}): Promi
   
   if (options.tags && options.tags.length > 0) {
     args.push("--tags", options.tags.join(","));
+  }
+  
+  if (options.taskText && options.taskText.trim()) {
+    args.push("--task", options.taskText.trim());
   }
   
   const out = await runCli(args, { timeoutMs: 120_000 });

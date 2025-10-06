@@ -10,7 +10,8 @@ import { buildHtml, getExtensionUri, mediaUri } from "../webview/webviewKit";
 export async function showStatsWebview(
   data: RunResult,
   refetch?: () => Promise<RunResult>,
-  generate?: () => Promise<string> // returns rendered markdown text
+  generate?: () => Promise<string>, // returns rendered markdown text
+  taskText?: string // text of the current task
 ) {
   const aiService = new AiIntegrationService();
   const scope = data.scope === "context" ? "Context" : "Section";
@@ -41,11 +42,16 @@ export async function showStatsWebview(
 
   // Текущее содержимое (обновляем после refresh)
   let current: RunResult = data;
+  let currentTaskText = taskText || ""; // локальное состояние task text
 
   // Рукопожатие: ждём "ready" из браузера и шлём данные
   panel.webview.onDidReceiveMessage((msg) => {
     if (msg?.type === "ready") {
-      panel.webview.postMessage({ type: "runResult", payload: current });
+      panel.webview.postMessage({ 
+        type: "runResult", 
+        payload: current,
+        taskText: currentTaskText
+      });
     }
   });
 
@@ -62,10 +68,14 @@ export async function showStatsWebview(
           () => refetch()
         );
         current = next;
-        panel.webview.postMessage({ type: "runResult", payload: current });
+        panel.webview.postMessage({ type: "runResult", payload: current, taskText: currentTaskText });
       } catch (e: any) {
         vscode.window.showErrorMessage(`LG: ${e?.message || e}`);
       }
+    } else if (msg?.type === "updateTaskText") {
+      currentTaskText = msg.taskText || "";
+      // Синхронизация с Control Panel через workspace state не требуется, 
+      // так как это локальное состояние для stats webview
     } else if (msg?.type === "generate") {
       if (!generate) {
         vscode.window.showWarningMessage("Generate is unavailable here.");

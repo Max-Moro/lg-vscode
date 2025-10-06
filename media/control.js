@@ -37,6 +37,17 @@
     UI.post(vscode, "setState", { state: patch });
   });
 
+  // ---- state-bound textarea (live updates) ----
+  UI.delegate(document, "textarea[data-state-key]", "input", UI.debounce((el) => {
+    const key = el.getAttribute("data-state-key");
+    if (!key) return;
+    
+    const value = el.value;
+    const patch = { [key]: value };
+    store.merge(patch);
+    UI.post(vscode, "setState", { state: patch });
+  }, 500)); // дебаунс 500ms для снижения частоты отправки
+
   // ---- handshake ----
   UI.post(vscode, "init");
 
@@ -74,6 +85,7 @@
     if (s.section !== undefined) next["section"] = s.section;
     if (s.template !== undefined) next["template"] = s.template;
     if (s.model !== undefined) next["model"] = s.model;
+    if (s.taskText !== undefined) next["taskText"] = s.taskText;
     
     // Apply modes state
     if (s.modes) {
