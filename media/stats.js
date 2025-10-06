@@ -83,8 +83,8 @@
       </div>
       
       <div class="actions">
-        <button class="btn-primary" id="btn-generate" title="Render the final prompt now">${esc(genLabel)}</button>
-        <button id="btn-send-ai" title="Generate and send directly to Cursor AI Pane">Send to AI</button>
+        <button class="btn-primary" id="btn-send-ai" title="Generate and send directly to Cursor AI Pane">Send to AI</button>
+        <button id="btn-generate" title="Render the final prompt now">${esc(genLabel)}</button>
         <button id="btn-refresh" title="Re-run stats">Refresh</button>
       </div>
 
