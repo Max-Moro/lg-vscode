@@ -9,8 +9,8 @@ import { buildHtml, getExtensionUri, mediaUri } from "../webview/webviewKit";
 
 export async function showStatsWebview(
   data: RunResult,
-  refetch?: () => Promise<RunResult>,
-  generate?: () => Promise<string>, // returns rendered markdown text
+  refetch?: (taskText?: string) => Promise<RunResult>,
+  generate?: (taskText?: string) => Promise<string>, // returns rendered markdown text
   taskText?: string // text of the current task
 ) {
   const aiService = new AiIntegrationService();
@@ -65,7 +65,7 @@ export async function showStatsWebview(
       try {
         const next = await vscode.window.withProgress(
           { location: vscode.ProgressLocation.Notification, title: "LG: Refreshing stats…", cancellable: false },
-          () => refetch()
+          () => refetch(currentTaskText)
         );
         current = next;
         panel.webview.postMessage({ type: "runResult", payload: current, taskText: currentTaskText });
@@ -84,7 +84,7 @@ export async function showStatsWebview(
       try {
         const text = await vscode.window.withProgress(
           { location: vscode.ProgressLocation.Notification, title: "LG: Rendering…", cancellable: false },
-          () => generate()
+          () => generate(currentTaskText)
         );
         // Закрываем вебвью статистики и открываем результат
         const vp = getVirtualProvider();
@@ -108,7 +108,7 @@ export async function showStatsWebview(
       try {
         const text = await vscode.window.withProgress(
           { location: vscode.ProgressLocation.Notification, title: "LG: Generating for AI…", cancellable: false },
-          () => generate()
+          () => generate(currentTaskText)
         );
         // Определяем тип контента и отправляем в AI
         if (current.scope === "context") {

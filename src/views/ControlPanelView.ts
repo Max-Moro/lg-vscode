@@ -202,8 +202,8 @@ export class ControlPanelView implements vscode.WebviewViewProvider {
     const { showStatsWebview } = await import("./StatsWebview");
     await showStatsWebview(
       data,
-      () => runContextStatsJson(params),
-      () => runContext(s.template, { model: s.model, ...this.getAdaptiveParams(s) }),
+      (taskText) => runContextStatsJson({ ...params, taskText }),
+      (taskText) => runContext(s.template, { model: s.model, ...this.getAdaptiveParams(s), taskText }),
       s.taskText
     );
   }
@@ -237,8 +237,8 @@ export class ControlPanelView implements vscode.WebviewViewProvider {
     const { showStatsWebview } = await import("./StatsWebview");
     await showStatsWebview(
       data,
-      () => runStatsJson(params),
-      () => runListing(params),
+      (taskText) => runStatsJson({ ...params, taskText }),
+      (taskText) => runListing({ ...params, taskText }),
       s.taskText
     );
   }
