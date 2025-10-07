@@ -347,7 +347,7 @@ export class ControlPanelView implements vscode.WebviewViewProvider {
 
   private async fetchBranches(): Promise<string[]> {
     try {
-      if (!this.gitService.isAvailable()) {
+      if (!(await this.gitService.isAvailable())) {
         return [];
       }
       

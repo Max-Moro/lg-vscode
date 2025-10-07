@@ -34,15 +34,25 @@ interface Ref {
 export class GitService {
     private gitAPI: GitAPI | undefined;
     private repository: Repository | undefined;
+    private initPromise: Promise<void> | undefined;
 
-    constructor() {
-        this.initialize();
+    /**
+     * Ленивая инициализация Git API и поиск репозитория проекта.
+     * Вызывается один раз при первом обращении к сервису.
+     */
+    private async ensureInitialized(): Promise<void> {
+        if (this.initPromise) {
+            return this.initPromise;
+        }
+
+        this.initPromise = this.initialize();
+        return this.initPromise;
     }
 
     /**
      * Инициализация Git API и поиск репозитория проекта
      */
-    private async initialize() {
+    private async initialize(): Promise<void> {
         try {
             const extension = vscode.extensions.getExtension<GitExtension>('vscode.git');
             
@@ -73,13 +83,11 @@ export class GitService {
 
         const projectRoot = effectiveWorkspaceRoot();
         if (!projectRoot) {
-            logDebug('[GitService] No workspace root found');
             return;
         }
 
         const lgCfgPath = path.join(projectRoot, 'lg-cfg');
         if (!fs.existsSync(lgCfgPath)) {
-            logDebug('[GitService] lg-cfg directory not found');
             return;
         }
 
@@ -88,7 +96,7 @@ export class GitService {
         
         if (foundRepo) {
             this.repository = foundRepo;
-            logDebug('[GitService] Repository found directly');
+            logDebug(`[GitService] Repository found: ${foundRepo.rootUri.fsPath}`);
         } else {
             this.repository = this.gitAPI.repositories.find(repo => {
                 const repoPath = repo.rootUri.fsPath;
@@ -96,7 +104,7 @@ export class GitService {
             });
             
             if (this.repository) {
-                logDebug('[GitService] Repository found in workspace repositories');
+                logDebug(`[GitService] Repository found: ${this.repository.rootUri.fsPath}`);
             } else {
                 logDebug('[GitService] No repository found for project root');
             }
@@ -106,7 +114,8 @@ export class GitService {
     /**
      * Проверка доступности Git API и репозитория проекта
      */
-    public isAvailable(): boolean {
+    public async isAvailable(): Promise<boolean> {
+        await this.ensureInitialized();
         return this.gitAPI !== undefined && this.repository !== undefined;
     }
 
@@ -114,8 +123,9 @@ export class GitService {
      * Получить все ветки проекта (локальные и удалённые)
      */
     public async getAllBranches(): Promise<{ local: Ref[]; remote: Ref[] }> {
+        await this.ensureInitialized();
+        
         if (!this.repository) {
-            logDebug('[GitService] getAllBranches: repository not available');
             return { local: [], remote: [] };
         }
 
