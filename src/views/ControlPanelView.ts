@@ -11,6 +11,7 @@ import { resetCache } from "../services/DoctorService";
 import { runDoctor } from "../diagnostics/Doctor";
 import { openConfigOrInit, runInitWizard } from "../starter/StarterConfig";
 import { AiIntegrationService } from "../services/ai";
+import { GitService } from "../services/GitService";
 import { EXT_ID } from "../constants";
 
 type PanelState = {
@@ -21,6 +22,7 @@ type PanelState = {
   modes: Record<string, string>; // modeset_id -> mode_id
   tags: string[]; // активные теги
   taskText: string; // текст текущей задачи
+  targetBranch: string; // целевая ветка для review режима
 };
 
 const MKEY = "lg.control.state";
@@ -30,7 +32,8 @@ const DEFAULT_STATE: PanelState = {
   model: "o3",
   modes: {},
   tags: [],
-  taskText: ""
+  taskText: "",
+  targetBranch: ""
 };
 
 export class ControlPanelView implements vscode.WebviewViewProvider {
@@ -39,6 +42,8 @@ export class ControlPanelView implements vscode.WebviewViewProvider {
   private bootstrapped = false;
   /** Универсальный AI-сервис */
   private aiService = new AiIntegrationService();
+  /** Git сервис для получения информации о ветках */
+  private gitService = new GitService();
 
   constructor(
     private readonly context: vscode.ExtensionContext,
@@ -288,11 +293,13 @@ export class ControlPanelView implements vscode.WebviewViewProvider {
     modes?: Record<string, string>; 
     tags?: string[];
     taskText?: string;
+    targetBranch?: string;
   } {
     return {
       modes: Object.keys(state.modes || {}).length > 0 ? state.modes : undefined,
       tags: Array.isArray(state.tags) && state.tags.length > 0 ? state.tags : undefined,
-      taskText: state.taskText && state.taskText.trim() ? state.taskText.trim() : undefined
+      taskText: state.taskText && state.taskText.trim() ? state.taskText.trim() : undefined,
+      targetBranch: state.targetBranch && state.targetBranch.trim() ? state.targetBranch.trim() : undefined
     };
   }
 
@@ -308,6 +315,9 @@ export class ControlPanelView implements vscode.WebviewViewProvider {
         const models = await listModelsJson().catch(() => [] as any[]);
         const modeSets = await listModeSetsJson().catch(() => ({ "mode-sets": [] } as ModeSetsList));
         const tagSets = await listTagSetsJson().catch(() => ({ "tag-sets": [] } as TagSetsList));
+        
+        // Fetch Git branches if available
+        const branches = await this.fetchBranches();
 
         const state = this.getState();
         let stateChanged = false;
@@ -327,12 +337,39 @@ export class ControlPanelView implements vscode.WebviewViewProvider {
         if (stateChanged) {
           await this.context.workspaceState.update(MKEY, state);
         }
-        this.post({ type: "data", sections, contexts, models, modeSets, tagSets, state });
+        this.post({ type: "data", sections, contexts, models, modeSets, tagSets, branches, state });
       })
       .catch(() => {
         // Гасим ошибку, чтобы не «сломать» цепочку последующих вызовов
       });
     return this.listsChain;
+  }
+
+  private async fetchBranches(): Promise<string[]> {
+    try {
+      if (!this.gitService.isAvailable()) {
+        return [];
+      }
+      
+      const branchesInfo = await this.gitService.getAllBranches();
+      if (!branchesInfo) {
+        return [];
+      }
+      
+      // Combine local and remote branches, removing duplicates
+      const allBranches = [
+        ...branchesInfo.local.map(b => b.name).filter((n): n is string => !!n),
+        ...branchesInfo.remote.map(b => b.name).filter((n): n is string => !!n)
+      ];
+      
+      // Remove duplicates and sort
+      const uniqueBranches = Array.from(new Set(allBranches)).sort();
+      
+      return uniqueBranches;
+    } catch (error) {
+      // Fail silently if git is not available
+      return [];
+    }
   }
 
   private post(msg: any) {

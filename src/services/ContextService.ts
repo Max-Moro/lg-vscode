@@ -7,6 +7,7 @@ export interface ContextParams {
   modes?: Record<string, string>;
   tags?: string[];
   taskText?: string;
+  targetBranch?: string;
 }
 
 export async function runContext(templateName: string, options: CliOptions = {}): Promise<string> {
@@ -20,7 +21,8 @@ export async function runContextStatsJson(params: ContextParams): Promise<RunRes
     model: params.model ?? "o3",
     modes: params.modes,
     tags: params.tags,
-    taskText: params.taskText
+    taskText: params.taskText,
+    targetBranch: params.targetBranch
   };
   return cliReport(target, options);
 }

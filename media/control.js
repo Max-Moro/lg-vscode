@@ -54,6 +54,7 @@
   // ---- adaptive settings state ----
   let currentModeSets = [];
   let currentTagSets = [];
+  let currentBranches = [];
 
   // ---- runtime updates from extension ----
   window.addEventListener("message", (e) => {
@@ -71,6 +72,12 @@
       // populate adaptive settings
       populateModeSets(msg.modeSets);
       populateTagSets(msg.tagSets);
+      
+      // populate branches
+      if (msg.branches) {
+        currentBranches = msg.branches;
+        populateBranches(msg.branches);
+      }
 
       applyState(msg.state);
     } else if (msg?.type === "state") {
@@ -86,6 +93,7 @@
     if (s.template !== undefined) next["template"] = s.template;
     if (s.model !== undefined) next["model"] = s.model;
     if (s.taskText !== undefined) next["taskText"] = s.taskText;
+    if (s.targetBranch !== undefined) next["targetBranch"] = s.targetBranch;
     
     // Apply modes state
     if (s.modes) {
@@ -101,6 +109,9 @@
       UI.setState(next);
       store.merge(next); // keep cache in sync with authoritative state
     }
+    
+    // Update target branch visibility based on current modes
+    updateTargetBranchVisibility();
   }
 
   // ---- adaptive settings functions ----
@@ -250,6 +261,9 @@
     const modeId = select.value;
     
     onModeChangeInternal(modeSetId, modeId);
+    
+    // Update target branch visibility when mode changes
+    updateTargetBranchVisibility();
   }
 
   function onTagChange() {
@@ -267,6 +281,33 @@
     const patch = { tags: selectedTags };
     store.merge(patch);
     UI.post(vscode, "setState", { state: patch });
+  }
+
+  function populateBranches(branches) {
+    const select = UI.qs("#targetBranch");
+    if (!select) return;
+    
+    UI.fillSelect(select, branches, {
+      getValue: it => (typeof it === "string" ? it : (it?.name ?? "")),
+      getLabel: it => (typeof it === "string" ? it : (it?.name ?? "")),
+      keepValue: true
+    });
+  }
+
+  function updateTargetBranchVisibility() {
+    const container = UI.qs("#target-branch-container");
+    if (!container) return;
+    
+    // Check if any mode set has "review" mode selected
+    let hasReviewMode = false;
+    currentModeSets.forEach(modeSet => {
+      const select = UI.qs(`#mode-${modeSet.id}`);
+      if (select && select.value === "review") {
+        hasReviewMode = true;
+      }
+    });
+    
+    container.style.display = hasReviewMode ? "flex" : "none";
   }
 
   // ---- tags panel management ----

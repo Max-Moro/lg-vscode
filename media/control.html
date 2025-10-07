@@ -51,6 +51,17 @@
       <div id="mode-sets-container" class="mode-sets-container">
         <!-- Mode sets will be populated here -->
       </div>
+      
+      <!-- Target Branch selector (shown only when review mode is active) -->
+      <div id="target-branch-container" class="target-branch-container" style="display: none;">
+        <div class="mode-set">
+          <label class="mode-set-label">Target Branch</label>
+          <select id="targetBranch" data-state-key="targetBranch" class="mode-select">
+            <option value="">Select target branch...</option>
+          </select>
+        </div>
+      </div>
+      
       <div class="row">
         <span class="cluster">
           <button id="tags-toggle" data-action="toggleTags" title="Configure tags">

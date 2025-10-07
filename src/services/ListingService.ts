@@ -6,6 +6,7 @@ export interface ListingParams {
   modes?: Record<string, string>;
   tags?: string[];
   taskText?: string;
+  targetBranch?: string;
 }
 
 export async function runListing(params: ListingParams): Promise<string> {
@@ -14,7 +15,8 @@ export async function runListing(params: ListingParams): Promise<string> {
     model: params.model,
     modes: params.modes,
     tags: params.tags,
-    taskText: params.taskText
+    taskText: params.taskText,
+    targetBranch: params.targetBranch
   };
   return cliRender(target, options);
 }
@@ -25,7 +27,8 @@ export async function runListIncludedJson(params: ListingParams): Promise<{ path
     model: params.model ?? "o3",
     modes: params.modes,
     tags: params.tags,
-    taskText: params.taskText
+    taskText: params.taskText,
+    targetBranch: params.targetBranch
   };
   const data = await cliReport(target, options);
   const files = Array.isArray(data.files) ? data.files : [];

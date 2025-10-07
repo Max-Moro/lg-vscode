@@ -7,6 +7,7 @@ export interface CliOptions {
   modes?: Record<string, string>; // modeset -> mode
   tags?: string[]; // active tags
   taskText?: string; // text of the current task
+  targetBranch?: string; // target branch for review mode
 }
 
 export async function cliRender(target: string, options: CliOptions = {}): Promise<string> {
@@ -26,6 +27,10 @@ export async function cliRender(target: string, options: CliOptions = {}): Promi
   
   if (options.tags && options.tags.length > 0) {
     args.push("--tags", options.tags.join(","));
+  }
+  
+  if (options.targetBranch && options.targetBranch.trim()) {
+    args.push("--target-branch", options.targetBranch.trim());
   }
   
   // Task text всегда через stdin (если не пустой)
@@ -55,6 +60,10 @@ export async function cliReport(target: string, options: CliOptions = {}): Promi
   
   if (options.tags && options.tags.length > 0) {
     args.push("--tags", options.tags.join(","));
+  }
+  
+  if (options.targetBranch && options.targetBranch.trim()) {
+    args.push("--target-branch", options.targetBranch.trim());
   }
   
   // Task text всегда через stdin (если не пустой)

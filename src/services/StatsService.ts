@@ -7,6 +7,7 @@ export interface StatsParams {
   modes?: Record<string, string>;
   tags?: string[];
   taskText?: string;
+  targetBranch?: string;
 }
 
 export async function runStatsJson(params: StatsParams): Promise<RunResult> {
@@ -15,7 +16,8 @@ export async function runStatsJson(params: StatsParams): Promise<RunResult> {
     model: params.model ?? "o3",
     modes: params.modes,
     tags: params.tags,
-    taskText: params.taskText
+    taskText: params.taskText,
+    targetBranch: params.targetBranch
   };
   return cliReport(target, options);
 }
