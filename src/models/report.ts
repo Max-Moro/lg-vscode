@@ -7,7 +7,7 @@ export interface RunResult {
   protocol: number;
   scope: "context" | "section";
   target: string;
-  model: string;
+  tokenizerLib: string;
   encoder: string;
   ctxLimit: number;
   total: {
