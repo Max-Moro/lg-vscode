@@ -72,7 +72,7 @@
     const genLabel = scope === "context" ? "Generate Context" : "Generate Listing";
     app.innerHTML = `
       <h2>${esc(scopeLabel)}: ${esc(name)} — Statistics</h2>
-      <p class="muted">Scope: <b>${esc(scope)}</b> • Name: <b>${esc(name)}</b> • Model: <b>${esc(data.model)}</b> • Encoder: <b>${esc(data.encoder)}</b> • Ctx limit: <b>${fmtInt(data.ctxLimit)}</b> tokens</p>
+      <p class="muted">Scope: <b>${esc(scope)}</b> • Name: <b>${esc(name)}</b> • Tokenizer: <b>${esc(data.tokenizerLib)}</b> • Encoder: <b>${esc(data.encoder)}</b> • Ctx limit: <b>${fmtInt(data.ctxLimit)}</b> tokens</p>
       
       <div class="task-context-wrapper">
         <textarea 

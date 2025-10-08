@@ -2,7 +2,9 @@ import { cliRender, cliReport, type CliOptions } from "../cli/CliClient";
 
 export interface ListingParams {
   section?: string;
-  model?: string;
+  tokenizerLib: string;
+  encoder: string;
+  ctxLimit: number;
   modes?: Record<string, string>;
   tags?: string[];
   taskText?: string;
@@ -12,7 +14,9 @@ export interface ListingParams {
 export async function runListing(params: ListingParams): Promise<string> {
   const target = params.section ? `sec:${params.section}` : "sec:all";
   const options: CliOptions = {
-    model: params.model,
+    tokenizerLib: params.tokenizerLib,
+    encoder: params.encoder,
+    ctxLimit: params.ctxLimit,
     modes: params.modes,
     tags: params.tags,
     taskText: params.taskText,
@@ -24,7 +28,9 @@ export async function runListing(params: ListingParams): Promise<string> {
 export async function runListIncludedJson(params: ListingParams): Promise<{ path: string; sizeBytes: number }[]> {
   const target = params.section ? `sec:${params.section}` : "sec:all";
   const options: CliOptions = {
-    model: params.model ?? "o3",
+    tokenizerLib: params.tokenizerLib,
+    encoder: params.encoder,
+    ctxLimit: params.ctxLimit,
     modes: params.modes,
     tags: params.tags,
     taskText: params.taskText,

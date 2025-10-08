@@ -116,11 +116,33 @@
     </div>
 
     <div class="block">
-      <h3><span class="codicon codicon-organization"></span> Project Scope</h3>
+      <h3><span class="codicon codicon-symbol-unit"></span> Tokenization Settings</h3>
+      
+      <!-- Библиотека токенизации -->
       <div class="row">
-        <span class="cluster" title="Параметры для расчета статистики">
-          <label class="muted">Model:</label>
-          <select id="model" data-state-key="model"></select>
+        <span class="cluster" title="Библиотека токенизации (tiktoken, tokenizers, sentencepiece)">
+          <label>Library:</label>
+          <select id="tokenizerLib" data-state-key="tokenizerLib"></select>
+        </span>
+      </div>
+      
+      <!-- Энкодер (зависит от библиотеки) -->
+      <div class="row">
+        <span class="cluster" title="Энкодер или модель токенизации">
+          <label>Encoder:</label>
+          <select id="encoder" data-state-key="encoder"></select>
+        </span>
+      </div>
+      
+      <!-- Размер контекстного окна -->
+      <div class="row">
+        <span class="cluster" title="Размер контекстного окна в токенах">
+          <label>Context Limit:</label>
+          <input type="number" id="ctxLimit" data-state-key="ctxLimit" 
+                 class="ctx-limit-input"
+                 min="1000" max="2000000" step="1000" 
+                 placeholder="128000" />
+          <span class="muted">tokens</span>
         </span>
       </div>
     </div>

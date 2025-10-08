@@ -91,11 +91,6 @@
           "default": "",
           "description": "Default context name from lg-cfg (without .ctx.md)."
         },
-        "lg.modelForStats": {
-          "type": "string",
-          "default": "o3",
-          "description": "Model name used to compute context share in stats."
-        },
         "lg.python.interpreter": {
           "type": "string",
           "default": "",

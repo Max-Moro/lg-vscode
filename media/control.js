@@ -48,6 +48,40 @@
     UI.post(vscode, "setState", { state: patch });
   }, 500)); // дебаунс 500ms для снижения частоты отправки
 
+  // ---- специальный обработчик для смены библиотеки токенизации ----
+  UI.delegate(document, "#tokenizerLib", "change", (el) => {
+    const lib = el.value;
+    
+    // Сохраняем в локальный стор
+    store.merge({ tokenizerLib: lib });
+    
+    // Уведомляем TS сторону о смене (чтобы перезагрузить энкодеры)
+    UI.post(vscode, "tokenizerLibChanged", { lib });
+  });
+
+  // ---- валидация ctxLimit на клиенте ----
+  UI.delegate(document, "#ctxLimit", "change", (el) => {
+    const input = el;
+    let value = parseInt(input.value, 10);
+    
+    // Проверяем границы
+    if (isNaN(value) || value < 1000) {
+      value = 1000;
+    } else if (value > 2000000) {
+      value = 2000000;
+    }
+    
+    // Обновляем значение если было скорректировано
+    if (input.value !== String(value)) {
+      input.value = String(value);
+    }
+    
+    // Сохраняем
+    const patch = { ctxLimit: value };
+    store.merge(patch);
+    UI.post(vscode, "setState", { state: patch });
+  });
+
   // ---- handshake ----
   UI.post(vscode, "init");
 
@@ -63,10 +97,20 @@
       // fill selects with remote lists
       UI.fillSelect(UI.qs("#section"), msg.sections, { value: msg.state.section || "" });
       UI.fillSelect(UI.qs("#template"), msg.contexts, { value: msg.state.template || "" });
-      UI.fillSelect(UI.qs("#model"), msg.models || [], {
-        getValue: it => (typeof it === "string" ? it : (it?.id ?? "")),
-        getLabel: it => (typeof it === "string" ? it : (it?.label ?? it?.id ?? "")),
-        value: msg.state.model || ""
+      
+      // fill tokenization selects
+      UI.fillSelect(UI.qs("#tokenizerLib"), msg.tokenizerLibs || [], { 
+        value: msg.state.tokenizerLib || "tiktoken" 
+      });
+      
+      UI.fillSelect(UI.qs("#encoder"), msg.encoders || [], {
+        getValue: it => (typeof it === "string" ? it : (it?.name ?? "")),
+        getLabel: it => {
+          if (typeof it === "string") return it;
+          // Помечаем скачанные модели
+          return it?.cached ? `${it.name} ✓` : it?.name;
+        },
+        value: msg.state.encoder || ""
       });
 
       // populate adaptive settings
@@ -80,6 +124,17 @@
       }
 
       applyState(msg.state);
+    } else if (msg?.type === "encoders") {
+      // обновление списка энкодеров после смены библиотеки
+      const state = store.get();
+      UI.fillSelect(UI.qs("#encoder"), msg.encoders || [], {
+        getValue: it => (typeof it === "string" ? it : (it?.name ?? "")),
+        getLabel: it => {
+          if (typeof it === "string") return it;
+          return it?.cached ? `${it.name} ✓` : it?.name;
+        },
+        value: state.encoder || ""
+      });
     } else if (msg?.type === "state") {
       applyState(msg.state);
     } else if (msg?.type === "theme") {
@@ -91,7 +146,12 @@
     const next = {};
     if (s.section !== undefined) next["section"] = s.section;
     if (s.template !== undefined) next["template"] = s.template;
-    if (s.model !== undefined) next["model"] = s.model;
+    
+    // Apply tokenization state
+    if (s.tokenizerLib !== undefined) next["tokenizerLib"] = s.tokenizerLib;
+    if (s.encoder !== undefined) next["encoder"] = s.encoder;
+    if (s.ctxLimit !== undefined) next["ctxLimit"] = s.ctxLimit;
+    
     if (s.taskText !== undefined) next["taskText"] = s.taskText;
     if (s.targetBranch !== undefined) next["targetBranch"] = s.targetBranch;
     

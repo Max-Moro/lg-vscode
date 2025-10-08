@@ -448,3 +448,36 @@ select:focus, button:focus {
     min-height: 48px;
   }
 }
+
+/* ========== TOKENIZATION SETTINGS STYLES ========== */
+
+/* Стиль для input[type="number"] (ctx-limit) */
+input.ctx-limit-input {
+  background: var(--vscode-input-background);
+  color: var(--vscode-input-foreground);
+  border: 1px solid var(--vscode-input-border, var(--vscode-editorWidget-border));
+  border-radius: 4px;
+  padding: 2px 6px;
+  font: inherit;
+  min-width: 100px;
+  max-width: 150px;
+  flex: 0 1 auto;
+}
+
+input.ctx-limit-input:focus {
+  outline: 1px solid var(--vscode-focusBorder);
+  outline-offset: 1px;
+}
+
+input.ctx-limit-input:disabled {
+  color: var(--vscode-disabledForeground);
+  opacity: 0.7;
+}
+
+/* В узком режиме делаем input на всю ширину */
+@container control-panel (max-width: 200px) {
+  input.ctx-limit-input {
+    width: 100%;
+    max-width: 100%;
+  }
+}

@@ -3,19 +3,21 @@ import type { RunResult } from "../models/report";
 import type { DiagReport } from "../models/diag_report";
 
 export interface CliOptions {
-  model?: string;
-  modes?: Record<string, string>; // modeset -> mode
-  tags?: string[]; // active tags
-  taskText?: string; // text of the current task
-  targetBranch?: string; // target branch for review mode
+  tokenizerLib: string;
+  encoder: string;
+  ctxLimit: number;
+  modes?: Record<string, string>;
+  tags?: string[];
+  taskText?: string;
+  targetBranch?: string;
 }
 
-export async function cliRender(target: string, options: CliOptions = {}): Promise<string> {
+export async function cliRender(target: string, options: CliOptions): Promise<string> {
   const args: string[] = ["render", target];
   
-  if (options.model) {
-    args.push("--model", options.model);
-  }
+  args.push("--lib", options.tokenizerLib);
+  args.push("--encoder", options.encoder);
+  args.push("--ctx-limit", String(options.ctxLimit));
   
   if (options.modes) {
     for (const [modeset, mode] of Object.entries(options.modes)) {
@@ -33,7 +35,6 @@ export async function cliRender(target: string, options: CliOptions = {}): Promi
     args.push("--target-branch", options.targetBranch.trim());
   }
   
-  // Task text всегда через stdin (если не пустой)
   let stdinData: string | undefined;
   if (options.taskText && options.taskText.trim()) {
     args.push("--task", "-");
@@ -43,12 +44,12 @@ export async function cliRender(target: string, options: CliOptions = {}): Promi
   return runCli(args, { timeoutMs: 120_000, stdinData });
 }
 
-export async function cliReport(target: string, options: CliOptions = {}): Promise<RunResult> {
+export async function cliReport(target: string, options: CliOptions): Promise<RunResult> {
   const args: string[] = ["report", target];
   
-  if (options.model) {
-    args.push("--model", options.model);
-  }
+  args.push("--lib", options.tokenizerLib);
+  args.push("--encoder", options.encoder);
+  args.push("--ctx-limit", String(options.ctxLimit));
   
   if (options.modes) {
     for (const [modeset, mode] of Object.entries(options.modes)) {
@@ -66,7 +67,6 @@ export async function cliReport(target: string, options: CliOptions = {}): Promi
     args.push("--target-branch", options.targetBranch.trim());
   }
   
-  // Task text всегда через stdin (если не пустой)
   let stdinData: string | undefined;
   if (options.taskText && options.taskText.trim()) {
     args.push("--task", "-");
@@ -78,16 +78,14 @@ export async function cliReport(target: string, options: CliOptions = {}): Promi
   return data as RunResult;
 }
 
-export async function cliList(what: "sections" | "contexts" | "models" | "mode-sets" | "tag-sets") {
+export async function cliList(what: "sections" | "contexts" | "mode-sets" | "tag-sets") {
   const out = await runCli(["list", what], { timeoutMs: 20_000 });
   const data = JSON.parse(out);
   
-  // For the new commands, return the full object structure
   if (what === "mode-sets" || what === "tag-sets") {
     return data;
   }
   
-  // For legacy commands, extract the array
   return data?.[what] ?? data ?? [];
 }
 

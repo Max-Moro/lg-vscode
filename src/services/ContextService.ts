@@ -3,14 +3,16 @@ import type { RunResult } from "../models/report";
 
 export interface ContextParams {
   template: string;
-  model?: string;
+  tokenizerLib: string;
+  encoder: string;
+  ctxLimit: number;
   modes?: Record<string, string>;
   tags?: string[];
   taskText?: string;
   targetBranch?: string;
 }
 
-export async function runContext(templateName: string, options: CliOptions = {}): Promise<string> {
+export async function runContext(templateName: string, options: CliOptions): Promise<string> {
   const target = `ctx:${templateName}`;
   return cliRender(target, options);
 }
@@ -18,7 +20,9 @@ export async function runContext(templateName: string, options: CliOptions = {})
 export async function runContextStatsJson(params: ContextParams): Promise<RunResult> {
   const target = `ctx:${params.template}`;
   const options: CliOptions = {
-    model: params.model ?? "o3",
+    tokenizerLib: params.tokenizerLib,
+    encoder: params.encoder,
+    ctxLimit: params.ctxLimit,
     modes: params.modes,
     tags: params.tags,
     taskText: params.taskText,

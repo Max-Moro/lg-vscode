@@ -4,7 +4,7 @@ import { IncludedTree } from "./IncludedTree";
 import { runListIncludedJson, runListing, type ListingParams } from "../services/ListingService";
 import { runContext, runContextStatsJson, type ContextParams } from "../services/ContextService";
 import { runStatsJson, type StatsParams } from "../services/StatsService";
-import { listContextsJson, listModelsJson, listSectionsJson, listModeSetsJson, listTagSetsJson } from "../services/CatalogService";
+import { listContextsJson, listTokenizerLibsJson, listEncodersJson, listSectionsJson, listModeSetsJson, listTagSetsJson } from "../services/CatalogService";
 import type { ModeSetsList } from "../models/mode_sets_list";
 import type { TagSetsList } from "../models/tag_sets_list";
 import { resetCache } from "../services/DoctorService";
@@ -13,23 +13,27 @@ import { openConfigOrInit, runInitWizard } from "../starter/StarterConfig";
 import { AiIntegrationService } from "../services/ai";
 import { GitService } from "../services/GitService";
 import { EXT_ID } from "../constants";
+import type { CliOptions } from "../cli/CliClient";
 
 type PanelState = {
   section: string;
   template: string;
-  model: string;
-  // Адаптивные возможности
-  modes: Record<string, string>; // modeset_id -> mode_id
-  tags: string[]; // активные теги
-  taskText: string; // текст текущей задачи
-  targetBranch: string; // целевая ветка для review режима
+  tokenizerLib: string;
+  encoder: string;
+  ctxLimit: number;
+  modes: Record<string, string>;
+  tags: string[];
+  taskText: string;
+  targetBranch: string;
 };
 
 const MKEY = "lg.control.state";
 const DEFAULT_STATE: PanelState = {
   section: "all-src",
   template: "",
-  model: "o3",
+  tokenizerLib: "tiktoken",
+  encoder: "cl100k_base",
+  ctxLimit: 128000,
   modes: {},
   tags: [],
   taskText: "",
@@ -51,6 +55,46 @@ export class ControlPanelView implements vscode.WebviewViewProvider {
     private readonly included: IncludedTree
   ) {}
 
+  private getTokenizationParams(state: PanelState): { 
+    tokenizerLib: string;
+    encoder: string;
+    ctxLimit: number;
+  } {
+    return {
+      tokenizerLib: state.tokenizerLib || "tiktoken",
+      encoder: state.encoder || "cl100k_base",
+      ctxLimit: state.ctxLimit || 128000
+    };
+  }
+
+  private getFullCliOptions(state: PanelState): CliOptions {
+    return {
+      ...this.getTokenizationParams(state),
+      modes: Object.keys(state.modes || {}).length > 0 ? state.modes : undefined,
+      tags: Array.isArray(state.tags) && state.tags.length > 0 ? state.tags : undefined,
+      taskText: state.taskText && state.taskText.trim() ? state.taskText.trim() : undefined,
+      targetBranch: state.targetBranch && state.targetBranch.trim() ? state.targetBranch.trim() : undefined
+    };
+  }
+
+  private async onTokenizerLibChange(lib: string) {
+    // При смене библиотеки перезагружаем список энкодеров
+    const encoders = await listEncodersJson(lib).catch(() => [] as any[]);
+    
+    const state = this.getState();
+    const encoderNames = encoders.map(e => e.name);
+    
+    // Если текущий энкодер не совместим с новой библиотекой - сбрасываем на первый
+    if (!encoderNames.includes(state.encoder) && encoderNames.length) {
+      this.setState({ tokenizerLib: lib, encoder: encoderNames[0] });
+    } else {
+      this.setState({ tokenizerLib: lib });
+    }
+    
+    // Отправляем обновленный список энкодеров в webview
+    this.post({ type: "encoders", encoders });
+  }
+
   resolveWebviewView(view: vscode.WebviewView): void | Thenable<void> {
     this.view = view;
     view.webview.options = { enableScripts: true };
@@ -64,6 +108,9 @@ export class ControlPanelView implements vscode.WebviewViewProvider {
             break;
           case "setState":
             this.setState(msg.state as Partial<PanelState>);
+            break;
+          case "tokenizerLibChanged":
+            await this.onTokenizerLibChange(msg.lib);
             break;
           case "generateListing":
             await this.onGenerateListing();
@@ -162,7 +209,7 @@ export class ControlPanelView implements vscode.WebviewViewProvider {
     const s = this.getState();
     const params: ListingParams = {
       section: s.section,
-      model: s.model,
+      ...this.getTokenizationParams(s),
       ...this.getAdaptiveParams(s)
     };
     const content = await vscode.window.withProgress(
@@ -178,10 +225,7 @@ export class ControlPanelView implements vscode.WebviewViewProvider {
       vscode.window.showWarningMessage("Select a template first.");
       return;
     }
-    const options = {
-      model: s.model,
-      ...this.getAdaptiveParams(s)
-    };
+    const options = this.getFullCliOptions(s);
     const content = await vscode.window.withProgress(
       { location: vscode.ProgressLocation.Notification, title: `LG: Generating context '${s.template}'…`, cancellable: false },
       () => runContext(s.template, options)
@@ -197,8 +241,11 @@ export class ControlPanelView implements vscode.WebviewViewProvider {
     }
     const params: ContextParams = {
       template: s.template,
-      model: s.model || "o3",
-      ...this.getAdaptiveParams(s)
+      ...this.getTokenizationParams(s),
+      modes: Object.keys(s.modes || {}).length > 0 ? s.modes : undefined,
+      tags: Array.isArray(s.tags) && s.tags.length > 0 ? s.tags : undefined,
+      taskText: s.taskText && s.taskText.trim() ? s.taskText.trim() : undefined,
+      targetBranch: s.targetBranch && s.targetBranch.trim() ? s.targetBranch.trim() : undefined
     };
     const data = await vscode.window.withProgress(
       { location: vscode.ProgressLocation.Notification, title: `LG: Computing stats for context '${s.template}'…`, cancellable: false },
@@ -208,7 +255,7 @@ export class ControlPanelView implements vscode.WebviewViewProvider {
     await showStatsWebview(
       data,
       (taskText) => runContextStatsJson({ ...params, taskText }),
-      (taskText) => runContext(s.template, { model: s.model, ...this.getAdaptiveParams(s), taskText }),
+      (taskText) => runContext(s.template, this.getFullCliOptions({ ...s, taskText: taskText || "" })),
       s.taskText
     );
   }
@@ -217,8 +264,11 @@ export class ControlPanelView implements vscode.WebviewViewProvider {
     const s = this.getState();
     const params: ListingParams = {
       section: s.section,
-      model: s.model,
-      ...this.getAdaptiveParams(s)
+      ...this.getTokenizationParams(s),
+      modes: Object.keys(s.modes || {}).length > 0 ? s.modes : undefined,
+      tags: Array.isArray(s.tags) && s.tags.length > 0 ? s.tags : undefined,
+      taskText: s.taskText && s.taskText.trim() ? s.taskText.trim() : undefined,
+      targetBranch: s.targetBranch && s.targetBranch.trim() ? s.targetBranch.trim() : undefined
     };
     const files = await vscode.window.withProgress(
       { location: vscode.ProgressLocation.Notification, title: "LG: Collecting included paths…", cancellable: false },
@@ -232,8 +282,11 @@ export class ControlPanelView implements vscode.WebviewViewProvider {
     const s = this.getState();
     const params: StatsParams = {
       section: s.section,
-      model: s.model || "o3",
-      ...this.getAdaptiveParams(s)
+      ...this.getTokenizationParams(s),
+      modes: Object.keys(s.modes || {}).length > 0 ? s.modes : undefined,
+      tags: Array.isArray(s.tags) && s.tags.length > 0 ? s.tags : undefined,
+      taskText: s.taskText && s.taskText.trim() ? s.taskText.trim() : undefined,
+      targetBranch: s.targetBranch && s.targetBranch.trim() ? s.targetBranch.trim() : undefined
     };
     const data = await vscode.window.withProgress(
       { location: vscode.ProgressLocation.Notification, title: "LG: Computing stats…", cancellable: false },
@@ -254,10 +307,7 @@ export class ControlPanelView implements vscode.WebviewViewProvider {
       vscode.window.showWarningMessage("Select a template first.");
       return;
     }
-    const options = {
-      model: s.model,
-      ...this.getAdaptiveParams(s)
-    };
+    const options = this.getFullCliOptions(s);
     const content = await vscode.window.withProgress(
       { location: vscode.ProgressLocation.Notification, title: `LG: Generating context '${s.template}' for AI…`, cancellable: false },
       () => runContext(s.template, options)
@@ -269,8 +319,11 @@ export class ControlPanelView implements vscode.WebviewViewProvider {
     const s = this.getState();
     const params: ListingParams = {
       section: s.section,
-      model: s.model,
-      ...this.getAdaptiveParams(s)
+      ...this.getTokenizationParams(s),
+      modes: Object.keys(s.modes || {}).length > 0 ? s.modes : undefined,
+      tags: Array.isArray(s.tags) && s.tags.length > 0 ? s.tags : undefined,
+      taskText: s.taskText && s.taskText.trim() ? s.taskText.trim() : undefined,
+      targetBranch: s.targetBranch && s.targetBranch.trim() ? s.targetBranch.trim() : undefined
     };
     const content = await vscode.window.withProgress(
       { location: vscode.ProgressLocation.Notification, title: `LG: Generating listing '${s.section}' for AI…`, cancellable: false },
@@ -312,32 +365,52 @@ export class ControlPanelView implements vscode.WebviewViewProvider {
       .then(async () => {
         const sections = await listSectionsJson().catch(() => [] as string[]);
         const contexts = await listContextsJson().catch(() => [] as string[]);
-        const models = await listModelsJson().catch(() => [] as any[]);
+        
+        // Загружаем библиотеки токенизации
+        const tokenizerLibs = await listTokenizerLibsJson().catch(() => [] as string[]);
+        
+        // Загружаем энкодеры для текущей библиотеки
+        const state = this.getState();
+        const currentLib = state.tokenizerLib || "tiktoken";
+        const encoders = await listEncodersJson(currentLib).catch(() => [] as any[]);
+        
         const modeSets = await listModeSetsJson().catch(() => ({ "mode-sets": [] } as ModeSetsList));
         const tagSets = await listTagSetsJson().catch(() => ({ "tag-sets": [] } as TagSetsList));
         
         // Fetch Git branches if available
         const branches = await this.fetchBranches();
 
-        const state = this.getState();
         let stateChanged = false;
         
+        // Валидация section
         if (!sections.includes(state.section) && sections.length) {
           state.section = sections[0];
           stateChanged = true;
         }
-        if (models.length) {
-          const ids = models.map((m: any) => m.id);
-          if (!ids.includes(state.model)) {
-            state.model = models[0].id;
-            stateChanged = true;
-          }
+        
+        // Валидация tokenizerLib
+        if (!tokenizerLibs.includes(state.tokenizerLib) && tokenizerLibs.length) {
+          state.tokenizerLib = tokenizerLibs[0];
+          stateChanged = true;
+        }
+        
+        // Валидация encoder
+        const encoderNames = encoders.map(e => e.name);
+        if (!encoderNames.includes(state.encoder) && encoderNames.length) {
+          state.encoder = encoderNames[0];
+          stateChanged = true;
+        }
+        
+        // Валидация ctxLimit
+        if (!state.ctxLimit || state.ctxLimit < 1000 || state.ctxLimit > 2_000_000) {
+          state.ctxLimit = 128000;
+          stateChanged = true;
         }
         
         if (stateChanged) {
           await this.context.workspaceState.update(MKEY, state);
         }
-        this.post({ type: "data", sections, contexts, models, modeSets, tagSets, branches, state });
+        this.post({ type: "data", sections, contexts, tokenizerLibs, encoders, modeSets, tagSets, branches, state });
       })
       .catch(() => {
         // Гасим ошибку, чтобы не «сломать» цепочку последующих вызовов
