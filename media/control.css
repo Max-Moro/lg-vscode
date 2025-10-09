@@ -69,11 +69,6 @@ label {
   flex-shrink: 0;
 }
 
-/* Base form controls - inherit font only, styling comes from lg-ui.css */
-select, button, input[type="radio"], input, textarea {
-  font: inherit;
-}
-
 /* ADAPTIVE BREAKPOINTS */
 
 /* Medium responsive mode: 300px+ */
@@ -115,8 +110,7 @@ select, button, input[type="radio"], input, textarea {
   }
   
   /* Full-width controls */
-  select, button {
-    width: 100%;
+  .lg-btn {
     justify-content: flex-start;
   }
   
