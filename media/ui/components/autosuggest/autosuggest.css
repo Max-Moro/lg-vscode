@@ -55,18 +55,19 @@
 
 .lg-autosuggest__indicator {
   position: absolute;
-  right: 8px;
+  right: var(--lg-space-xs);
   top: 50%;
-  transform: translateY(-50%);
+  transform: translateY(-50%) scaleX(0.85);
+  transform-origin: center;
   color: var(--vscode-dropdown-foreground);
   font-size: 12px;
+  font-weight: bold !important;
   pointer-events: none;
-  opacity: 0.85;
   transition: transform var(--lg-transition-fast);
 }
 
 .lg-autosuggest--open .lg-autosuggest__indicator {
-  transform: translateY(-50%) rotate(180deg);
+  transform: translateY(-50%) scaleX(0.85) rotate(180deg);
 }
 
 /* Dropdown menu */
