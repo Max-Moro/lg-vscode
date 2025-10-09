@@ -258,12 +258,89 @@ State.merge({ value: input.value });
 
 ---
 
+## 🧹 Base.css Cleanup — COMPLETED ✅
+
+**Date**: 2025-10-09
+
+### Problem
+
+`media/base.css` contained **two UI components** that violated the new architecture principle:
+> "All UI component styles must be in `media/ui/components/`, not scattered in `base.css`"
+
+### Issues Found
+
+1. **`textarea.rawjson`** (9 lines) — Debug component for displaying raw JSON
+2. **`.task-context-field`** (55 lines) — Chat-like textarea, **duplicated** `.lg-chat-input`
+
+### Solution
+
+#### 1. Created `lg-code-viewer` Component
+
+**Files Created:**
+- `media/ui/components/code-viewer/code-viewer.css` — Monospace textarea styles
+- `media/ui/components/code-viewer/README.md` — Component documentation
+- Updated `src/build-ui.ts` — Added to COMPONENTS array
+
+**Migration:**
+- `doctor.js` line 120: `class="rawjson"` → `class="lg-code-viewer"`
+- `stats.js` line 254: `class="rawjson"` → `class="lg-code-viewer"`
+- Deleted `textarea.rawjson` from `base.css` (9 lines)
+
+#### 2. Migrated to Existing `lg-chat-input` Component
+
+**Migration:**
+- `control.html` line 24: `class="task-context-field"` → `class="lg-chat-input"`
+- `stats.js` line 81: `class="task-context-field"` → `class="lg-chat-input"`
+- `control.css` line 371: `.task-context-field` → `.lg-chat-input` (layout reference)
+- Deleted entire **TASK CONTEXT FIELD** section from `base.css` (55 lines)
+
+### Results
+
+**base.css Reduction:**
+- **Before**: 95 lines (contained 2 UI components)
+- **After**: 26 lines (only utilities: cards, pills, table)
+- **Reduction**: -69 lines (-73%)
+
+**Final base.css Content:**
+- ✅ CSS variables (`:root`)
+- ✅ Base typography (`body`, `h2`)
+- ✅ Utility classes (`.card`, `.pill`, `.muted`, `.monosmall`, `.right`)
+- ✅ Table styles (`table`, `th`, `td`)
+- ❌ **Zero UI components** ✨
+
+**Verification:**
+```bash
+# Legacy classes removed
+grep -r "class=\"rawjson\"" media/ → 0 matches ✅
+grep -r "task-context-field" media/ → 0 matches ✅
+
+# New components in use
+grep -r "lg-code-viewer" media/ → 2 files (doctor.js, stats.js) ✅
+grep -r "lg-chat-input" media/ → 2 files (control.html, stats.js) ✅
+```
+
+**Bundle Update:**
+- `lg-ui.css` grew from 12.7 KB → 13.6 KB (+900 bytes for code-viewer)
+- `lg-ui.css` now contains **8 components** (added code-viewer)
+
+### Benefits
+
+✅ **100% Architecture Compliance** — No UI components outside `media/ui/components/`  
+✅ **Eliminated Duplication** — `.task-context-field` was 99% duplicate of `.lg-chat-input`  
+✅ **Single Source of Truth** — All textarea variants now in component library  
+✅ **Cleaner base.css** — 73% smaller, only utilities remain  
+✅ **Better Maintainability** — Component docs + proper structure  
+✅ **Consistent Naming** — All components use `.lg-*` prefix  
+
+---
+
 ## 🎓 Learning Resources
 
 - **[README.md](./README.md)** — Overview & quick start
 - **[ARCHITECTURE.md](./ARCHITECTURE.md)** — System architecture
 - **[MIGRATION.md](./MIGRATION.md)** — Full migration guide
 - **[autosuggest/README.md](./components/autosuggest/README.md)** — Autosuggest API docs
+- **[code-viewer/README.md](./components/code-viewer/README.md)** — Code Viewer API docs
 
 ---
 

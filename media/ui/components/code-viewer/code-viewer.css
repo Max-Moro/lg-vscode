@@ -1,0 +1,34 @@
+/**
+ * Code Viewer Component Styles
+ * Monospace textarea for displaying raw JSON/code in debug views
+ */
+
+.lg-code-viewer {
+  width: 480px;
+  height: 300px;
+  resize: both;
+  background: var(--vscode-editor-background);
+  color: var(--vscode-foreground);
+  border: 1px solid var(--vscode-editorIndentGuide-background);
+  border-radius: var(--lg-radius-md);
+  padding: var(--lg-space-sm);
+  font-family: var(--vscode-editor-font-family, monospace);
+  font-size: 11px;
+  line-height: 1.5;
+  white-space: pre;
+  overflow: auto;
+  transition: border-color var(--lg-transition-fast),
+              box-shadow var(--lg-transition-fast);
+}
+
+.lg-code-viewer:focus {
+  outline: none;
+  border-color: var(--vscode-focusBorder);
+  box-shadow: 0 0 0 1px var(--vscode-focusBorder);
+}
+
+.lg-code-viewer:disabled {
+  opacity: 0.7;
+  cursor: not-allowed;
+  color: var(--vscode-disabledForeground);
+}

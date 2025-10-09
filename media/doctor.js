@@ -117,7 +117,7 @@
       <div class="section">
         <details>
           <summary><span class="kv-summary">Raw JSON</span></summary>
-          <textarea class="rawjson">${esc(lastJson)}</textarea>
+          <textarea class="lg-code-viewer">${esc(lastJson)}</textarea>
         </details>
       </div>
     `;

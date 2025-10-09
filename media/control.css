@@ -359,7 +359,7 @@ select, button, input[type="radio"], input, textarea {
   color: var(--vscode-charts-blue);
 }
 
-/* ========== TASK CONTEXT FIELD STYLES ========== */
+/* ========== TASK CONTEXT FIELD LAYOUT ========== */
 
 /* Control Panel specific adjustments */
 .task-context-row {
@@ -368,7 +368,7 @@ select, button, input[type="radio"], input, textarea {
 
 /* Adaptive behavior for narrow panels */
 @container control-panel (max-width: 200px) {
-  .task-context-field {
+  .lg-chat-input {
     min-height: 48px;
   }
 }

@@ -78,7 +78,7 @@
       <div class="task-context-wrapper">
         <textarea 
           id="statsTaskText" 
-          class="task-context-field"
+          class="lg-chat-input"
           placeholder="Describe current task"
           rows="1"></textarea>
       </div>
@@ -251,7 +251,7 @@
       <div class="section">
         <details>
           <summary><span class="kv-summary">Raw JSON</span></summary>
-          <textarea class="rawjson">${esc(JSON.stringify(data, null, 2))}</textarea>
+          <textarea class="lg-code-viewer">${esc(JSON.stringify(data, null, 2))}</textarea>
         </details>
       </div>`;
 

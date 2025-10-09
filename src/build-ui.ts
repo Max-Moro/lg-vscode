@@ -22,7 +22,8 @@ const COMPONENTS = [
   'number',
   'autosuggest',
   'textarea',
-  'chat-input'
+  'chat-input',
+  'code-viewer'
 ];
 
 function ensureDir(dir: string) {
