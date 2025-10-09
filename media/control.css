@@ -69,76 +69,9 @@ label {
   flex-shrink: 0;
 }
 
-/* Base form controls */
-select, button, input[type="radio"] {
+/* Base form controls - inherit font only, styling comes from lg-ui.css */
+select, button, input[type="radio"], input, textarea {
   font: inherit;
-}
-
-/* Select styles with overflow protection */
-select {
-  background: var(--vscode-dropdown-background);
-  color: var(--vscode-dropdown-foreground);
-  border: 1px solid var(--vscode-dropdown-border, var(--vscode-editorWidget-border, transparent));
-  border-radius: 4px;
-  padding: 2px 6px;
-  min-width: 0;
-  max-width: 100%;
-  flex: 1 1 auto;
-  
-  /* Prevent text overflow in selects */
-  text-overflow: ellipsis;
-  white-space: nowrap;
-  overflow: hidden;
-}
-
-select:focus-visible {
-  outline: 1px solid var(--vscode-focusBorder);
-  outline-offset: 1px;
-}
-
-select:disabled {
-  color: var(--vscode-disabledForeground);
-  opacity: 0.7;
-}
-
-/* Button styles - back to original working version */
-button {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  gap: 6px;
-  padding: 2px 6px;
-  line-height: 1.2;
-  border-radius: 4px;
-  background: var(--vscode-button-secondaryBackground);
-  color: var(--vscode-button-secondaryForeground);
-  border: 1px solid var(--vscode-dropdown-border, transparent);
-  cursor: pointer;
-  min-width: 0;
-  max-width: 100%;
-  flex: 1 1 auto;
-}
-
-button:hover {
-  background: var(--vscode-button-secondaryHoverBackground);
-}
-
-button:focus-visible {
-  outline: 1px solid var(--vscode-focusBorder);
-  outline-offset: 1px;
-}
-
-/* Ensure codicons don't get cut off */
-button .codicon {
-  flex-shrink: 0;
-}
-
-/* Text wrapper for proper ellipsis handling */
-button .btn-text {
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-  min-width: 0;
 }
 
 /* ADAPTIVE BREAKPOINTS */
@@ -236,18 +169,9 @@ button .btn-text {
   }
 }
 
-/* Focus management for better keyboard navigation */
-select:focus, button:focus {
-  outline-offset: 2px;
-}
-
 /* High contrast mode support */
 @media (prefers-contrast: high) {
   .block {
-    border-width: 2px;
-  }
-  
-  button, select {
     border-width: 2px;
   }
 }
@@ -447,117 +371,4 @@ select:focus, button:focus {
   .task-context-field {
     min-height: 48px;
   }
-}
-
-/* ========== INPUT COMPONENTS STYLES ========== */
-
-/* Generic form control tokens */
-.lg-input {
-  background: var(--vscode-input-background);
-  color: var(--vscode-input-foreground);
-  border: 1px solid var(--vscode-input-border, var(--vscode-editorWidget-border));
-  border-radius: 4px;
-  padding: 2px 6px;
-  font: inherit;
-  min-width: 0;
-  max-width: 100%;
-}
-
-.lg-input:focus {
-  outline: 1px solid var(--vscode-focusBorder);
-  outline-offset: 1px;
-}
-
-.lg-input:disabled {
-  color: var(--vscode-disabledForeground);
-  opacity: 0.7;
-}
-
-/* Numeric input variant */
-input.lg-input--number {
-  flex: 0 1 auto;
-  appearance: textfield;
-  -moz-appearance: textfield;
-}
-
-input.lg-input--number::-webkit-outer-spin-button,
-input.lg-input--number::-webkit-inner-spin-button {
-  -webkit-appearance: none;
-  margin: 0;
-}
-
-/* Autosadgest (text input with optional suggestions) */
-input.lg-input--autosadgest {
-  flex: 1 1 auto;
-  -webkit-appearance: none;
-  appearance: none;
-  padding-right: 24px;
-}
-
-input.lg-input--autosadgest::-webkit-calendar-picker-indicator {
-  display: none !important;
-  opacity: 0 !important;
-  pointer-events: none;
-  width: 0;
-  height: 0;
-}
-
-.lg-autosadgest {
-  position: relative;
-  display: inline-flex;
-  align-items: center;
-  flex: 1 1 auto;
-  min-width: 0;
-  max-width: 100%;
-  width: 100%;
-}
-
-.lg-autosadgest__indicator {
-  position: absolute;
-  right: 8px;
-  top: 50%;
-  transform: translateY(-50%);
-  color: var(--vscode-dropdown-foreground);
-  font-size: 12px;
-  pointer-events: none;
-  opacity: 0.85;
-}
-
-/* Custom dropdown for autosadgest */
-.lg-autosadgest__dropdown {
-  position: absolute;
-  top: 100%;
-  left: 0;
-  right: 0;
-  margin-top: 2px;
-  max-height: 200px;
-  overflow-y: auto;
-  background: var(--vscode-dropdown-background);
-  border: 1px solid var(--vscode-dropdown-border, var(--vscode-editorWidget-border));
-  border-radius: 4px;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
-  z-index: 1000;
-  display: none;
-}
-
-.lg-autosadgest__dropdown.show {
-  display: block;
-}
-
-.lg-autosadgest__option {
-  padding: 4px 8px;
-  cursor: pointer;
-  color: var(--vscode-dropdown-foreground);
-  font-size: 12px;
-}
-
-.lg-autosadgest__option:hover,
-.lg-autosadgest__option.selected {
-  background: var(--vscode-list-hoverBackground);
-}
-
-.lg-autosadgest__option.cached::after {
-  content: " ✓";
-  color: var(--vscode-charts-green);
-  margin-left: 4px;
 }
