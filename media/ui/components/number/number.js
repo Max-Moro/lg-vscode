@@ -3,7 +3,7 @@
  */
 
 export function enhanceNumber(element, options = {}) {
-  element.classList.add('lg-input', 'lg-number');
+  element.classList.add('lg-input', 'lg-input--number');
   element.type = 'number';
   
   if (options.min !== undefined) {

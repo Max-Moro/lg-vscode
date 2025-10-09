@@ -1,8 +1,11 @@
 /**
  * Number Input Component Styles
+ * Removes spinner controls for a cleaner, modern look
+ * 
+ * Usage: <input type="number" class="lg-input lg-input--number">
  */
 
-.lg-number {
+.lg-input--number {
   appearance: textfield;
   -moz-appearance: textfield;
   flex: 0 1 auto;
@@ -11,8 +14,8 @@
   max-width: 150px;
 }
 
-.lg-number::-webkit-outer-spin-button,
-.lg-number::-webkit-inner-spin-button {
+.lg-input--number::-webkit-outer-spin-button,
+.lg-input--number::-webkit-inner-spin-button {
   -webkit-appearance: none;
   margin: 0;
 }
