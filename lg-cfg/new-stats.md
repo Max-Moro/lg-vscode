@@ -942,7 +942,7 @@ view.webview.onDidReceiveMessage(async (msg) => {
     <span class="cluster" title="Размер контекстного окна в токенах">
       <label>Context Limit:</label>
       <input type="number" id="ctxLimit" data-state-key="ctxLimit" 
-             class="ctx-limit-input"
+        class="lg-input lg-input--number"
              min="1000" max="2000000" step="1000" 
              placeholder="128000" />
       <span class="muted">tokens</span>
@@ -960,32 +960,42 @@ view.webview.onDidReceiveMessage(async (msg) => {
 ```css
 /* ========== TOKENIZATION SETTINGS STYLES ========== */
 
-/* Стиль для input[type="number"] (ctx-limit) */
-input.ctx-limit-input {
+/* Базовый стиль для контролов */
+.lg-input {
   background: var(--vscode-input-background);
   color: var(--vscode-input-foreground);
   border: 1px solid var(--vscode-input-border, var(--vscode-editorWidget-border));
   border-radius: 4px;
   padding: 2px 6px;
   font: inherit;
-  min-width: 100px;
-  max-width: 150px;
-  flex: 0 1 auto;
 }
 
-input.ctx-limit-input:focus {
+.lg-input:focus {
   outline: 1px solid var(--vscode-focusBorder);
   outline-offset: 1px;
 }
 
-input.ctx-limit-input:disabled {
+.lg-input:disabled {
   color: var(--vscode-disabledForeground);
   opacity: 0.7;
 }
 
+/* Числовой вариант */
+input.lg-input--number {
+  flex: 0 1 auto;
+  appearance: textfield;
+  -moz-appearance: textfield;
+}
+
+input.lg-input--number::-webkit-outer-spin-button,
+input.lg-input--number::-webkit-inner-spin-button {
+  -webkit-appearance: none;
+  margin: 0;
+}
+
 /* В узком режиме делаем input на всю ширину */
 @container control-panel (max-width: 200px) {
-  input.ctx-limit-input {
+  input.lg-input--number {
     width: 100%;
     max-width: 100%;
   }

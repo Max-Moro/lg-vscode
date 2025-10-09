@@ -449,58 +449,52 @@ select:focus, button:focus {
   }
 }
 
-/* ========== TOKENIZATION SETTINGS STYLES ========== */
+/* ========== INPUT COMPONENTS STYLES ========== */
 
-/* Стиль для input[type="number"] (ctx-limit) */
-input.ctx-limit-input {
+/* Generic form control tokens */
+.lg-input {
   background: var(--vscode-input-background);
   color: var(--vscode-input-foreground);
   border: 1px solid var(--vscode-input-border, var(--vscode-editorWidget-border));
   border-radius: 4px;
   padding: 2px 6px;
   font: inherit;
-  flex: 0 1 auto;
+  min-width: 0;
+  max-width: 100%;
 }
 
-input.ctx-limit-input:focus {
+.lg-input:focus {
   outline: 1px solid var(--vscode-focusBorder);
   outline-offset: 1px;
 }
 
-input.ctx-limit-input::-webkit-outer-spin-button,
-input.ctx-limit-input::-webkit-inner-spin-button {
+.lg-input:disabled {
+  color: var(--vscode-disabledForeground);
+  opacity: 0.7;
+}
+
+/* Numeric input variant */
+input.lg-input--number {
+  flex: 0 1 auto;
+  appearance: textfield;
+  -moz-appearance: textfield;
+}
+
+input.lg-input--number::-webkit-outer-spin-button,
+input.lg-input--number::-webkit-inner-spin-button {
   -webkit-appearance: none;
   margin: 0;
 }
 
-/* Стиль для input[type="text"] encoder (с datalist автоподсказками) */
-input.encoder-input {
-  background: var(--vscode-input-background);
-  color: var(--vscode-input-foreground);
-  border: 1px solid var(--vscode-input-border, var(--vscode-editorWidget-border));
-  border-radius: 4px;
-  padding: 2px 6px;
-  font: inherit;
+/* Autosadgest (text input with optional suggestions) */
+input.lg-input--autosadgest {
   flex: 1 1 auto;
-  min-width: 0;
-  max-width: 100%;
   -webkit-appearance: none;
   appearance: none;
   padding-right: 24px;
 }
 
-input.encoder-input:focus {
-  outline: 1px solid var(--vscode-focusBorder);
-  outline-offset: 1px;
-}
-
-input.encoder-input:disabled {
-  color: var(--vscode-disabledForeground);
-  opacity: 0.7;
-}
-
-input.encoder-input::-webkit-calendar-picker-indicator,
-input.encoder-input::-webkit-list-button {
+input.lg-input--autosadgest::-webkit-calendar-picker-indicator {
   display: none !important;
   opacity: 0 !important;
   pointer-events: none;
@@ -508,12 +502,7 @@ input.encoder-input::-webkit-list-button {
   height: 0;
 }
 
-input.encoder-input::-ms-reveal,
-input.encoder-input::-ms-clear {
-  display: none;
-}
-
-.autocomplete-field {
+.lg-autosadgest {
   position: relative;
   display: inline-flex;
   align-items: center;
@@ -523,7 +512,7 @@ input.encoder-input::-ms-clear {
   width: 100%;
 }
 
-.autocomplete-arrow {
+.lg-autosadgest__indicator {
   position: absolute;
   right: 8px;
   top: 50%;

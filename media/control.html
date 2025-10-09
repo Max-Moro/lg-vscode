@@ -130,12 +130,12 @@
       <div class="row">
         <span class="cluster" title="Энкодер или модель токенизации">
           <label>Encoder:</label>
-          <span class="autocomplete-field">
+          <span class="lg-autosadgest">
             <input type="text" id="encoder" data-state-key="encoder" 
                    list="encoder-list" 
-                   class="encoder-input"
+                   class="lg-input lg-input--autosadgest"
                    placeholder="Enter encoder name" />
-            <span class="codicon codicon-chevron-down autocomplete-arrow" aria-hidden="true"></span>
+            <span class="codicon codicon-chevron-down lg-autosadgest__indicator" aria-hidden="true"></span>
           </span>
           <datalist id="encoder-list"></datalist>
         </span>
@@ -145,8 +145,8 @@
       <div class="row">
         <span class="cluster" title="Размер контекстного окна в токенах">
           <label>Context Limit:</label>
-          <input type="number" id="ctxLimit" data-state-key="ctxLimit" 
-                 class="ctx-limit-input"
+     <input type="number" id="ctxLimit" data-state-key="ctxLimit" 
+       class="lg-input lg-input--number"
                  min="1000" max="2000000" step="1000" 
                  placeholder="128000" />
         </span>
