@@ -11,6 +11,8 @@
 - ✅ Lazy loading (асинхронная загрузка items)
 - ✅ Кастомная функция фильтрации
 - ✅ VS Code темизация
+- ✅ Dropdown позиционируется через `position: fixed` и не влияет на layout родителей
+- ✅ Dropdown автоматически перепозиционируется при скролле/resize
 
 ## Usage
 
@@ -77,20 +79,25 @@ fetch('/api/encoders')
 ## HTML Structure
 
 ```html
+<!-- Container (in normal flow) -->
 <div class="lg-autosuggest lg-autosuggest--open">
   <input type="text" class="lg-autosuggest__input" />
   <span class="lg-autosuggest__indicator codicon codicon-chevron-down"></span>
-  <div class="lg-autosuggest__dropdown">
-    <div class="lg-autosuggest__option" data-value="item1">
-      Item 1
-      <span class="lg-autosuggest__badge">✓</span>
-    </div>
-    <div class="lg-autosuggest__option lg-autosuggest__option--selected" data-value="item2">
-      Item 2
-    </div>
+</div>
+
+<!-- Dropdown (appended to document.body with position: fixed) -->
+<div class="lg-autosuggest__dropdown">
+  <div class="lg-autosuggest__option" data-value="item1">
+    Item 1
+    <span class="lg-autosuggest__badge">✓</span>
+  </div>
+  <div class="lg-autosuggest__option lg-autosuggest__option--selected" data-value="item2">
+    Item 2
   </div>
 </div>
 ```
+
+**Note:** Dropdown is rendered outside the container (in `document.body`) to avoid overflow clipping and parent scrollbar issues.
 
 ## Keyboard Navigation
 

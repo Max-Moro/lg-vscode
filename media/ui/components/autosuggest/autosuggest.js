@@ -52,9 +52,9 @@ export class Autosuggest {
     });
     this.container.appendChild(this.indicator);
 
-    // Create dropdown
+    // Create dropdown and append to body (to avoid overflow clipping)
     this.dropdown = DOM.create('div', { class: 'lg-autosuggest__dropdown' });
-    this.container.appendChild(this.dropdown);
+    document.body.appendChild(this.dropdown);
 
     this.bindEvents();
   }
@@ -115,6 +115,23 @@ export class Autosuggest {
           this.close();
         }
       })
+    );
+
+    // Reposition dropdown on scroll/resize
+    this.cleanups.push(
+      Events.on(window, 'scroll', () => {
+        if (this.isOpen) {
+          this.positionDropdown();
+        }
+      }, { passive: true, capture: true })
+    );
+
+    this.cleanups.push(
+      Events.on(window, 'resize', Events.throttle(() => {
+        if (this.isOpen) {
+          this.positionDropdown();
+        }
+      }, 100))
     );
   }
 
@@ -270,9 +287,13 @@ export class Autosuggest {
     
     this.isOpen = true;
     this.container.classList.add('lg-autosuggest--open');
+    this.dropdown.classList.add('lg-autosuggest__dropdown--open');
     
     // Filter with current value
     this.filter(this.input.value || '');
+    
+    // Position dropdown
+    this.positionDropdown();
   }
 
   close() {
@@ -280,7 +301,37 @@ export class Autosuggest {
     
     this.isOpen = false;
     this.container.classList.remove('lg-autosuggest--open');
+    this.dropdown.classList.remove('lg-autosuggest__dropdown--open');
     this.selectedIndex = -1;
+  }
+
+  positionDropdown() {
+    if (!this.isOpen) return;
+    
+    const inputRect = this.input.getBoundingClientRect();
+    const viewportHeight = window.innerHeight;
+    const dropdownMaxHeight = 200; // matches CSS max-height
+    
+    // Calculate available space below and above
+    const spaceBelow = viewportHeight - inputRect.bottom;
+    const spaceAbove = inputRect.top;
+    
+    // Determine if we should show dropdown above or below
+    const showAbove = spaceBelow < dropdownMaxHeight && spaceAbove > spaceBelow;
+    
+    if (showAbove) {
+      // Position above input
+      this.dropdown.style.bottom = `${viewportHeight - inputRect.top + 2}px`;
+      this.dropdown.style.top = 'auto';
+    } else {
+      // Position below input (default)
+      this.dropdown.style.top = `${inputRect.bottom + 2}px`;
+      this.dropdown.style.bottom = 'auto';
+    }
+    
+    // Set horizontal position and width to match input
+    this.dropdown.style.left = `${inputRect.left}px`;
+    this.dropdown.style.width = `${inputRect.width}px`;
   }
 
   setItems(items) {
@@ -301,6 +352,9 @@ export class Autosuggest {
   destroy() {
     this.cleanups.forEach(cleanup => cleanup());
     this.cleanups = [];
+    
+    // Remove dropdown from body
+    DOM.remove(this.dropdown);
     
     // Unwrap input
     const parent = this.container.parentNode;

@@ -72,10 +72,7 @@
 
 /* Dropdown menu */
 .lg-autosuggest__dropdown {
-  position: absolute;
-  top: calc(100% + 2px);
-  left: 0;
-  right: 0;
+  position: fixed;
   max-height: 200px;
   overflow-y: auto;
   background: var(--vscode-dropdown-background);
@@ -88,9 +85,11 @@
   pointer-events: none;
   transition: opacity var(--lg-transition-fast),
               transform var(--lg-transition-fast);
+  /* Position will be set dynamically via JS */
 }
 
-.lg-autosuggest--open .lg-autosuggest__dropdown {
+/* Open state - class is added directly to dropdown */
+.lg-autosuggest__dropdown--open {
   opacity: 1;
   transform: translateY(0);
   pointer-events: auto;
