@@ -130,10 +130,13 @@
       <div class="row">
         <span class="cluster" title="Энкодер или модель токенизации">
           <label>Encoder:</label>
-          <input type="text" id="encoder" data-state-key="encoder" 
-                 list="encoder-list" 
-                 class="encoder-input"
-                 placeholder="Enter encoder name" />
+          <span class="autocomplete-field">
+            <input type="text" id="encoder" data-state-key="encoder" 
+                   list="encoder-list" 
+                   class="encoder-input"
+                   placeholder="Enter encoder name" />
+            <span class="codicon codicon-chevron-down autocomplete-arrow" aria-hidden="true"></span>
+          </span>
           <datalist id="encoder-list"></datalist>
         </span>
       </div>
