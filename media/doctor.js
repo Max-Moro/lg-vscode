@@ -1,9 +1,10 @@
-/* global UI, LG */
+/* global LGUI, LG */
 (function () {
+  const { DOM, Events, State } = LGUI;
   const { esc, fmtInt, hrSize } = LG;
-  const vscode = UI.acquire();
+  const vscode = State.getVSCode();
   const app = document.getElementById("app");
-  UI.post(vscode, "ready");
+  State.post("ready");
   let lastJson = "";
   window.addEventListener("message", (ev) => {
     const msg = ev.data;
@@ -123,10 +124,10 @@
 
     // Actions
     const $ = (id) => document.getElementById(id);
-    $("btn-refresh")?.addEventListener("click", () => UI.post(vscode, "refresh"));
-    $("btn-rebuild")?.addEventListener("click", () => UI.post(vscode, "rebuildCache"));
-    $("btn-bundle")?.addEventListener("click", () => UI.post(vscode, "buildBundle"));
-    $("btn-copy")?.addEventListener("click", () => UI.post(vscode, "copyJson", { text: lastJson }));
+    $("btn-refresh")?.addEventListener("click", () => State.post("refresh"));
+    $("btn-rebuild")?.addEventListener("click", () => State.post("rebuildCache"));
+    $("btn-bundle")?.addEventListener("click", () => State.post("buildBundle"));
+    $("btn-copy")?.addEventListener("click", () => State.post("copyJson", { text: lastJson }));
   }
 
   // ------- helpers -------

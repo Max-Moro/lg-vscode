@@ -1,6 +1,6 @@
 import * as vscode from "vscode";
 import { runDoctorBundle, runDoctorJson } from "../services/DoctorService";
-import { buildHtml, getExtensionUri, mediaUri } from "../webview/webviewKit";
+import { buildHtml, getExtensionUri, mediaUri, lgUiUri } from "../webview/webviewKit";
 import type { DiagReport } from "../models/diag_report";
 
 export async function showDoctorWebview(report: DiagReport) {
@@ -18,10 +18,10 @@ export async function showDoctorWebview(report: DiagReport) {
   // локальные ресурсы из media/
   panel.webview.html = buildHtml(panel.webview, "doctor.html", {
     cssUri:      mediaUri(panel.webview, "doctor.css"),
-    baseCssUri:  mediaUri(panel.webview, "base.css"),
+    lgUiCssUri:  lgUiUri(panel.webview, "lg-ui.css"),
+    lgUiJsUri:   lgUiUri(panel.webview, "lg-ui.js"),
     jsUri:       mediaUri(panel.webview, "doctor.js"),
     commonJsUri: mediaUri(panel.webview, "common.js"),
-    commonUiJsUri: mediaUri(panel.webview, "common-ui.js"),
   });
 
   panel.webview.onDidReceiveMessage(async (msg) => {

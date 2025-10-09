@@ -105,12 +105,99 @@
 
 ---
 
-## 🔄 Next Steps (Remaining)
+### Doctor View — COMPLETED ✅
 
-### Doctor View — PENDING ⏳
-- [ ] Update `doctor.html` to use `lg-ui.css` and `lg-ui.js`
-- [ ] Migrate `doctor.js` to LGUI API
-- [ ] Remove component styles from `doctor.css`
+**Date**: 2025-10-09
+
+#### Files Changed:
+- ✅ `doctor.js` — Migrated to LGUI API
+- ✅ `doctor.html` — Updated to use lg-ui bundles
+- ✅ `doctor.css` — Already perfect (4 lines, layout only)
+- ✅ `DoctorWebview.ts` — Updated to pass lgUiCssUri/lgUiJsUri
+
+#### Changes Made:
+
+**JavaScript Migration (`doctor.js`)**:
+- `UI.acquire()` → `State.getVSCode()`
+- `UI.post()` → `State.post()` (5 calls)
+
+**CSS Status (`doctor.css`)**:
+- Already perfect — only 4 lines of layout styles
+- No component styles to remove
+- Just updated comment
+
+**HTML Updates (`doctor.html`)**:
+- Removed `{{baseCssUri}}` and `{{commonUiJsUri}}`
+- Added `{{lgUiCssUri}}` and `{{lgUiJsUri}}`
+
+#### Benefits:
+✅ **Fastest migration** — Doctor was already well-structured  
+✅ **Clean code** — No legacy UI.* calls  
+✅ **Minimal CSS** — Only 4 lines of layout styles  
+
+---
+
+### Legacy Cleanup — COMPLETED ✅
+
+**Date**: 2025-10-09
+
+#### Files Deleted:
+- ✅ `common-ui.js` — Completely removed (170 lines)
+
+#### Files Cleaned:
+- ✅ `base.css` — Removed duplicate button styles, kept .btn-primary mapping for compatibility
+
+#### Changes Made:
+
+**Deleted Files**:
+- `media/common-ui.js` — No longer needed after LGUI migration
+  - Was 170 lines of legacy UI utilities
+  - Replaced by lg-ui.js (22 KB, more features)
+
+**base.css Cleanup**:
+- Removed duplicate button styles (now in lg-ui.css)
+- Kept `.btn-primary` compatibility mapping
+- File reduced from 113 → 101 lines
+
+#### Benefits:
+✅ **Cleaner codebase** — Removed 170 lines of legacy code  
+✅ **No duplication** — Button styles only in lg-ui.css  
+✅ **Backward compatible** — .btn-primary still works  
+✅ **Single source** — All component styles in one place  
+
+---
+
+## 📊 Migration Summary
+
+### All Views Migrated! 🎉
+
+| View | JavaScript | HTML | CSS | Status |
+|------|-----------|------|-----|--------|
+| **Control Panel** | ~17 API calls → LGUI | lg-ui bundles | 564→380 lines | ✅ |
+| **Stats View** | ~17 API calls → LGUI | lg-ui bundles | 47 lines (clean) | ✅ |
+| **Doctor View** | ~6 API calls → LGUI | lg-ui bundles | 4 lines (clean) | ✅ |
+
+### Legacy Files Status
+
+| File | Before | After | Status |
+|------|--------|-------|--------|
+| `common-ui.js` | 170 lines | **DELETED** | ✅ |
+| `base.css` | 113 lines | 101 lines | ✅ |
+| `control.css` | 564 lines | 380 lines | ✅ |
+| `stats.css` | 47 lines | 47 lines | ✅ |
+| `doctor.css` | 4 lines | 4 lines | ✅ |
+
+### Total Impact
+
+- **JavaScript**: ~40 UI.* calls → LGUI API
+- **CSS Reduction**: -196 lines total
+- **Files Deleted**: 1 (common-ui.js)
+- **Bundle Size**: All views now use lg-ui.css (12.7 KB) + lg-ui.js (22 KB)
+- **Consistency**: 100% — all views use same component library
+
+---
+
+## 🔄 Next Steps (Remaining)
 
 ### Legacy Cleanup — PENDING ⏳
 - [ ] Delete `media/common-ui.js` (no longer needed)

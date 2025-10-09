@@ -6,13 +6,13 @@
           content="default-src 'none'; img-src {{cspSource}} https: data:; style-src {{cspSource}}; font-src {{cspSource}}; script-src 'nonce-{{nonce}}';" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <title>Listing Generator — Doctor</title>
+    <link rel="stylesheet" href="{{lgUiCssUri}}" />
     <link rel="stylesheet" href="{{cssUri}}" />
-    <link rel="stylesheet" href="{{baseCssUri}}" />
   </head>
   <body>
     <div id="app"></div>
     <script nonce="{{nonce}}" src="{{commonJsUri}}"></script>
-    <script nonce="{{nonce}}" src="{{commonUiJsUri}}"></script>
+    <script nonce="{{nonce}}" src="{{lgUiJsUri}}"></script>
     <script nonce="{{nonce}}" src="{{jsUri}}"></script>
   </body>
   </html>
