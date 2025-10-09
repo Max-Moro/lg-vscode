@@ -4,7 +4,7 @@
 
 .lg-autosuggest {
   position: relative;
-  display: inline-flex;
+  display: flex;
   align-items: center;
   flex: 1 1 auto;
   min-width: 0;
