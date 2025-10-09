@@ -81,15 +81,8 @@ export class ControlPanelView implements vscode.WebviewViewProvider {
     // При смене библиотеки перезагружаем список энкодеров
     const encoders = await listEncodersJson(lib).catch(() => [] as any[]);
     
-    const state = this.getState();
-    const encoderNames = encoders.map(e => e.name);
-    
-    // Если текущий энкодер не совместим с новой библиотекой - сбрасываем на первый
-    if (!encoderNames.includes(state.encoder) && encoderNames.length) {
-      this.setState({ tokenizerLib: lib, encoder: encoderNames[0] });
-    } else {
-      this.setState({ tokenizerLib: lib });
-    }
+    // Обновляем библиотеку токенизации (encoder остается как есть, даже если это кастомное значение)
+    this.setState({ tokenizerLib: lib });
     
     // Отправляем обновленный список энкодеров в webview
     this.post({ type: "encoders", encoders });
@@ -394,10 +387,10 @@ export class ControlPanelView implements vscode.WebviewViewProvider {
           stateChanged = true;
         }
         
-        // Валидация encoder
-        const encoderNames = encoders.map(e => e.name);
-        if (!encoderNames.includes(state.encoder) && encoderNames.length) {
-          state.encoder = encoderNames[0];
+        // Валидация encoder - разрешаем произвольные значения, валидируем только если пусто
+        if (!state.encoder && encoders.length) {
+          const encoderNames = encoders.map(e => e.name);
+          state.encoder = encoderNames[0] || "cl100k_base";
           stateChanged = true;
         }
         

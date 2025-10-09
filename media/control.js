@@ -82,6 +82,34 @@
     UI.post(vscode, "setState", { state: patch });
   });
 
+  // ---- helper function to populate datalist for encoder ----
+  function fillEncoderDatalist(encoders, currentValue) {
+    const input = UI.qs("#encoder");
+    const datalist = UI.qs("#encoder-list");
+    
+    if (!input || !datalist) return;
+    
+    // Clear existing options
+    datalist.innerHTML = "";
+    
+    // Populate datalist with encoder options
+    for (const item of encoders || []) {
+      const name = typeof item === "string" ? item : (item?.name ?? "");
+      const cached = typeof item === "object" && item?.cached;
+      const label = cached ? `${name} ✓` : name;
+      
+      const option = document.createElement("option");
+      option.value = name;
+      option.textContent = label;
+      datalist.appendChild(option);
+    }
+    
+    // Set input value (allow custom values)
+    if (currentValue !== undefined && currentValue !== null) {
+      input.value = String(currentValue);
+    }
+  }
+
   // ---- handshake ----
   UI.post(vscode, "init");
 
@@ -103,15 +131,8 @@
         value: msg.state.tokenizerLib || "tiktoken" 
       });
       
-      UI.fillSelect(UI.qs("#encoder"), msg.encoders || [], {
-        getValue: it => (typeof it === "string" ? it : (it?.name ?? "")),
-        getLabel: it => {
-          if (typeof it === "string") return it;
-          // Помечаем скачанные модели
-          return it?.cached ? `${it.name} ✓` : it?.name;
-        },
-        value: msg.state.encoder || ""
-      });
+      // fill encoder datalist (supports custom values)
+      fillEncoderDatalist(msg.encoders, msg.state.encoder);
 
       // populate adaptive settings
       populateModeSets(msg.modeSets);
@@ -127,14 +148,7 @@
     } else if (msg?.type === "encoders") {
       // обновление списка энкодеров после смены библиотеки
       const state = store.get();
-      UI.fillSelect(UI.qs("#encoder"), msg.encoders || [], {
-        getValue: it => (typeof it === "string" ? it : (it?.name ?? "")),
-        getLabel: it => {
-          if (typeof it === "string") return it;
-          return it?.cached ? `${it.name} ✓` : it?.name;
-        },
-        value: state.encoder || ""
-      });
+      fillEncoderDatalist(msg.encoders, state.encoder);
     } else if (msg?.type === "state") {
       applyState(msg.state);
     } else if (msg?.type === "theme") {
