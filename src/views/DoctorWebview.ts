@@ -17,6 +17,7 @@ export async function showDoctorWebview(report: DiagReport) {
 
   // локальные ресурсы из media/
   panel.webview.html = buildHtml(panel.webview, "doctor.html", {
+    baseCssUri:  mediaUri(panel.webview, "base.css"),
     cssUri:      mediaUri(panel.webview, "doctor.css"),
     lgUiCssUri:  lgUiUri(panel.webview, "lg-ui.css"),
     lgUiJsUri:   lgUiUri(panel.webview, "lg-ui.js"),

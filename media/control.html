@@ -9,6 +9,7 @@
                    img-src data:;
                    script-src 'nonce-{{nonce}}';">
     <link rel="stylesheet" href="{{codiconsUri}}">
+    <link rel="stylesheet" href="{{baseCssUri}}">
     <link rel="stylesheet" href="{{lgUiCssUri}}">
     <link rel="stylesheet" href="{{controlCssUri}}">
   </head>
@@ -127,13 +128,15 @@
       <!-- Энкодер (зависит от библиотеки) -->
       <div class="row">
         <span class="cluster" title="Энкодер или модель токенизации">
-          <label>Encoder:</label>
-          <span class="lg-autosadgest">
-            <input type="text" id="encoder" data-state-key="encoder" 
-                   class="lg-input lg-input--autosadgest"
-                   placeholder="Enter encoder name"
-                   autocomplete="off" />
-          </span>
+          <label for="encoder">Encoder:</label>
+          <input
+            type="text"
+            id="encoder"
+            data-state-key="encoder"
+            class="lg-input"
+            placeholder="Enter encoder name"
+            autocomplete="off"
+          />
         </span>
       </div>
       

@@ -33,6 +33,7 @@ export async function showStatsWebview(
   );
 
   panel.webview.html = buildHtml(panel.webview, "stats.html", {
+    baseCssUri:  mediaUri(panel.webview, "base.css"),
     cssUri:      mediaUri(panel.webview, "stats.css"),
     lgUiCssUri:  lgUiUri(panel.webview, "lg-ui.css"),
     lgUiJsUri:   lgUiUri(panel.webview, "lg-ui.js"),
