@@ -82,32 +82,151 @@
     UI.post(vscode, "setState", { state: patch });
   });
 
-  // ---- helper function to populate datalist for encoder ----
+  // ---- autosadgest теперь использует кастомный dropdown (см. setupAutosadgestDropdown выше) ----
+
+  // ---- custom autosadgest implementation ----
+  let currentEncoders = [];
+  let dropdownVisible = false;
+
   function fillEncoderDatalist(encoders, currentValue) {
     const input = UI.qs("#encoder");
-    const datalist = UI.qs("#encoder-list");
+    if (!input) return;
     
-    if (!input || !datalist) return;
-    
-    // Clear existing options
-    datalist.innerHTML = "";
-    
-    // Populate datalist with encoder options
-    for (const item of encoders || []) {
-      const name = typeof item === "string" ? item : (item?.name ?? "");
-      const cached = typeof item === "object" && item?.cached;
-      const label = cached ? `${name} ✓` : name;
-      
-      const option = document.createElement("option");
-      option.value = name;
-      option.textContent = label;
-      datalist.appendChild(option);
-    }
+    // Store encoders for filtering
+    currentEncoders = (encoders || []).map(e => 
+      typeof e === "string" ? { name: e, cached: false } : e
+    );
     
     // Set input value (allow custom values)
     if (currentValue !== undefined && currentValue !== null) {
       input.value = String(currentValue);
     }
+    
+    // Setup dropdown if not exists
+    setupAutosadgestDropdown();
+  }
+
+  function setupAutosadgestDropdown() {
+    const wrapper = UI.qs(".lg-autosadgest");
+    if (!wrapper) return;
+    
+    // Remove old dropdown if exists
+    const oldDropdown = wrapper.querySelector(".lg-autosadgest__dropdown");
+    if (oldDropdown) oldDropdown.remove();
+    
+    // Create dropdown
+    const dropdown = document.createElement("div");
+    dropdown.className = "lg-autosadgest__dropdown";
+    wrapper.appendChild(dropdown);
+    
+    const input = wrapper.querySelector(".lg-input--autosadgest");
+    if (!input) return;
+    
+    // Show dropdown on focus/click
+    const showDropdown = () => {
+      updateDropdownOptions(input.value || "");
+      dropdown.classList.add("show");
+      dropdownVisible = true;
+    };
+    
+    // Hide dropdown
+    const hideDropdown = () => {
+      dropdown.classList.remove("show");
+      dropdownVisible = false;
+    };
+    
+    // Update dropdown options based on filter
+    const updateDropdownOptions = (filter) => {
+      const lowerFilter = filter.toLowerCase();
+      const filtered = currentEncoders.filter(e => 
+        e.name.toLowerCase().includes(lowerFilter)
+      );
+      
+      dropdown.innerHTML = "";
+      
+      if (filtered.length === 0) {
+        const empty = document.createElement("div");
+        empty.className = "lg-autosadgest__option";
+        empty.textContent = filter ? "No matches" : "No encoders available";
+        empty.style.fontStyle = "italic";
+        empty.style.color = "var(--vscode-descriptionForeground)";
+        dropdown.appendChild(empty);
+        return;
+      }
+      
+      filtered.forEach(encoder => {
+        const option = document.createElement("div");
+        option.className = "lg-autosadgest__option" + (encoder.cached ? " cached" : "");
+        option.textContent = encoder.name;
+        option.dataset.value = encoder.name;
+        
+        option.addEventListener("click", () => {
+          input.value = encoder.name;
+          input.dispatchEvent(new Event("change", { bubbles: true }));
+          hideDropdown();
+          input.focus();
+        });
+        
+        dropdown.appendChild(option);
+      });
+    };
+    
+    // Event handlers
+    input.addEventListener("focus", showDropdown);
+    input.addEventListener("click", showDropdown);
+    
+    input.addEventListener("input", () => {
+      if (dropdownVisible) {
+        updateDropdownOptions(input.value || "");
+      }
+    });
+    
+    input.addEventListener("blur", () => {
+      // Delay to allow click on option
+      setTimeout(hideDropdown, 200);
+    });
+    
+    // Keyboard navigation
+    input.addEventListener("keydown", (e) => {
+      if (!dropdownVisible) {
+        if (e.key === "ArrowDown" || e.key === "ArrowUp") {
+          showDropdown();
+          e.preventDefault();
+        }
+        return;
+      }
+      
+      const options = Array.from(dropdown.querySelectorAll(".lg-autosadgest__option[data-value]"));
+      if (!options.length) return;
+      
+      const selected = dropdown.querySelector(".lg-autosadgest__option.selected");
+      let index = selected ? options.indexOf(selected) : -1;
+      
+      if (e.key === "ArrowDown") {
+        e.preventDefault();
+        index = Math.min(index + 1, options.length - 1);
+      } else if (e.key === "ArrowUp") {
+        e.preventDefault();
+        index = Math.max(index - 1, 0);
+      } else if (e.key === "Enter" && selected) {
+        e.preventDefault();
+        input.value = selected.dataset.value;
+        input.dispatchEvent(new Event("change", { bubbles: true }));
+        hideDropdown();
+        return;
+      } else if (e.key === "Escape") {
+        e.preventDefault();
+        hideDropdown();
+        return;
+      }
+      
+      // Update selection
+      options.forEach(opt => opt.classList.remove("selected"));
+      if (index >= 0 && index < options.length) {
+        options[index].classList.add("selected");
+        options[index].scrollIntoView({ block: "nearest" });
+      }
+    });
   }
 
   // ---- handshake ----

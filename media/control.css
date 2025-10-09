@@ -522,3 +522,42 @@ input.lg-input--autosadgest::-webkit-calendar-picker-indicator {
   pointer-events: none;
   opacity: 0.85;
 }
+
+/* Custom dropdown for autosadgest */
+.lg-autosadgest__dropdown {
+  position: absolute;
+  top: 100%;
+  left: 0;
+  right: 0;
+  margin-top: 2px;
+  max-height: 200px;
+  overflow-y: auto;
+  background: var(--vscode-dropdown-background);
+  border: 1px solid var(--vscode-dropdown-border, var(--vscode-editorWidget-border));
+  border-radius: 4px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+  z-index: 1000;
+  display: none;
+}
+
+.lg-autosadgest__dropdown.show {
+  display: block;
+}
+
+.lg-autosadgest__option {
+  padding: 4px 8px;
+  cursor: pointer;
+  color: var(--vscode-dropdown-foreground);
+  font-size: 12px;
+}
+
+.lg-autosadgest__option:hover,
+.lg-autosadgest__option.selected {
+  background: var(--vscode-list-hoverBackground);
+}
+
+.lg-autosadgest__option.cached::after {
+  content: " ✓";
+  color: var(--vscode-charts-green);
+  margin-left: 4px;
+}
