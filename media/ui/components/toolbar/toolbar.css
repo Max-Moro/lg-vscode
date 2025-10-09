@@ -1,0 +1,44 @@
+/**
+ * Toolbar Component Styles
+ * Horizontal action bar for buttons with fixed width
+ * 
+ * Usage: <div class="lg-toolbar">...</div>
+ */
+
+.lg-toolbar {
+  display: flex;
+  gap: var(--lg-space-lg);
+  align-items: center;
+  flex-wrap: wrap;
+  margin-bottom: var(--lg-space-xl);
+}
+
+/* Ensure buttons in toolbar have fixed width (override default adaptive behavior) */
+.lg-toolbar .lg-btn {
+  flex: 0 0 auto;
+  width: auto;
+}
+
+/* Optional: Toolbar variants */
+.lg-toolbar--compact {
+  gap: var(--lg-space-sm);
+  margin-bottom: var(--lg-space-md);
+}
+
+.lg-toolbar--dense {
+  gap: var(--lg-space-xs);
+  margin-bottom: var(--lg-space-sm);
+}
+
+/* Group separator */
+.lg-toolbar__separator {
+  width: 1px;
+  height: 24px;
+  background: var(--vscode-editorIndentGuide-background);
+  margin: 0 var(--lg-space-xs);
+}
+
+/* Spacer to push items to the right */
+.lg-toolbar__spacer {
+  flex: 1 1 auto;
+}

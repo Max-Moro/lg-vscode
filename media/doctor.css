@@ -1,5 +1,4 @@
 /* Doctor-specific layout only. Component styles come from lg-ui.css */
 .row { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
 .section { margin-top: 16px; }
-.actions { display: flex; gap: 8px; flex-wrap: wrap; margin: 8px 0 16px; }
 .note { font-size: 11px; }

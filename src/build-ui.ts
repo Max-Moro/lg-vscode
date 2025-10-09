@@ -23,7 +23,8 @@ const COMPONENTS = [
   'autosuggest',
   'textarea',
   'chat-input',
-  'code-viewer'
+  'code-viewer',
+  'toolbar'
 ];
 
 function ensureDir(dir: string) {
@@ -145,6 +146,8 @@ function buildJS() {
   parts.push('    createAutosuggest,');
   parts.push('    ChatInput,');
   parts.push('    createChatInput,');
+  parts.push('    Toolbar,');
+  parts.push('    enhanceToolbar,');
   parts.push('    fillSelect,');
   parts.push('    enhanceSelect,');
   parts.push('    enhanceInput,');

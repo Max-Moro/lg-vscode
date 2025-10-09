@@ -36,7 +36,7 @@
       <h2>Listing Generator — Doctor</h2>
       <p class="muted">Tool: <b>${esc(data.tool_version || "unknown")}</b> • Protocol: <b>${esc(data.protocol)}</b> • Root: <span class="monosmall">${esc(data.root)}</span></p>
 
-      <div class="actions">
+      <div class="lg-toolbar">
         <button id="btn-refresh" class="lg-btn lg-btn--primary" title="Re-run diagnostics">Refresh</button>
         <button id="btn-rebuild" class="lg-btn" title="Reset local LG cache and re-run">Rebuild cache</button>
         <button id="btn-bundle" class="lg-btn" title="Build diagn. bundle (.zip) with diag.json, lg-cfg and git metadata">Build bundle</button>
