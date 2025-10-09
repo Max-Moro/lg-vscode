@@ -70,10 +70,42 @@
 
 ## 🔄 Next Steps
 
-### Stats View — PENDING ⏳
-- [ ] Update `stats.html` to use `lg-ui.css` and `lg-ui.js`
-- [ ] Migrate `stats.js` to LGUI API
-- [ ] Remove component styles from `stats.css`
+### Stats View — COMPLETED ✅
+
+**Date**: 2025-10-09
+
+#### Files Changed:
+- ✅ `stats.js` — Migrated to LGUI API
+- ✅ `stats.html` — Updated to use lg-ui bundles
+- ✅ `stats.css` — Added lg-input class to filter input
+- ✅ `StatsWebview.ts` — Updated to pass lgUiCssUri/lgUiJsUri
+
+#### Changes Made:
+
+**JavaScript Migration (`stats.js`)**:
+- `UI.acquire()` → `State.getVSCode()`
+- `UI.post()` → `State.post()`
+- `UI.on()` → `Events.on()`
+- `UI.delegate()` → `Events.delegate()`
+- `UI.debounce()` → `Events.debounce()`
+
+**CSS Optimization (`stats.css`)**:
+- Added `lg-input` class to filter input
+- Removed duplicate input styling
+- Stats.css already clean (47 lines, no component styles)
+
+**HTML Updates (`stats.html`)**:
+- Removed `{{baseCssUri}}` and `{{commonUiJsUri}}`
+- Added `{{lgUiCssUri}}` and `{{lgUiJsUri}}`
+
+#### Benefits:
+✅ **Consistency**: Same LGUI API as Control Panel  
+✅ **Clean code**: No legacy UI.* calls  
+✅ **Smaller bundle**: Removed common-ui.js dependency  
+
+---
+
+## 🔄 Next Steps (Remaining)
 
 ### Doctor View — PENDING ⏳
 - [ ] Update `doctor.html` to use `lg-ui.css` and `lg-ui.js`
@@ -83,7 +115,7 @@
 ### Legacy Cleanup — PENDING ⏳
 - [ ] Delete `media/common-ui.js` (no longer needed)
 - [ ] Clean up `media/base.css` (remove redundant styles)
-- [ ] Clean up `media/control.css` (remove component styles, keep only layout)
+- ✅ Clean up `media/control.css` (remove component styles, keep only layout)
 
 ---
 

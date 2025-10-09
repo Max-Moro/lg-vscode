@@ -5,7 +5,7 @@ import * as vscode from "vscode";
 import { getVirtualProvider } from "./virtualBus";
 import { AiIntegrationService } from "../services/ai";
 import type { RunResult } from "../models/report";
-import { buildHtml, getExtensionUri, mediaUri } from "../webview/webviewKit";
+import { buildHtml, getExtensionUri, mediaUri, lgUiUri } from "../webview/webviewKit";
 
 export async function showStatsWebview(
   data: RunResult,
@@ -34,10 +34,10 @@ export async function showStatsWebview(
 
   panel.webview.html = buildHtml(panel.webview, "stats.html", {
     cssUri:      mediaUri(panel.webview, "stats.css"),
-    baseCssUri:  mediaUri(panel.webview, "base.css"),
+    lgUiCssUri:  lgUiUri(panel.webview, "lg-ui.css"),
+    lgUiJsUri:   lgUiUri(panel.webview, "lg-ui.js"),
     jsUri:       mediaUri(panel.webview, "stats.js"),
     commonJsUri: mediaUri(panel.webview, "common.js"),
-    commonUiJsUri: mediaUri(panel.webview, "common-ui.js"),
   });
 
   // Текущее содержимое (обновляем после refresh)

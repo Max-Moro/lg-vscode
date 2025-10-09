@@ -1,4 +1,4 @@
-/* Stats-specific behavior & extras. Base visuals come from media/base.css */
+/* Stats-specific behavior & extras. Component styles come from lg-ui.css */
 th { user-select: none; }
 .warn { color: var(--vscode-editorWarning-foreground); font-weight: 600; }
 th.sortable { cursor: pointer; }
@@ -26,7 +26,7 @@ th.sortable.active .arrow { opacity: 1; }
 }
 
 .filter { margin: 8px 0 12px; display: flex; gap: 8px; align-items: center; }
-input[type="search"] { width: 320px; padding: 6px 8px; background: var(--vscode-input-background); color: var(--vscode-input-foreground); border: 1px solid var(--vscode-inputBorder); border-radius: 6px; }
+.filter-input { width: 320px; max-width: 100%; }
 
 /* ——— Debug row: два независимых спойлера в одну строку ——— */
 .debug-row {

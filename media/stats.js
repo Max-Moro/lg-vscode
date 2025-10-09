@@ -1,13 +1,14 @@
-/* global UI, LG */
+/* global LGUI, LG */
 (function () {
+  const { DOM, Events, State } = LGUI;
   const { esc, fmtInt, fmtPct, hrSize } = LG;
-  const vscode = UI.acquire();
+  const vscode = State.getVSCode();
   const app = document.getElementById("app");
   
   let currentTaskText = ""; // локальное состояние task text
 
   // Handshake: ask TS side for data
-  UI.post(vscode, "ready");
+  State.post("ready");
   window.addEventListener("message", (ev) => {
     const msg = ev.data;
     if (msg && msg.type === "runResult") {
@@ -34,11 +35,11 @@
     }
     
     // Handle input changes
-    UI.on(textarea, "input", UI.debounce(() => {
+    Events.on(textarea, "input", Events.debounce(() => {
       const newText = textarea instanceof HTMLTextAreaElement ? textarea.value : "";
       currentTaskText = newText;
       // Send update to extension host
-      UI.post(vscode, "updateTaskText", { taskText: newText });
+      State.post("updateTaskText", { taskText: newText });
     }, 500));
   }
 
@@ -123,7 +124,7 @@
         <h3>Files</h3>
         <div class="filter">
           <label class="muted">Filter:</label>
-          <input id="flt" type="search" placeholder="path or ext" />
+          <input id="flt" class="lg-input filter-input" type="search" placeholder="path or ext" />
         </div>
       </div>
 
@@ -214,7 +215,7 @@
 
     // Делегированная сортировка по клику в заголовке
     if (thead) {
-      UI.delegate(thead, "th.sortable", "click", (th) => {
+      Events.delegate(thead, "th.sortable", "click", (th) => {
         const key = th.getAttribute("data-key") || "path";
         if (key === sortKey) {
           sortDir = (sortDir === "asc") ? "desc" : "asc";
@@ -227,7 +228,7 @@
     }
     // Дебаунс фильтра
     if (flt) {
-      UI.on(flt, "input", UI.debounce((e) => {
+      Events.on(flt, "input", Events.debounce((e) => {
         filter = (e.target && e.target.value || "").trim();
         renderBody();
       }, 120));
@@ -238,9 +239,9 @@
 
     // Копирование пути по double-click на строке
     if (tbody) {
-      UI.delegate(tbody, "tr[data-path]", "dblclick", (tr) => {
+      Events.delegate(tbody, "tr[data-path]", "dblclick", (tr) => {
         const p = tr.getAttribute("data-path");
-        if (p) UI.post(vscode, "copy", { text: p });
+        if (p) State.post("copy", { text: p });
       });
     }
 
@@ -266,15 +267,15 @@
 
     // Hook refresh button
     const btn = document.getElementById("btn-refresh");
-    if (btn) UI.on(btn, "click", () => UI.post(vscode, "refresh"));
+    if (btn) Events.on(btn, "click", () => State.post("refresh"));
 
     // Hook generate button
     const gen = document.getElementById("btn-generate");
-    if (gen) UI.on(gen, "click", () => UI.post(vscode, "generate"));
+    if (gen) Events.on(gen, "click", () => State.post("generate"));
 
     // Hook send to AI button
     const sendAi = document.getElementById("btn-send-ai");
-    if (sendAi) UI.on(sendAi, "click", () => UI.post(vscode, "sendToAI"));
+    if (sendAi) Events.on(sendAi, "click", () => State.post("sendToAI"));
   }
 
   function card(title, valueHtml, tooltip) {
