@@ -1,0 +1,57 @@
+/**
+ * Design Tokens for LG UI Components
+ * CSS Custom Properties for VS Code theme integration
+ */
+
+:root {
+  /* ========================================
+     SPACING SYSTEM
+     ======================================== */
+  --lg-space-xs: 2px;
+  --lg-space-sm: 4px;
+  --lg-space-md: 6px;
+  --lg-space-lg: 8px;
+  --lg-space-xl: 12px;
+  --lg-space-2xl: 16px;
+  --lg-space-3xl: 24px;
+
+  /* ========================================
+     BORDER RADIUS
+     ======================================== */
+  --lg-radius-sm: 4px;
+  --lg-radius-md: 6px;
+  --lg-radius-lg: 8px;
+  --lg-radius-round: 999px;
+
+  /* ========================================
+     TRANSITIONS
+     ======================================== */
+  --lg-transition-fast: 0.15s ease;
+  --lg-transition-normal: 0.2s ease;
+  --lg-transition-slow: 0.3s ease;
+
+  /* ========================================
+     Z-INDEX LAYERS
+     ======================================== */
+  --lg-z-base: 0;
+  --lg-z-dropdown: 1000;
+  --lg-z-overlay: 1500;
+  --lg-z-modal: 2000;
+  --lg-z-tooltip: 3000;
+
+  /* ========================================
+     FONT SIZES
+     ======================================== */
+  --lg-font-xs: 10px;
+  --lg-font-sm: 11px;
+  --lg-font-md: 12px;
+  --lg-font-lg: 13px;
+  --lg-font-xl: 14px;
+
+  /* ========================================
+     SHADOWS
+     ======================================== */
+  --lg-shadow-sm: 0 1px 3px rgba(0, 0, 0, 0.1);
+  --lg-shadow-md: 0 2px 8px rgba(0, 0, 0, 0.15);
+  --lg-shadow-lg: 0 4px 16px rgba(0, 0, 0, 0.2);
+}

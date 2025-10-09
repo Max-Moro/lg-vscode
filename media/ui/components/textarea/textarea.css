@@ -1,0 +1,36 @@
+/**
+ * Textarea Component Styles
+ */
+
+.lg-textarea {
+  background: var(--vscode-input-background);
+  color: var(--vscode-input-foreground);
+  border: 1px solid var(--vscode-input-border, var(--vscode-editorWidget-border));
+  border-radius: var(--lg-radius-sm);
+  padding: var(--lg-space-sm) var(--lg-space-md);
+  font-family: var(--vscode-font-family);
+  font-size: var(--lg-font-md);
+  line-height: 1.5;
+  resize: vertical;
+  min-height: 60px;
+  max-height: 240px;
+  transition: border-color var(--lg-transition-fast),
+              box-shadow var(--lg-transition-fast);
+}
+
+.lg-textarea:focus {
+  outline: none;
+  border-color: var(--vscode-focusBorder);
+  box-shadow: 0 0 0 1px var(--vscode-focusBorder);
+}
+
+.lg-textarea:disabled {
+  color: var(--vscode-disabledForeground);
+  opacity: 0.7;
+  cursor: not-allowed;
+}
+
+.lg-textarea::placeholder {
+  color: var(--vscode-input-placeholderForeground);
+  opacity: 0.6;
+}

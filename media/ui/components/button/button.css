@@ -1,0 +1,85 @@
+/**
+ * Button Component Styles
+ */
+
+.lg-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--lg-space-md);
+  padding: var(--lg-space-xs) var(--lg-space-md);
+  line-height: 1.2;
+  border-radius: var(--lg-radius-sm);
+  background: var(--vscode-button-secondaryBackground);
+  color: var(--vscode-button-secondaryForeground);
+  border: 1px solid var(--vscode-dropdown-border, transparent);
+  cursor: pointer;
+  font: inherit;
+  min-width: 0;
+  max-width: 100%;
+  transition: background var(--lg-transition-fast);
+  white-space: nowrap;
+}
+
+.lg-btn:hover:not(:disabled) {
+  background: var(--vscode-button-secondaryHoverBackground);
+}
+
+.lg-btn:active:not(:disabled) {
+  transform: translateY(1px);
+}
+
+.lg-btn:disabled {
+  opacity: 0.7;
+  cursor: not-allowed;
+  color: var(--vscode-disabledForeground);
+}
+
+/* Button variants */
+.lg-btn--primary {
+  background: var(--vscode-button-background);
+  color: var(--vscode-button-foreground);
+  border-color: var(--vscode-button-border, var(--vscode-button-background));
+}
+
+.lg-btn--primary:hover:not(:disabled) {
+  background: var(--vscode-button-hoverBackground);
+}
+
+/* Size variants */
+.lg-btn--sm {
+  padding: var(--lg-space-xs) var(--lg-space-sm);
+  font-size: var(--lg-font-sm);
+}
+
+.lg-btn--lg {
+  padding: var(--lg-space-sm) var(--lg-space-xl);
+  font-size: var(--lg-font-lg);
+}
+
+/* Icon in button */
+.lg-btn__icon {
+  flex-shrink: 0;
+  display: inline-flex;
+  align-items: center;
+}
+
+/* Text wrapper for proper ellipsis */
+.lg-btn__text {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  min-width: 0;
+}
+
+/* Icon-only button */
+.lg-btn--icon-only {
+  padding: var(--lg-space-xs);
+  aspect-ratio: 1;
+}
+
+/* Full width button */
+.lg-btn--block {
+  width: 100%;
+  justify-content: center;
+}

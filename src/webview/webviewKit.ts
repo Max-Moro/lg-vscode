@@ -38,6 +38,12 @@ export function readHtmlTemplate(relPathInMedia: string): string {
  * Собирает HTML из шаблона `media/<template>` с автоподстановкой {{cspSource}} и {{nonce}}.
  * В `replacements` можно передать дополнительные маркеры ({{key}} → value).
  */
+/** Конвертирует файл из папки `media/ui/dist/` в webview-URI. */
+export function lgUiUri(webview: vscode.Webview, file: 'lg-ui.css' | 'lg-ui.js'): string {
+  const base = vscode.Uri.joinPath(getExtensionUri(), 'media', 'ui', 'dist', file);
+  return webview.asWebviewUri(base).toString();
+}
+
 export function buildHtml(
   webview: vscode.Webview,
   templateRelPath: string,

@@ -1,0 +1,48 @@
+/**
+ * Chat Input Component Styles
+ * AI-style expandable text input field
+ */
+
+.lg-chat-input {
+  width: 100%;
+  min-height: 42px;
+  max-height: 120px;
+  padding: 10px 12px;
+  background: var(--vscode-input-background);
+  color: var(--vscode-input-foreground);
+  border: 1px solid var(--vscode-input-border, var(--vscode-editorWidget-border));
+  border-radius: var(--lg-radius-lg);
+  font-family: var(--vscode-font-family);
+  font-size: var(--lg-font-lg);
+  line-height: 1.5;
+  box-sizing: border-box;
+  resize: none;
+  overflow-y: auto;
+  overflow-x: hidden;
+  scrollbar-width: none;
+  field-sizing: content;
+  transition: border-color var(--lg-transition-fast),
+              box-shadow var(--lg-transition-fast),
+              height 0.1s ease;
+}
+
+.lg-chat-input::-webkit-scrollbar {
+  display: none;
+}
+
+.lg-chat-input:focus {
+  outline: none;
+  border-color: var(--vscode-focusBorder);
+  box-shadow: 0 0 0 1px var(--vscode-focusBorder);
+}
+
+.lg-chat-input::placeholder {
+  color: var(--vscode-input-placeholderForeground);
+  opacity: 0.6;
+}
+
+.lg-chat-input:disabled {
+  opacity: 0.7;
+  cursor: not-allowed;
+  color: var(--vscode-disabledForeground);
+}

@@ -1,0 +1,50 @@
+/**
+ * Base Reset/Normalize for LG UI Components
+ * Minimal reset to ensure consistency
+ */
+
+/* Box sizing */
+.lg-ui *,
+.lg-ui *::before,
+.lg-ui *::after {
+  box-sizing: border-box;
+}
+
+/* Remove default margins and paddings for components */
+.lg-ui button,
+.lg-ui input,
+.lg-ui select,
+.lg-ui textarea {
+  margin: 0;
+  padding: 0;
+  font: inherit;
+}
+
+/* Remove default button styles */
+.lg-ui button {
+  background: none;
+  border: none;
+  cursor: pointer;
+}
+
+/* Accessibility: focus visible */
+.lg-ui *:focus-visible {
+  outline: 1px solid var(--vscode-focusBorder);
+  outline-offset: 1px;
+}
+
+/* Reduced motion support */
+@media (prefers-reduced-motion: reduce) {
+  .lg-ui * {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+}
+
+/* High contrast mode support */
+@media (prefers-contrast: high) {
+  .lg-ui {
+    --lg-border-width: 2px;
+  }
+}

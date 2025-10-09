@@ -1,0 +1,33 @@
+/**
+ * Input Component Styles
+ */
+
+.lg-input {
+  background: var(--vscode-input-background);
+  color: var(--vscode-input-foreground);
+  border: 1px solid var(--vscode-input-border, var(--vscode-editorWidget-border));
+  border-radius: var(--lg-radius-sm);
+  padding: var(--lg-space-xs) var(--lg-space-md);
+  font: inherit;
+  min-width: 0;
+  max-width: 100%;
+  transition: border-color var(--lg-transition-fast),
+              box-shadow var(--lg-transition-fast);
+}
+
+.lg-input:focus {
+  outline: none;
+  border-color: var(--vscode-focusBorder);
+  box-shadow: 0 0 0 1px var(--vscode-focusBorder);
+}
+
+.lg-input:disabled {
+  color: var(--vscode-disabledForeground);
+  opacity: 0.7;
+  cursor: not-allowed;
+}
+
+.lg-input::placeholder {
+  color: var(--vscode-input-placeholderForeground);
+  opacity: 0.6;
+}

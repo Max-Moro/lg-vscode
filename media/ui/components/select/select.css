@@ -1,0 +1,31 @@
+/**
+ * Select Component Styles
+ */
+
+.lg-select {
+  background: var(--vscode-dropdown-background);
+  color: var(--vscode-dropdown-foreground);
+  border: 1px solid var(--vscode-dropdown-border, var(--vscode-editorWidget-border));
+  border-radius: var(--lg-radius-sm);
+  padding: var(--lg-space-xs) var(--lg-space-md);
+  min-width: 0;
+  max-width: 100%;
+  flex: 1 1 auto;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  overflow: hidden;
+  font: inherit;
+  transition: border-color var(--lg-transition-fast),
+              outline var(--lg-transition-fast);
+}
+
+.lg-select:focus-visible {
+  outline: 1px solid var(--vscode-focusBorder);
+  outline-offset: 1px;
+}
+
+.lg-select:disabled {
+  color: var(--vscode-disabledForeground);
+  opacity: 0.7;
+  cursor: not-allowed;
+}

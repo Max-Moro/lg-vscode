@@ -1,0 +1,158 @@
+/**
+ * Autosuggest Component Styles
+ */
+
+.lg-autosuggest {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  flex: 1 1 auto;
+  min-width: 0;
+  max-width: 100%;
+  width: 100%;
+}
+
+.lg-autosuggest__input {
+  flex: 1 1 auto;
+  background: var(--vscode-input-background);
+  color: var(--vscode-input-foreground);
+  border: 1px solid var(--vscode-input-border, var(--vscode-editorWidget-border));
+  border-radius: var(--lg-radius-sm);
+  padding: var(--lg-space-xs) 24px var(--lg-space-xs) var(--lg-space-md);
+  font: inherit;
+  min-width: 0;
+  transition: border-color var(--lg-transition-fast),
+              box-shadow var(--lg-transition-fast);
+  -webkit-appearance: none;
+  appearance: none;
+}
+
+.lg-autosuggest__input:focus {
+  outline: none;
+  border-color: var(--vscode-focusBorder);
+  box-shadow: 0 0 0 1px var(--vscode-focusBorder);
+}
+
+.lg-autosuggest__input:disabled {
+  color: var(--vscode-disabledForeground);
+  opacity: 0.7;
+  cursor: not-allowed;
+}
+
+.lg-autosuggest__input::placeholder {
+  color: var(--vscode-input-placeholderForeground);
+  opacity: 0.6;
+}
+
+/* Hide native picker */
+.lg-autosuggest__input::-webkit-calendar-picker-indicator {
+  display: none !important;
+  opacity: 0 !important;
+  pointer-events: none;
+  width: 0;
+  height: 0;
+}
+
+.lg-autosuggest__indicator {
+  position: absolute;
+  right: 8px;
+  top: 50%;
+  transform: translateY(-50%);
+  color: var(--vscode-dropdown-foreground);
+  font-size: 12px;
+  pointer-events: none;
+  opacity: 0.85;
+  transition: transform var(--lg-transition-fast);
+}
+
+.lg-autosuggest--open .lg-autosuggest__indicator {
+  transform: translateY(-50%) rotate(180deg);
+}
+
+/* Dropdown menu */
+.lg-autosuggest__dropdown {
+  position: absolute;
+  top: calc(100% + 2px);
+  left: 0;
+  right: 0;
+  max-height: 200px;
+  overflow-y: auto;
+  background: var(--vscode-dropdown-background);
+  border: 1px solid var(--vscode-dropdown-border, var(--vscode-editorWidget-border));
+  border-radius: var(--lg-radius-sm);
+  box-shadow: var(--lg-shadow-md);
+  z-index: var(--lg-z-dropdown);
+  opacity: 0;
+  transform: translateY(-4px);
+  pointer-events: none;
+  transition: opacity var(--lg-transition-fast),
+              transform var(--lg-transition-fast);
+}
+
+.lg-autosuggest--open .lg-autosuggest__dropdown {
+  opacity: 1;
+  transform: translateY(0);
+  pointer-events: auto;
+}
+
+.lg-autosuggest__option {
+  padding: var(--lg-space-sm) var(--lg-space-lg);
+  cursor: pointer;
+  color: var(--vscode-dropdown-foreground);
+  font-size: var(--lg-font-md);
+  transition: background var(--lg-transition-fast);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.lg-autosuggest__option:hover {
+  background: var(--vscode-list-hoverBackground);
+}
+
+.lg-autosuggest__option--selected {
+  background: var(--vscode-list-activeSelectionBackground);
+  color: var(--vscode-list-activeSelectionForeground);
+}
+
+.lg-autosuggest__option--empty {
+  font-style: italic;
+  color: var(--vscode-descriptionForeground);
+  cursor: default;
+  padding: var(--lg-space-lg);
+  text-align: center;
+}
+
+.lg-autosuggest__option--empty:hover {
+  background: transparent;
+}
+
+/* Badge for cached items */
+.lg-autosuggest__badge {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--lg-space-xs);
+  padding: 2px 6px;
+  border-radius: var(--lg-radius-round);
+  background: rgba(16, 124, 16, 0.2);
+  color: var(--vscode-charts-green);
+  font-size: var(--lg-font-xs);
+  font-weight: 600;
+  margin-left: var(--lg-space-sm);
+}
+
+/* Loading state */
+.lg-autosuggest--loading .lg-autosuggest__indicator::before {
+  content: "";
+  display: block;
+  width: 12px;
+  height: 12px;
+  border: 2px solid var(--vscode-progressBar-background);
+  border-top-color: transparent;
+  border-radius: 50%;
+  animation: lg-spin 0.6s linear infinite;
+}
+
+@keyframes lg-spin {
+  to { transform: rotate(360deg); }
+}
