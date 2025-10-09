@@ -69,7 +69,20 @@ export class Autosuggest {
 
     this.cleanups.push(
       Events.on(this.input, 'focus', () => {
-        this.open();
+        // При фокусе не открываем автоматически - позволяем пользователю просто вводить текст
+      })
+    );
+
+    // Click toggle - открываем/закрываем dropdown при клике на поле
+    this.cleanups.push(
+      Events.on(this.input, 'click', (e) => {
+        // Останавливаем всплытие, чтобы не сработал document click
+        e.stopPropagation();
+        if (this.isOpen) {
+          this.close();
+        } else {
+          this.open();
+        }
       })
     );
 
