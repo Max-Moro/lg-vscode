@@ -109,7 +109,8 @@ label {
     width: 100%;
   }
   
-  /* Full-width controls */
+  /* Full-width controls in narrow mode */
+  /* Note: .lg-btn has flex: 1 1 auto by default (adaptive behavior) */
   .lg-btn {
     justify-content: flex-start;
   }

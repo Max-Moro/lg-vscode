@@ -9,6 +9,18 @@ th.sortable.active .arrow { opacity: 1; }
 .pill.warn { background: rgba(156, 124, 0, .25); }
 .pill.crit { background: rgba(176, 0, 32, .3); }
 
+/* Actions toolbar: fixed-width buttons */
+.actions {
+  display: flex;
+  gap: 8px;
+  margin-bottom: 12px;
+  flex-wrap: wrap;
+}
+
+.actions .lg-btn {
+  flex: 0 0 auto;
+}
+
 /* key-value table used in Adapter Metrics */
 .kv { width: 100%; border-collapse: collapse; }
 .kv td { padding: 4px 6px; border-bottom: 1px dashed var(--vscode-editorIndentGuide-background); }

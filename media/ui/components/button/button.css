@@ -19,6 +19,9 @@
   max-width: 100%;
   transition: background var(--lg-transition-fast);
   white-space: nowrap;
+  
+  /* Default: flex layout for adaptive panels (Control Panel) */
+  flex: 1 1 auto;
 }
 
 .lg-btn:hover:not(:disabled) {
@@ -57,6 +60,12 @@
   font-size: var(--lg-font-lg);
 }
 
+/* Layout mode: fixed-width buttons for toolbars (Stats, etc.) */
+.lg-btn--fixed {
+  flex: 0 0 auto;
+  width: auto;
+}
+
 /* Icon in button */
 .lg-btn__icon {
   flex-shrink: 0;
@@ -64,8 +73,21 @@
   align-items: center;
 }
 
+/* Ensure codicons don't get cut off */
+.lg-btn .codicon {
+  flex-shrink: 0;
+}
+
 /* Text wrapper for proper ellipsis */
 .lg-btn__text {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  min-width: 0;
+}
+
+/* Text wrapper inside button for ellipsis handling */
+.lg-btn .btn-text {
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
