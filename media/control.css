@@ -495,8 +495,3 @@ input.encoder-input:disabled {
   color: var(--vscode-disabledForeground);
   opacity: 0.7;
 }
-
-/* Hide default datalist dropdown arrow in webkit browsers */
-input.encoder-input::-webkit-calendar-picker-indicator {
-  display: none;
-}
