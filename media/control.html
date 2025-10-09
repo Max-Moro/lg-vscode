@@ -30,16 +30,16 @@
       
       <div class="row">
         <span class="cluster">
-          <select id="template" class="grow" data-state-key="template" title="Контекст (.ctx.md) из lg-cfg/"></select>
-          <button data-action="sendContextToAI" title="Сгенерировать контекст и отправить в AI">
+          <select id="template" class="lg-select grow" data-state-key="template" title="Контекст (.ctx.md) из lg-cfg/"></select>
+          <button class="lg-btn" data-action="sendContextToAI" title="Сгенерировать контекст и отправить в AI">
             <span class="codicon codicon-send"></span><span class="btn-text">Send to AI</span>
           </button>
-          <button id="btn-context" data-action="generateContext" title="Сгенерировать контекст-промт по шаблону">
+          <button class="lg-btn" id="btn-context" data-action="generateContext" title="Сгенерировать контекст-промт по шаблону">
             <span class="codicon codicon-file-code"></span><span class="btn-text">Generate Context</span>
           </button>
         </span>
         <span class="cluster">
-          <button class="btn-primary" data-action="showContextStats" title="Показать суммарную статистику токенов для выбранного контекста">
+          <button class="lg-btn lg-btn--primary" data-action="showContextStats" title="Показать суммарную статистику токенов для выбранного контекста">
             <span class="codicon codicon-table"></span><span class="btn-text">Show Context Stats</span>
           </button>
         </span>
@@ -56,7 +56,7 @@
       <div id="target-branch-container" class="target-branch-container" style="display: none;">
         <div class="mode-set">
           <label class="mode-set-label">Target Branch</label>
-          <select id="targetBranch" data-state-key="targetBranch" class="mode-select">
+          <select id="targetBranch" data-state-key="targetBranch" class="lg-select mode-select">
             <option value="">Select target branch...</option>
           </select>
         </div>
@@ -64,7 +64,7 @@
       
       <div class="row">
         <span class="cluster">
-          <button id="tags-toggle" data-action="toggleTags" title="Configure tags">
+          <button class="lg-btn" id="tags-toggle" data-action="toggleTags" title="Configure tags">
             <span class="codicon codicon-tag"></span><span class="btn-text">Configure Tags</span>
           </button>
         </span>
@@ -75,7 +75,7 @@
     <div id="tags-panel" class="tags-panel" style="display: none;">
       <div class="tags-panel-header">
         <h3><span class="codicon codicon-tag"></span> Tags Configuration</h3>
-        <button id="tags-close" class="tags-close" title="Close tags panel">
+        <button class="lg-btn tags-close" id="tags-close" title="Close tags panel">
           <span class="codicon codicon-close"></span>
         </button>
       </div>
@@ -89,26 +89,26 @@
       <div class="row">
         <span class="cluster" title="Секция из lg-cfg/sections.yaml или *.sec.yaml">
           <label>Section:</label>
-          <select id="section" data-state-key="section"></select>
+          <select class="lg-select" id="section" data-state-key="section"></select>
         </span>
 
       </div>
       <div class="row">
         <span class="cluster">
-          <button data-action="showIncluded" title="Показать какие файлы проходят фильтры">
+          <button class="lg-btn" data-action="showIncluded" title="Показать какие файлы проходят фильтры">
             <span class="codicon codicon-list-tree"></span><span class="btn-text">Show Included</span>
           </button>
         </span>
         <span class="cluster">
-          <button data-action="generateListing" title="Сшить исходники из выбранной секции в единый листинг">
+          <button class="lg-btn" data-action="generateListing" title="Сшить исходники из выбранной секции в единый листинг">
            <span class="codicon codicon-file-code"></span><span class="btn-text">Generate Listing</span>
           </button>
-          <button data-action="sendListingToAI" title="Сгенерировать листинг и отправить в AI">
+          <button class="lg-btn" data-action="sendListingToAI" title="Сгенерировать листинг и отправить в AI">
             <span class="codicon codicon-send"></span><span class="btn-text">Send to AI</span>
           </button>
         </span>
         <span class="cluster">
-          <button data-action="showStats" title="Таблица размеров и токенов с долями контекста">
+          <button class="lg-btn" data-action="showStats" title="Таблица размеров и токенов с долями контекста">
             <span class="codicon codicon-table"></span><span class="btn-text">Show Stats</span>
           </button>
         </span>
@@ -122,7 +122,7 @@
       <div class="row">
         <span class="cluster" title="Библиотека токенизации (tiktoken, tokenizers, sentencepiece)">
           <label>Library:</label>
-          <select id="tokenizerLib" data-state-key="tokenizerLib"></select>
+          <select class="lg-select" id="tokenizerLib" data-state-key="tokenizerLib"></select>
         </span>
       </div>
       
@@ -156,21 +156,21 @@
       <h3><span class="codicon codicon-tools"></span> Utilities</h3>
       <div class="row">
         <span class="cluster">
-          <button data-action="createStarter" title="Создать lg-cfg/sections.yaml и примеры .tpl.md/.ctx.md">
+          <button class="lg-btn" data-action="createStarter" title="Создать lg-cfg/sections.yaml и примеры .tpl.md/.ctx.md">
              <span class="codicon codicon-new-file"></span><span class="btn-text">Create Starter Config</span>
           </button>
-          <button data-action="openConfig" title="Открыть lg-cfg/sections.yaml">
+          <button class="lg-btn" data-action="openConfig" title="Открыть lg-cfg/sections.yaml">
            <span class="codicon codicon-file"></span><span class="btn-text">Open Config</span>
           </button>
         </span>
         <span class="cluster">
-          <button data-action="doctor" title="Проверка окружения и конфигурации">
+          <button class="lg-btn" data-action="doctor" title="Проверка окружения и конфигурации">
             <span class="codicon codicon-pulse"></span><span class="btn-text">Doctor</span>
           </button>
-          <button data-action="resetCache" title="Сбросить кеш Listing Generator">
+          <button class="lg-btn" data-action="resetCache" title="Сбросить кеш Listing Generator">
             <span class="codicon codicon-trash"></span><span class="btn-text">Reset Cache</span>
           </button>
-          <button data-action="openSettings" title="Открыть настройки расширения">
+          <button class="lg-btn" data-action="openSettings" title="Открыть настройки расширения">
             <span class="codicon codicon-gear"></span><span class="btn-text">Settings</span>
           </button>
         </span>

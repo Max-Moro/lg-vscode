@@ -156,8 +156,8 @@
 
 **base.css Cleanup**:
 - Removed duplicate button styles (now in lg-ui.css)
-- Kept `.btn-primary` compatibility mapping
-- File reduced from 113 → 101 lines
+- ~~Kept `.btn-primary` compatibility mapping~~ **REMOVED** — fully migrated to `.lg-btn--primary`
+- File reduced from 113 → 101 → **91 lines** (-22 lines total)
 
 #### Benefits:
 ✅ **Cleaner codebase** — Removed 170 lines of legacy code  
@@ -190,10 +190,11 @@
 ### Total Impact
 
 - **JavaScript**: ~40 UI.* calls → LGUI API
-- **CSS Reduction**: -196 lines total
-- **Files Deleted**: 1 (common-ui.js)
+- **CSS Reduction**: -206 lines total (base.css: -22, control.css: -184)
+- **Files Deleted**: 1 (common-ui.js, 170 lines)
+- **Legacy Classes Removed**: .btn-primary → .lg-btn--primary (13 buttons + 3 generated)
 - **Bundle Size**: All views now use lg-ui.css (12.7 KB) + lg-ui.js (22 KB)
-- **Consistency**: 100% — all views use same component library
+- **Consistency**: 100% — all views use same component library, zero legacy classes
 
 ---
 

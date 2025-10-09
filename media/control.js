@@ -10,8 +10,6 @@
     applyStateToDOM(cached);
   }
 
-
-
   // ---- helper: apply state to DOM ----
   function applyStateToDOM(state) {
     for (const [key, value] of Object.entries(state)) {
@@ -220,7 +218,7 @@
       const select = document.createElement("select");
       select.id = `mode-${modeSet.id}`;
       select.dataset.modeSet = modeSet.id;
-      select.className = "mode-select";
+      select.className = "lg-select mode-select";
       
       // Add mode options
       (modeSet.modes || []).forEach(mode => {

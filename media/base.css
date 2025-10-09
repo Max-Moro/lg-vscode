@@ -25,18 +25,6 @@ th { text-align: left; }
 .right { text-align: right; }
 .monosmall { font-family: var(--vscode-editor-font-family, monospace); font-size: 11px; }
 
-/* Note: Button styles are in lg-ui.css. Legacy .btn-primary maps to lg-btn--primary */
-button.btn-primary,
-.btn-primary {
-  background: var(--vscode-button-background) !important;
-  color: var(--vscode-button-foreground) !important;
-  border-color: var(--vscode-button-border, var(--vscode-button-background)) !important;
-}
-button.btn-primary:hover,
-.btn-primary:hover {
-  background: var(--vscode-button-hoverBackground) !important;
-}
-
 textarea.rawjson {
   width: 480px; height: 300px; resize: both;
   background: var(--vscode-editor-background);
