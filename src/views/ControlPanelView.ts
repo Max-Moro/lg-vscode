@@ -444,15 +444,15 @@ export class ControlPanelView implements vscode.WebviewViewProvider {
 
   // ——————————————— HTML ——————————————— //
   private buildHtml(view: vscode.WebviewView): string {
-    const { buildHtml, mediaUri, toWebviewUri } = require("../webview/webviewKit") as typeof import("../webview/webviewKit");
+    const { buildHtml, lgUiUri, mediaUri, toWebviewUri } = require("../webview/webviewKit") as typeof import("../webview/webviewKit");
     // путь к codicons берём из node_modules
     const codicons = toWebviewUri(view.webview, require.resolve("@vscode/codicons/dist/codicon.css"));
     return buildHtml(view.webview, "control.html", {
       codiconsUri: codicons,
-      baseCssUri:  mediaUri(view.webview, "base.css"),
-      controlCssUri: mediaUri(view.webview, "control.css"),
-      controlJsUri:  mediaUri(view.webview, "control.js"),
-      commonUiJsUri: mediaUri(view.webview, "common-ui.js"),
+      lgUiCssUri: lgUiUri(view.webview, "lg-ui.css"),
+      lgUiJsUri: lgUiUri(view.webview, "lg-ui.js"),
+      controlCssUri: mediaUri(view.webview, "control.css"), // Layout only
+      controlJsUri: mediaUri(view.webview, "control.js"),
     });
   }
 }
