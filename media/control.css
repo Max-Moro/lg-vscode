@@ -8,8 +8,12 @@ body {
 
 /* Prevent horizontal overflow at all costs */
 body {
-  overflow-x: hidden;
+  overflow: hidden;
   min-width: 0;
+}
+
+body::-webkit-scrollbar {
+  display: none; /* WebKit: hide scrollbar visuals while retaining scroll */
 }
 
 /* Basic typography */
