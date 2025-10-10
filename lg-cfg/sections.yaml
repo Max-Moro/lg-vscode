@@ -11,11 +11,9 @@ src:
         mode: block
         block:
           - "/doctor**"
+          - "/ui/"
       src:
         mode: block
         block:
-          - "/commands/copilotDiagnostics.ts"
-          - "/commands/cursorDiagnostics.ts"
-          - "/services/ai/"
           - "**doctor**"
           - "**diag**"
