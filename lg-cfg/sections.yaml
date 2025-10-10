@@ -10,12 +10,10 @@ src:
       media:
         mode: block
         block:
-          - "/stats**"
           - "/doctor**"
           - "/ui/"
       src:
         mode: block
         block:
-          - "**stats**"
           - "**doctor**"
           - "**diag**"

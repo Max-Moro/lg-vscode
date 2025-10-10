@@ -115,64 +115,11 @@ export async function showStatsWebview(
         return;
       }
       
-      const config = vscode.workspace.getConfiguration();
-      const providerId = config.get<string>("lg.ai.provider");
-      
-      if (!providerId) {
-        const choice = await vscode.window.showErrorMessage(
-          "No AI provider configured.",
-          "Open Settings",
-          "Cancel"
-        );
-        
-        if (choice === "Open Settings") {
-          vscode.commands.executeCommand("workbench.action.openSettings", "lg.ai.provider");
-        }
-        return;
-      }
-      
-      let generatedContent: string | undefined;
-      
-      try {
-        // Generate content with current task text
-        generatedContent = await vscode.window.withProgress(
-          {
-            location: vscode.ProgressLocation.Notification,
-            title: "LG: Generating content...",
-            cancellable: false
-          },
-          () => generate(currentTaskText)
-        );
-        
-        // Send to AI
-        const aiService = getAiService();
-        const providerName = aiService.getProviderName(providerId);
-        
-        await vscode.window.withProgress(
-          {
-            location: vscode.ProgressLocation.Notification,
-            title: `Sending to ${providerName}...`,
-            cancellable: false
-          },
-          () => aiService.sendToProvider(providerId, generatedContent!)
-        );
-      } catch (error: any) {
-        const aiService = getAiService();
-        const providerName = aiService.getProviderName(providerId);
-        
-        const choice = await vscode.window.showErrorMessage(
-          `Failed to send to ${providerName}: ${error.message}`,
-          "Open Settings",
-          "Copy to Clipboard",
-          "Cancel"
-        );
-        
-        if (choice === "Open Settings") {
-          vscode.commands.executeCommand("workbench.action.openSettings", "lg.ai.provider");
-        } else if (choice === "Copy to Clipboard" && generatedContent) {
-          await aiService.sendToProvider("clipboard", generatedContent);
-        }
-      }
+      const aiService = getAiService();
+      await aiService.generateAndSend(
+        () => generate(currentTaskText),
+        "LG: Generating content..."
+      );
     }
   });
 }
