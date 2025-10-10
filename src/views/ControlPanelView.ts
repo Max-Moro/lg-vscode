@@ -10,7 +10,6 @@ import type { TagSetsList } from "../models/tag_sets_list";
 import { resetCache } from "../services/DoctorService";
 import { runDoctor } from "../diagnostics/Doctor";
 import { openConfigOrInit, runInitWizard } from "../starter/StarterConfig";
-import { AiIntegrationService } from "../services/ai";
 import { GitService } from "../services/GitService";
 import { EXT_ID } from "../constants";
 import type { CliOptions } from "../cli/CliClient";
@@ -44,8 +43,6 @@ export class ControlPanelView implements vscode.WebviewViewProvider {
   private view?: vscode.WebviewView;
   /** Гарантия, что стартовую загрузку списков/state делаем ровно один раз. */
   private bootstrapped = false;
-  /** Универсальный AI-сервис */
-  private aiService = new AiIntegrationService();
   /** Git сервис для получения информации о ветках */
   private gitService = new GitService();
 
@@ -108,14 +105,8 @@ export class ControlPanelView implements vscode.WebviewViewProvider {
           case "generateListing":
             await this.onGenerateListing();
             break;
-          case "sendListingToAI":
-            await this.onSendListingToAI();
-            break;
           case "generateContext":
             await this.onGenerateContext();
-            break;
-          case "sendContextToAI":
-            await this.onSendContextToAI();
             break;
           case "showContextStats":
             await this.onShowContextStats();
@@ -292,37 +283,6 @@ export class ControlPanelView implements vscode.WebviewViewProvider {
       (taskText) => runListing({ ...params, taskText }),
       s.taskText
     );
-  }
-
-  private async onSendContextToAI() {
-    const s = this.getState();
-    if (!s.template) {
-      vscode.window.showWarningMessage("Select a template first.");
-      return;
-    }
-    const options = this.getFullCliOptions(s);
-    const content = await vscode.window.withProgress(
-      { location: vscode.ProgressLocation.Notification, title: `LG: Generating context '${s.template}' for AI…`, cancellable: false },
-      () => runContext(s.template, options)
-    );
-    await this.aiService.sendContext(s.template, content);
-  }
-
-  private async onSendListingToAI() {
-    const s = this.getState();
-    const params: ListingParams = {
-      section: s.section,
-      ...this.getTokenizationParams(s),
-      modes: Object.keys(s.modes || {}).length > 0 ? s.modes : undefined,
-      tags: Array.isArray(s.tags) && s.tags.length > 0 ? s.tags : undefined,
-      taskText: s.taskText && s.taskText.trim() ? s.taskText.trim() : undefined,
-      targetBranch: s.targetBranch && s.targetBranch.trim() ? s.targetBranch.trim() : undefined
-    };
-    const content = await vscode.window.withProgress(
-      { location: vscode.ProgressLocation.Notification, title: `LG: Generating listing '${s.section}' for AI…`, cancellable: false },
-      () => runListing(params)
-    );
-    await this.aiService.sendListing(s.section, content);
   }
 
   // ——————————————— state & lists ——————————————— //

@@ -3,7 +3,6 @@
  */
 import * as vscode from "vscode";
 import { getVirtualProvider } from "./virtualBus";
-import { AiIntegrationService } from "../services/ai";
 import type { RunResult } from "../models/report";
 import { buildHtml, getExtensionUri, mediaUri, lgUiUri } from "../webview/webviewKit";
 
@@ -13,7 +12,6 @@ export async function showStatsWebview(
   generate?: (taskText?: string) => Promise<string>, // returns rendered markdown text
   taskText?: string // text of the current task
 ) {
-  const aiService = new AiIntegrationService();
   const scope = data.scope === "context" ? "Context" : "Section";
   const name = data.target.startsWith("ctx:")
     ? data.target.slice(4)
@@ -97,25 +95,6 @@ export async function showStatsWebview(
         } else {
           const doc = await vscode.workspace.openTextDocument({ language: "markdown", content: text });
           await vscode.window.showTextDocument(doc, { preview: false });
-        }
-      } catch (e: any) {
-        vscode.window.showErrorMessage(`LG: ${e?.message || e}`);
-      }
-    } else if (msg?.type === "sendToAI") {
-      if (!generate) {
-        vscode.window.showWarningMessage("Send to AI is unavailable here.");
-        return;
-      }
-      try {
-        const text = await vscode.window.withProgress(
-          { location: vscode.ProgressLocation.Notification, title: "LG: Generating for AI…", cancellable: false },
-          () => generate(currentTaskText)
-        );
-        // Определяем тип контента и отправляем в AI
-        if (current.scope === "context") {
-          await aiService.sendContext(name, text);
-        } else {
-          await aiService.sendListing(name, text);
         }
       } catch (e: any) {
         vscode.window.showErrorMessage(`LG: ${e?.message || e}`);
