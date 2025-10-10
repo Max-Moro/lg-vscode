@@ -1,11 +1,11 @@
 import * as vscode from "vscode";
 
-export type LogLevel = "error" | "warn" | "info" | "debug" | "trace";
+export type LogLevel = "error" | "warn" | "info" | "debug";
 
 let channel: vscode.OutputChannel | undefined;
 let currentLevel: LogLevel = "info";
 
-const order: Record<LogLevel, number> = { error: 0, warn: 1, info: 2, debug: 3, trace: 4 };
+const order: Record<LogLevel, number> = { error: 0, warn: 1, info: 2, debug: 3 };
 
 function ts() {
   const d = new Date();
@@ -34,22 +34,31 @@ export function initLogging(context: vscode.ExtensionContext) {
   );
 }
 
-function write(level: LogLevel, msg: string, meta?: unknown) {
+function write(level: LogLevel, msg: string, error?: unknown) {
   if (order[level] <= order[currentLevel]) {
     const ch = ensureChannel();
     ch.appendLine(`${ts()} [${level.toUpperCase()}] ${msg}`);
-    if (meta !== undefined) {
-      try { ch.appendLine(typeof meta === "string" ? meta : JSON.stringify(meta, null, 2)); }
-      catch { /* ignore JSON issues */ }
+  }
+  // Стектрейс печатаем всегда, независимо от уровня логирования
+  if (error !== undefined && error !== null) {
+    const ch = ensureChannel();
+    if (error instanceof Error) {
+      if (error.stack) {
+        ch.appendLine(error.stack);
+      } else {
+        ch.appendLine(`${error.name}: ${error.message}`);
+      }
+    } else {
+      // Если это не Error, печатаем как строку
+      ch.appendLine(String(error));
     }
   }
 }
 
-export function logError(msg: string, meta?: unknown) { write("error", msg, meta); }
-export function logWarn (msg: string, meta?: unknown) { write("warn",  msg, meta); }
-export function logInfo (msg: string, meta?: unknown) { write("info",  msg, meta); }
-export function logDebug(msg: string, meta?: unknown) { write("debug", msg, meta); }
-export function logTrace(msg: string, meta?: unknown) { write("trace", msg, meta); }
+export function logError(msg: string, error?: unknown) { write("error", msg, error); }
+export function logWarn (msg: string, error?: unknown) { write("warn",  msg, error); }
+export function logInfo (msg: string, error?: unknown) { write("info",  msg, error); }
+export function logDebug(msg: string, error?: unknown) { write("debug", msg, error); }
 
 export function showLogs() { ensureChannel().show(); }
 

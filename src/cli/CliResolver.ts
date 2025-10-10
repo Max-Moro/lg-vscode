@@ -2,7 +2,7 @@ import * as vscode from "vscode";
 import { spawnToString, spawnToResult } from "../runner/LgProcess";
 import { ensureManagedCli, resolveManagedCliBin } from "../runner/LgInstaller";
 import { findPython } from "../runner/PythonFind";
-import { logDebug, logError, logTrace, withDuration } from "../logging/log";
+import { logDebug, logError, withDuration } from "../logging/log";
 
 export type RunSpec = { cmd: string; args: string[] };
 
@@ -80,8 +80,7 @@ export async function runCli(cliArgs: string[], opts: { timeoutMs?: number; stdi
     } catch (e: any) {
       const stderr = String(e?.message || e || "");
       const brief = briefFromStderr(stderr);
-      logError(`[CLI] ${cliArgs.join(" ")} — failed: ${brief}`);
-      if (stderr) logTrace(stderr);
+      logError(`[CLI] ${cliArgs.join(" ")} — failed: ${brief}`, e);
       throw e;
     }
   });
@@ -108,13 +107,12 @@ export async function runCliResult(
         stdinData: opts.stdinData
       });
       // полезно видеть stderr даже при коде 0 (некоторые утилиты пишут варнинги)
-      if (res.stderr?.trim()) logDebug("[CLI] stderr (non-empty)", res.stderr.trim().slice(0, 4000));
+      if (res.stderr?.trim()) logDebug("[CLI] stderr (non-empty): " + res.stderr.trim().slice(0, 4000));
       return res;
     } catch (e: any) {
       const stderr = String(e?.message || e || "");
       const brief = briefFromStderr(stderr);
-      logError(`[CLI] ${cliArgs.join(" ")} (result) — failed: ${brief}`);
-      if (stderr) logTrace(stderr);
+      logError(`[CLI] ${cliArgs.join(" ")} (result) — failed: ${brief}`, e);
       throw e;
     }
   });

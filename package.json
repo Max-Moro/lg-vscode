@@ -68,7 +68,7 @@
       "properties": {
         "lg.logging.level": {
           "type": "string",
-          "enum": ["error", "warn", "info", "debug", "trace"],
+          "enum": ["error", "warn", "info", "debug"],
           "default": "info",
           "description": "Logging level for the Listing Generator Output channel."
         },
