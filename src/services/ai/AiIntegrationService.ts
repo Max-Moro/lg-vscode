@@ -26,8 +26,6 @@ export class AiIntegrationService {
    * Вызывается один раз при активации расширения
    */
   async detectBestProvider(): Promise<string> {
-    logInfo("Running AI provider detection...");
-
     const available: Array<{ id: string; priority: number }> = [];
 
     for (const [id, module] of this.providers) {

@@ -6,6 +6,6 @@ export const detector: ProviderDetector = {
 
   async detect(): Promise<boolean> {
     const ext = vscode.extensions.getExtension("GitHub.copilot-chat");
-    return ext?.isActive ?? false;
+    return ext !== undefined;
   }
 };

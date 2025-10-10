@@ -27,10 +27,18 @@ export function activate(context: vscode.ExtensionContext) {
   // Первичная детекция провайдеров
   aiService.detectBestProvider().then(async (bestProviderId) => {
     const config = vscode.workspace.getConfiguration();
-    const current = config.get<string>("lg.ai.provider");
+    const inspection = config.inspect<string>("lg.ai.provider");
     
-    // Если настройка не установлена, предлагаем лучший вариант
-    if (!current) {
+    // Проверяем, задана ли настройка явно (в workspace или global)
+    const isExplicitlySet = inspection?.workspaceValue !== undefined || inspection?.globalValue !== undefined;
+    
+    // Если настройка не установлена явно, предлагаем лучший вариант
+    if (!isExplicitlySet) {
+      // Пропускаем предложение, если лучший вариант - clipboard (ничего лучше не нашли)
+      if (bestProviderId === "clipboard") {
+        return;
+      }
+      
       const providerName = aiService.getProviderName(bestProviderId);
       const choice = await vscode.window.showInformationMessage(
         `LG: Detected AI provider: ${providerName}. Set as default?`,
