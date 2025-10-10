@@ -55,13 +55,6 @@ export class AiIntegrationService {
   }
 
   /**
-   * Получить список всех зарегистрированных провайдеров
-   */
-  getProviderIds(): string[] {
-    return Array.from(this.providers.keys());
-  }
-
-  /**
    * Получить имя провайдера по ID
    */
   getProviderName(id: string): string {
@@ -95,20 +88,6 @@ export class AiIntegrationService {
       logError(`Failed to send content to ${providerId}`, e);
       throw e;
     }
-  }
-
-  /**
-   * Отправить контент в предпочтительный провайдер из настроек
-   */
-  async sendToPreferred(content: string): Promise<void> {
-    const config = vscode.workspace.getConfiguration();
-    const preferredId = config.get<string>("lg.ai.provider");
-
-    if (!preferredId) {
-      throw new Error("No AI provider configured. Please set lg.ai.provider in settings.");
-    }
-
-    await this.sendToProvider(preferredId, content);
   }
 
   /**
