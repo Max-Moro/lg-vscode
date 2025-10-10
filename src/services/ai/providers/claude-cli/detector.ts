@@ -7,8 +7,8 @@ export const detector: ProviderDetector = {
   async detect(): Promise<boolean> {
     try {
       const cmd = process.platform === "win32" ? "where" : "which";
-      cp.spawnSync(cmd, ["claude"], { stdio: "ignore", timeout: 4000 });
-      return true;
+      const result = cp.spawnSync(cmd, ["claude"], { stdio: "ignore", timeout: 4000 });
+      return result.status === 0;
     } catch {
       return false;
     }
