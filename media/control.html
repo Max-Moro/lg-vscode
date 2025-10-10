@@ -43,6 +43,24 @@
     </div>
 
     <div class="block">
+      <h3><span class="codicon codicon-send"></span>Send to AI</h3>
+      <div class="row">
+        <span class="cluster">
+          <button class="lg-btn lg-btn--primary" id="btn-send-to-ai" data-action="sendToAI" 
+                  title="Send generated content to configured AI assistant">
+            <span class="codicon codicon-send"></span>
+            <span class="btn-text">Send to AI</span>
+          </button>
+        </span>
+      </div>
+      <div class="row">
+        <span class="muted" id="ai-provider-status">
+          Provider: <span id="ai-provider-name">Not configured</span>
+        </span>
+      </div>
+    </div>
+
+    <div class="block">
       <h3><span class="codicon codicon-settings-gear"></span> Adaptive Settings</h3>
       <div id="mode-sets-container" class="mode-sets-container">
         <!-- Mode sets will be populated here -->

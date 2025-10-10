@@ -33,6 +33,10 @@
       {
         "command": "lg.showLogs",
         "title": "LG: Show Logs"
+      },
+      {
+        "command": "lg.ai.configureOpenAI",
+        "title": "LG: Configure OpenAI API Key"
       }
     ],
     "views": {
@@ -103,6 +107,31 @@
           "type": "boolean",
           "default": false,
           "description": "Open generated listings/contexts as editable Markdown files instead of read-only virtual documents."
+        },
+        "lg.ai.provider": {
+          "type": "string",
+          "enum": [
+            "clipboard",
+            "github.copilot",
+            "cursor.composer",
+            "claude.cli",
+            "openai.api"
+          ],
+          "enumDescriptions": [
+            "Copy to clipboard",
+            "GitHub Copilot Chat (requires extension)",
+            "Cursor Composer (requires Cursor IDE)",
+            "Claude CLI (requires claude command in PATH)",
+            "OpenAI API"
+          ],
+          "default": "clipboard",
+          "description": "AI provider for 'Send to AI' action"
+        },
+        "lg.openai.apiKey": {
+          "type": "string",
+          "default": "",
+          "description": "OpenAI API Key (stored in VS Code secrets)",
+          "markdownDescription": "OpenAI API Key for network integration. [Get your key](https://platform.openai.com/api-keys)"
         }
       }
     }

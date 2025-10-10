@@ -8,16 +8,49 @@ import { setVirtualProvider } from "./views/virtualBus";
 import { IncludedTree } from "./views/IncludedTree";
 import { ControlPanelView } from "./views/ControlPanelView";
 import { locateCliOrOfferInstall, setExtensionContext } from "./cli/CliResolver";
-import { initLogging, showLogs, logInfo } from "./logging/log";
+import { initLogging, showLogs, logInfo, logError } from "./logging/log";
+import { createAiIntegrationService, AiIntegrationService } from "./services/ai";
 
 
 let virtualProvider: VirtualDocProvider;
 let includedTree: IncludedTree;
+let aiService: AiIntegrationService;
 
 export function activate(context: vscode.ExtensionContext) {
   setExtensionContext(context);
   initLogging(context);
   logInfo("Extension activated");
+
+  // ===== НОВЫЙ КОД: Инициализация AI Integration =====
+  aiService = createAiIntegrationService(context);
+  (context as any)._lgAiService = aiService; // Сохраняем ссылку для других модулей
+  
+  // Первичная детекция провайдеров
+  aiService.detectBestProvider().then(async (bestProviderId) => {
+    const config = vscode.workspace.getConfiguration();
+    const current = config.get<string>("lg.ai.provider");
+    
+    // Если настройка не установлена, предлагаем лучший вариант
+    if (!current) {
+      const providerName = aiService.getProviderName(bestProviderId);
+      const choice = await vscode.window.showInformationMessage(
+        `LG: Detected AI provider: ${providerName}. Set as default?`,
+        "Yes",
+        "Choose Another",
+        "Later"
+      );
+      
+      if (choice === "Yes") {
+        await config.update("lg.ai.provider", bestProviderId, vscode.ConfigurationTarget.Global);
+        logInfo(`AI provider set to: ${bestProviderId}`);
+      } else if (choice === "Choose Another") {
+        vscode.commands.executeCommand("workbench.action.openSettings", "lg.ai.provider");
+      }
+    }
+  }).catch((e) => {
+    logError("Failed to detect AI providers", e);
+  });
+  // ===== КОНЕЦ НОВОГО КОДА =====
 
   // 1) Провайдер виртуальных документов (lg://listing, lg://context)
   virtualProvider = new VirtualDocProvider();
@@ -51,6 +84,29 @@ export function activate(context: vscode.ExtensionContext) {
       includedTree.toggleViewMode();
       const mode = includedTree.getMode();
       vscode.window.setStatusBarMessage(`LG Included: ${mode === "tree" ? "Tree" : "Flat"} view`, 2000);
+    }),
+
+    // Настройка OpenAI API ключа
+    vscode.commands.registerCommand("lg.ai.configureOpenAI", async () => {
+      const currentKey = await context.secrets.get("lg.openai.apiKey");
+      
+      const input = await vscode.window.showInputBox({
+        prompt: "Enter your OpenAI API Key",
+        password: true,
+        value: currentKey ? "••••••••••••" : "",
+        placeHolder: "sk-..."
+      });
+      
+      if (input === undefined) {
+        return; // cancelled
+      }
+      
+      if (!input || input === "••••••••••••") {
+        return; // no change
+      }
+      
+      await context.secrets.store("lg.openai.apiKey", input);
+      vscode.window.showInformationMessage("OpenAI API key saved successfully");
     })
   );
 
@@ -58,6 +114,11 @@ export function activate(context: vscode.ExtensionContext) {
   locateCliOrOfferInstall(context).catch(() => {
     // Мягко игнорируем — установщик появится при первом реальном запуске.
   });
+}
+
+// Добавить функцию-хелпер для получения aiService из других модулей
+export function getAiService(context: vscode.ExtensionContext): AiIntegrationService {
+  return (context as any)._lgAiService;
 }
 
 export function deactivate() {}

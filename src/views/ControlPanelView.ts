@@ -12,6 +12,7 @@ import { runDoctor } from "../diagnostics/Doctor";
 import { openConfigOrInit, runInitWizard } from "../starter/StarterConfig";
 import { GitService } from "../services/GitService";
 import { EXT_ID } from "../constants";
+import { getAiService } from "../extension";
 import type { CliOptions } from "../cli/CliClient";
 
 type PanelState = {
@@ -136,6 +137,9 @@ export class ControlPanelView implements vscode.WebviewViewProvider {
           case "openSettings":
             vscode.commands.executeCommand("workbench.action.openSettings", `@ext:${EXT_ID}`);
             break;
+          case "sendToAI":
+            await this.onSendToAI();
+            break;
           case "toggleTags":
             // Tags panel is handled purely on the client side
             break;
@@ -148,6 +152,7 @@ export class ControlPanelView implements vscode.WebviewViewProvider {
     // Первичная инициализация (возможен двойной триггер: здесь и по "init" из webview)
     // Благодаря guard в bootstrapOnce() фактически выполнится ровно один раз.
     this.bootstrapOnce().catch(() => void 0);
+    this.updateAiProviderStatus();
     // Отправим текущую тему сразу при инициализации
     this.postTheme(vscode.window.activeColorTheme.kind);
 
@@ -186,6 +191,24 @@ export class ControlPanelView implements vscode.WebviewViewProvider {
   /** Публичный метод: безопасно отправить в webview информацию о теме */
   public postTheme(kind: vscode.ColorThemeKind) {
     this.view?.webview.postMessage({ type: "theme", kind });
+  }
+
+  /**
+   * Обновить отображение текущего AI провайдера
+   */
+  private updateAiProviderStatus() {
+    const config = vscode.workspace.getConfiguration();
+    const providerId = config.get<string>("lg.ai.provider");
+    
+    if (!providerId) {
+      this.post({ type: "aiProviderStatus", providerName: "Not configured" });
+      return;
+    }
+    
+    const aiService = getAiService(this.context);
+    const providerName = aiService.getProviderName(providerId);
+    
+    this.post({ type: "aiProviderStatus", providerName });
   }
 
   // ——————————————— handlers ——————————————— //
@@ -283,6 +306,92 @@ export class ControlPanelView implements vscode.WebviewViewProvider {
       (taskText) => runListing({ ...params, taskText }),
       s.taskText
     );
+  }
+
+  /**
+   * Обработчик кнопки "Send to AI"
+   */
+  private async onSendToAI() {
+    const s = this.getState();
+    const config = vscode.workspace.getConfiguration();
+    const providerId = config.get<string>("lg.ai.provider");
+    
+    if (!providerId) {
+      const choice = await vscode.window.showErrorMessage(
+        "No AI provider configured.",
+        "Open Settings",
+        "Cancel"
+      );
+      
+      if (choice === "Open Settings") {
+        vscode.commands.executeCommand("workbench.action.openSettings", "lg.ai.provider");
+      }
+      return;
+    }
+    
+    // Определяем, что отправлять: контекст или секцию
+    let content: string;
+    let targetName: string;
+    
+    if (s.template) {
+      // Отправляем контекст
+      targetName = s.template;
+      const options = this.getFullCliOptions(s);
+      
+      content = await vscode.window.withProgress(
+        {
+          location: vscode.ProgressLocation.Notification,
+          title: `Generating context '${targetName}'...`,
+          cancellable: false
+        },
+        () => runContext(targetName, options)
+      );
+    } else {
+      // Отправляем секцию
+      targetName = s.section || "all";
+      const params = {
+        section: s.section,
+        ...this.getTokenizationParams(s),
+        ...this.getAdaptiveParams(s)
+      };
+      
+      content = await vscode.window.withProgress(
+        {
+          location: vscode.ProgressLocation.Notification,
+          title: `Generating listing for '${targetName}'...`,
+          cancellable: false
+        },
+        () => runListing(params)
+      );
+    }
+    
+    // Отправляем в AI
+    const aiService = getAiService(this.context);
+    const providerName = aiService.getProviderName(providerId);
+    
+    try {
+      await vscode.window.withProgress(
+        {
+          location: vscode.ProgressLocation.Notification,
+          title: `Sending to ${providerName}...`,
+          cancellable: false
+        },
+        () => aiService.sendToProvider(providerId, content)
+      );
+    } catch (error: any) {
+      const choice = await vscode.window.showErrorMessage(
+        `Failed to send to ${providerName}: ${error.message}`,
+        "Open Settings",
+        "Copy to Clipboard",
+        "Cancel"
+      );
+      
+      if (choice === "Open Settings") {
+        vscode.commands.executeCommand("workbench.action.openSettings", "lg.ai.provider");
+      } else if (choice === "Copy to Clipboard") {
+        await aiService.sendToProvider("clipboard", content);
+      }
+    }
   }
 
   // ——————————————— state & lists ——————————————— //
