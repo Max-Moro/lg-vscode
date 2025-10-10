@@ -1,5 +1,5 @@
 import * as vscode from "vscode";
-import { BaseAiProvider } from "../../BaseAiProvider";
+import { BaseAiProvider } from "../../base";
 
 export class ClipboardProvider extends BaseAiProvider {
   readonly id = "clipboard";

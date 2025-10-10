@@ -1,5 +1,5 @@
 import * as vscode from "vscode";
-import { BaseForkProvider } from "../../BaseAiProvider";
+import { BaseForkProvider } from "../../base";
 
 export class CursorProvider extends BaseForkProvider {
   readonly id = "cursor.composer";

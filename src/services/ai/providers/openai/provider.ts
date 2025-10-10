@@ -1,5 +1,5 @@
 import * as vscode from "vscode";
-import { BaseNetworkProvider } from "../../BaseAiProvider";
+import { BaseNetworkProvider } from "../../base";
 
 export class OpenAiProvider extends BaseNetworkProvider {
   readonly id = "openai.api";

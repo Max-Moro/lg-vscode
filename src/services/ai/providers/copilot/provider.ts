@@ -1,5 +1,5 @@
 import * as vscode from "vscode";
-import { BaseExtensionProvider } from "../../BaseAiProvider";
+import { BaseExtensionProvider } from "../../base";
 
 export class CopilotProvider extends BaseExtensionProvider {
   readonly id = "github.copilot";

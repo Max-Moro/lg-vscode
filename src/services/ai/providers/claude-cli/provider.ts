@@ -1,5 +1,5 @@
 import * as vscode from "vscode";
-import { BaseCliProvider } from "../../BaseAiProvider";
+import { BaseCliProvider } from "../../base";
 
 export class ClaudeCliProvider extends BaseCliProvider {
   readonly id = "claude.cli";
