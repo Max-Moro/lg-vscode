@@ -153,12 +153,6 @@
       }
 
       applyState(msg.state);
-    } else if (msg?.type === "aiProviderStatus") {
-      // Обновляем отображение текущего провайдера
-      const nameEl = document.getElementById("ai-provider-name");
-      if (nameEl) {
-        nameEl.textContent = msg.providerName || "Not configured";
-      }
     } else if (msg?.type === "state") {
       // обновление списка энкодеров после смены библиотеки
       const state = State.get();

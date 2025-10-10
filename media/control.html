@@ -30,6 +30,9 @@
       <div class="row">
         <span class="cluster">
           <select id="template" class="lg-select grow" data-state-key="template" title="Контекст (.ctx.md) из lg-cfg/"></select>
+          <button class="lg-btn" data-action="sendToAI" title="Сгенерировать контекст и отправить в AI">
+            <span class="codicon codicon-send"></span><span class="btn-text">Send to AI</span>
+          </button>
           <button class="lg-btn" id="btn-context" data-action="generateContext" title="Сгенерировать контекст-промт по шаблону">
             <span class="codicon codicon-file-code"></span><span class="btn-text">Generate Context</span>
           </button>
@@ -38,24 +41,6 @@
           <button class="lg-btn lg-btn--primary" data-action="showContextStats" title="Показать суммарную статистику токенов для выбранного контекста">
             <span class="codicon codicon-table"></span><span class="btn-text">Show Context Stats</span>
           </button>
-        </span>
-      </div>
-    </div>
-
-    <div class="block">
-      <h3><span class="codicon codicon-send"></span>Send to AI</h3>
-      <div class="row">
-        <span class="cluster">
-          <button class="lg-btn lg-btn--primary" id="btn-send-to-ai" data-action="sendToAI" 
-                  title="Send generated content to configured AI assistant">
-            <span class="codicon codicon-send"></span>
-            <span class="btn-text">Send to AI</span>
-          </button>
-        </span>
-      </div>
-      <div class="row">
-        <span class="muted" id="ai-provider-status">
-          Provider: <span id="ai-provider-name">Not configured</span>
         </span>
       </div>
     </div>

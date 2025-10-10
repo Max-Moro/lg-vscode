@@ -152,7 +152,6 @@ export class ControlPanelView implements vscode.WebviewViewProvider {
     // Первичная инициализация (возможен двойной триггер: здесь и по "init" из webview)
     // Благодаря guard в bootstrapOnce() фактически выполнится ровно один раз.
     this.bootstrapOnce().catch(() => void 0);
-    this.updateAiProviderStatus();
     // Отправим текущую тему сразу при инициализации
     this.postTheme(vscode.window.activeColorTheme.kind);
 
@@ -191,24 +190,6 @@ export class ControlPanelView implements vscode.WebviewViewProvider {
   /** Публичный метод: безопасно отправить в webview информацию о теме */
   public postTheme(kind: vscode.ColorThemeKind) {
     this.view?.webview.postMessage({ type: "theme", kind });
-  }
-
-  /**
-   * Обновить отображение текущего AI провайдера
-   */
-  private updateAiProviderStatus() {
-    const config = vscode.workspace.getConfiguration();
-    const providerId = config.get<string>("lg.ai.provider");
-    
-    if (!providerId) {
-      this.post({ type: "aiProviderStatus", providerName: "Not configured" });
-      return;
-    }
-    
-    const aiService = getAiService(this.context);
-    const providerName = aiService.getProviderName(providerId);
-    
-    this.post({ type: "aiProviderStatus", providerName });
   }
 
   // ——————————————— handlers ——————————————— //

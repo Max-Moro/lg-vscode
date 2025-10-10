@@ -21,7 +21,7 @@ export function activate(context: vscode.ExtensionContext) {
   initLogging(context);
   logInfo("Extension activated");
 
-  // ===== НОВЫЙ КОД: Инициализация AI Integration =====
+  // Инициализация AI Integration
   aiService = createAiIntegrationService(context);
   (context as any)._lgAiService = aiService; // Сохраняем ссылку для других модулей
   
@@ -50,7 +50,6 @@ export function activate(context: vscode.ExtensionContext) {
   }).catch((e) => {
     logError("Failed to detect AI providers", e);
   });
-  // ===== КОНЕЦ НОВОГО КОДА =====
 
   // 1) Провайдер виртуальных документов (lg://listing, lg://context)
   virtualProvider = new VirtualDocProvider();
