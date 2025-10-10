@@ -15,7 +15,6 @@ export abstract class BaseAiProvider implements AiProvider {
  */
 export abstract class BaseExtensionProvider extends BaseAiProvider {
   protected abstract extensionId: string;
-  protected abstract commandName: string;
 
   /**
    * Проверка активности расширения
