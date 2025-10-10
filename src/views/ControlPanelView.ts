@@ -244,7 +244,8 @@ export class ControlPanelView implements vscode.WebviewViewProvider {
       data,
       (taskText) => runContextStatsJson({ ...params, taskText }),
       (taskText) => runContext(s.template, this.getFullCliOptions({ ...s, taskText: taskText || "" })),
-      s.taskText
+      s.taskText,
+      this.context
     );
   }
 
@@ -285,7 +286,8 @@ export class ControlPanelView implements vscode.WebviewViewProvider {
       data,
       (taskText) => runStatsJson({ ...params, taskText }),
       (taskText) => runListing({ ...params, taskText }),
-      s.taskText
+      s.taskText,
+      this.context
     );
   }
 

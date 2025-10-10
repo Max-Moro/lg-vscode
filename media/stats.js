@@ -84,6 +84,7 @@
       </div>
       
       <div class="lg-toolbar">
+        <button id="btn-send-to-ai" class="lg-btn lg-btn--primary" title="Generate and send to AI provider">Send to AI</button>
         <button id="btn-generate" class="lg-btn" title="Render the final prompt now">${esc(genLabel)}</button>
         <button id="btn-refresh" class="lg-btn" title="Re-run stats">Refresh</button>
       </div>
@@ -271,6 +272,10 @@
     // Hook generate button
     const gen = document.getElementById("btn-generate");
     if (gen) Events.on(gen, "click", () => State.post("generate"));
+    
+    // Hook send to AI button
+    const sendBtn = document.getElementById("btn-send-to-ai");
+    if (sendBtn) Events.on(sendBtn, "click", () => State.post("sendToAI"));
   }
 
   function card(title, valueHtml, tooltip) {

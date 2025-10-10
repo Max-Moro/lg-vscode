@@ -5,12 +5,14 @@ import * as vscode from "vscode";
 import { getVirtualProvider } from "./virtualBus";
 import type { RunResult } from "../models/report";
 import { buildHtml, getExtensionUri, mediaUri, lgUiUri } from "../webview/webviewKit";
+import { getAiService } from "../extension";
 
 export async function showStatsWebview(
   data: RunResult,
   refetch?: (taskText?: string) => Promise<RunResult>,
   generate?: (taskText?: string) => Promise<string>, // returns rendered markdown text
-  taskText?: string // text of the current task
+  taskText?: string, // text of the current task
+  context?: vscode.ExtensionContext // extension context for AI service
 ) {
   const scope = data.scope === "context" ? "Context" : "Section";
   const name = data.target.startsWith("ctx:")
@@ -107,6 +109,75 @@ export async function showStatsWebview(
         vscode.window.showInformationMessage("Copied to clipboard.");
       } catch (e: any) {
         vscode.window.showErrorMessage(`Copy failed: ${e?.message || e}`);
+      }
+    } else if (msg?.type === "sendToAI") {
+      if (!context) {
+        vscode.window.showWarningMessage("AI integration is unavailable in this context.");
+        return;
+      }
+      
+      if (!generate) {
+        vscode.window.showWarningMessage("Generate is unavailable here.");
+        return;
+      }
+      
+      const config = vscode.workspace.getConfiguration();
+      const providerId = config.get<string>("lg.ai.provider");
+      
+      if (!providerId) {
+        const choice = await vscode.window.showErrorMessage(
+          "No AI provider configured.",
+          "Open Settings",
+          "Cancel"
+        );
+        
+        if (choice === "Open Settings") {
+          vscode.commands.executeCommand("workbench.action.openSettings", "lg.ai.provider");
+        }
+        return;
+      }
+      
+      let generatedContent: string | undefined;
+      
+      try {
+        // Generate content with current task text
+        generatedContent = await vscode.window.withProgress(
+          {
+            location: vscode.ProgressLocation.Notification,
+            title: "LG: Generating content...",
+            cancellable: false
+          },
+          () => generate(currentTaskText)
+        );
+        
+        // Send to AI
+        const aiService = getAiService(context);
+        const providerName = aiService.getProviderName(providerId);
+        
+        await vscode.window.withProgress(
+          {
+            location: vscode.ProgressLocation.Notification,
+            title: `Sending to ${providerName}...`,
+            cancellable: false
+          },
+          () => aiService.sendToProvider(providerId, generatedContent!)
+        );
+      } catch (error: any) {
+        const aiService = getAiService(context);
+        const providerName = aiService.getProviderName(providerId);
+        
+        const choice = await vscode.window.showErrorMessage(
+          `Failed to send to ${providerName}: ${error.message}`,
+          "Open Settings",
+          "Copy to Clipboard",
+          "Cancel"
+        );
+        
+        if (choice === "Open Settings") {
+          vscode.commands.executeCommand("workbench.action.openSettings", "lg.ai.provider");
+        } else if (choice === "Copy to Clipboard" && generatedContent) {
+          await aiService.sendToProvider("clipboard", generatedContent);
+        }
       }
     }
   });
