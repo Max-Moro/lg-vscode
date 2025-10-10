@@ -23,7 +23,6 @@ export function activate(context: vscode.ExtensionContext) {
 
   // Инициализация AI Integration
   aiService = createAiIntegrationService(context);
-  (context as any)._lgAiService = aiService; // Сохраняем ссылку для других модулей
   
   // Первичная детекция провайдеров
   aiService.detectBestProvider().then(async (bestProviderId) => {
@@ -116,8 +115,8 @@ export function activate(context: vscode.ExtensionContext) {
 }
 
 // Добавить функцию-хелпер для получения aiService из других модулей
-export function getAiService(context: vscode.ExtensionContext): AiIntegrationService {
-  return (context as any)._lgAiService;
+export function getAiService(): AiIntegrationService {
+  return aiService;
 }
 
 export function deactivate() {}

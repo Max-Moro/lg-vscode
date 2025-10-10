@@ -11,8 +11,7 @@ export async function showStatsWebview(
   data: RunResult,
   refetch?: (taskText?: string) => Promise<RunResult>,
   generate?: (taskText?: string) => Promise<string>, // returns rendered markdown text
-  taskText?: string, // text of the current task
-  context?: vscode.ExtensionContext // extension context for AI service
+  taskText?: string // text of the current task
 ) {
   const scope = data.scope === "context" ? "Context" : "Section";
   const name = data.target.startsWith("ctx:")
@@ -111,11 +110,6 @@ export async function showStatsWebview(
         vscode.window.showErrorMessage(`Copy failed: ${e?.message || e}`);
       }
     } else if (msg?.type === "sendToAI") {
-      if (!context) {
-        vscode.window.showWarningMessage("AI integration is unavailable in this context.");
-        return;
-      }
-      
       if (!generate) {
         vscode.window.showWarningMessage("Generate is unavailable here.");
         return;
@@ -151,7 +145,7 @@ export async function showStatsWebview(
         );
         
         // Send to AI
-        const aiService = getAiService(context);
+        const aiService = getAiService();
         const providerName = aiService.getProviderName(providerId);
         
         await vscode.window.withProgress(
@@ -163,7 +157,7 @@ export async function showStatsWebview(
           () => aiService.sendToProvider(providerId, generatedContent!)
         );
       } catch (error: any) {
-        const aiService = getAiService(context);
+        const aiService = getAiService();
         const providerName = aiService.getProviderName(providerId);
         
         const choice = await vscode.window.showErrorMessage(

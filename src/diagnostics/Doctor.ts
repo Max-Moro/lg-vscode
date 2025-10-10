@@ -6,7 +6,7 @@ import { showDoctorWebview } from "../views/DoctorWebview";
 import { runDoctorJson } from "../services/DoctorService";
 import type { DiagReport } from "../models/diag_report";
 
-export async function runDoctor(_ctx: vscode.ExtensionContext) {
+export async function runDoctor() {
   const wf = vscode.workspace.workspaceFolders?.[0];
   if (!wf) {
     vscode.window.showErrorMessage("Open a folder to run LG Doctor.");

@@ -132,7 +132,7 @@ export class ControlPanelView implements vscode.WebviewViewProvider {
             await openConfigOrInit();
             break;
           case "doctor":
-            await runDoctor(this.context);
+            await runDoctor();
             break;
           case "openSettings":
             vscode.commands.executeCommand("workbench.action.openSettings", `@ext:${EXT_ID}`);
@@ -244,8 +244,7 @@ export class ControlPanelView implements vscode.WebviewViewProvider {
       data,
       (taskText) => runContextStatsJson({ ...params, taskText }),
       (taskText) => runContext(s.template, this.getFullCliOptions({ ...s, taskText: taskText || "" })),
-      s.taskText,
-      this.context
+      s.taskText
     );
   }
 
@@ -286,8 +285,7 @@ export class ControlPanelView implements vscode.WebviewViewProvider {
       data,
       (taskText) => runStatsJson({ ...params, taskText }),
       (taskText) => runListing({ ...params, taskText }),
-      s.taskText,
-      this.context
+      s.taskText
     );
   }
 
@@ -349,7 +347,7 @@ export class ControlPanelView implements vscode.WebviewViewProvider {
     }
     
     // Отправляем в AI
-    const aiService = getAiService(this.context);
+    const aiService = getAiService();
     const providerName = aiService.getProviderName(providerId);
     
     try {
