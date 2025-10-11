@@ -333,6 +333,9 @@ export class GroupedTable {
       // Aggregate values for group
       const aggregated = this.aggregateGroup(group.files);
       
+      // Clean up display path: remove trailing 'self' segments
+      const displayPath = this.getDisplayPath(prefix);
+      
       // Group header row
       const groupRow = DOM.create('tr', { class: 'lg-grouped-table__group-row' });
       
@@ -344,7 +347,7 @@ export class GroupedTable {
         if (col.key === 'path') {
           const label = DOM.create('div', { class: 'lg-grouped-table__group-label' }, [
             DOM.create('span', { class: 'lg-grouped-table__group-icon codicon codicon-folder' }),
-            DOM.create('span', {}, [prefix])
+            DOM.create('span', {}, [displayPath])
           ]);
           td.appendChild(label);
         } else {
@@ -360,6 +363,26 @@ export class GroupedTable {
     }
 
     return rows;
+  }
+
+  /**
+   * Get display path: remove 'self' segments and add trailing slash
+   */
+  getDisplayPath(prefix) {
+    const parts = prefix.split('/').filter(Boolean);
+    
+    // Remove trailing 'self' segments
+    while (parts.length > 0 && parts[parts.length - 1] === 'self') {
+      parts.pop();
+    }
+    
+    // If nothing left (was all 'self'), show root
+    if (parts.length === 0) {
+      return '/';
+    }
+    
+    // Add trailing slash to indicate it's a group
+    return parts.join('/') + '/';
   }
 
   /**
