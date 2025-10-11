@@ -1,9 +1,4 @@
 /* Stats-specific behavior & extras. Component styles come from lg-ui.css */
-th { user-select: none; }
-.warn { color: var(--vscode-editorWarning-foreground); font-weight: 600; }
-th.sortable { cursor: pointer; }
-th.sortable .arrow { opacity: 0.5; margin-left: 6px; }
-th.sortable.active .arrow { opacity: 1; }
 .pill.neutral { background: var(--vscode-editorIndentGuide-background); }
 .pill.good { background: rgba(16, 124, 16, .2); }
 .pill.warn { background: rgba(156, 124, 0, .25); }
@@ -12,7 +7,6 @@ th.sortable.active .arrow { opacity: 1; }
 /* key-value table used in Adapter Metrics */
 .kv { width: 100%; border-collapse: collapse; }
 .kv td { padding: 4px 6px; border-bottom: 1px dashed var(--vscode-editorIndentGuide-background); }
- 
 
 /* Adapter Metrics: ограничим ширину и добавим стиль групп */
 .kv-group { max-width: 480px; margin: 12px 0; }
@@ -24,9 +18,6 @@ th.sortable.active .arrow { opacity: 1; }
   border-bottom: 1px solid var(--vscode-editorIndentGuide-background);
   padding-bottom: 2px;
 }
-
-.filter { margin: 8px 0 12px; display: flex; gap: 8px; align-items: center; }
-.filter-input { width: 320px; max-width: 100%; }
 
 /* ——— Debug row: два независимых спойлера в одну строку ——— */
 .debug-row {

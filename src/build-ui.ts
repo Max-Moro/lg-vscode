@@ -24,7 +24,8 @@ const COMPONENTS = [
   'textarea',
   'chat-input',
   'code-viewer',
-  'toolbar'
+  'toolbar',
+  'grouped-table'
 ];
 
 function ensureDir(dir: string) {
@@ -148,6 +149,8 @@ function buildJS() {
   parts.push('    createChatInput,');
   parts.push('    Toolbar,');
   parts.push('    enhanceToolbar,');
+  parts.push('    GroupedTable,');
+  parts.push('    createGroupedTable,');
   parts.push('    fillSelect,');
   parts.push('    enhanceSelect,');
   parts.push('    enhanceInput,');

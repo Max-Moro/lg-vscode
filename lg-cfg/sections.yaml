@@ -11,9 +11,11 @@ src:
         mode: block
         block:
           - "/doctor**"
-          - "/ui/"
+          - "/control**"
       src:
         mode: block
         block:
+          - "/services/ai/"
           - "**doctor**"
           - "**diag**"
+          - "**control**"

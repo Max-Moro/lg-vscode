@@ -1,0 +1,177 @@
+/**
+ * Grouped Table Component Styles
+ * Table with filtering, sorting, and hierarchical grouping
+ */
+
+.lg-grouped-table {
+  width: 100%;
+}
+
+/* Toolbar */
+.lg-grouped-table__toolbar {
+  display: flex;
+  gap: var(--lg-space-xl);
+  align-items: center;
+  margin-bottom: var(--lg-space-lg);
+  flex-wrap: wrap;
+}
+
+.lg-grouped-table__filter {
+  display: flex;
+  align-items: center;
+  gap: var(--lg-space-lg);
+  flex: 1 1 auto;
+  min-width: 240px;
+}
+
+.lg-grouped-table__filter-label {
+  color: var(--vscode-descriptionForeground);
+  white-space: nowrap;
+}
+
+.lg-grouped-table__filter-input {
+  flex: 1 1 auto;
+  max-width: 320px;
+}
+
+/* Grouping control */
+.lg-grouped-table__grouping {
+  display: flex;
+  align-items: center;
+  gap: var(--lg-space-sm);
+  white-space: nowrap;
+}
+
+.lg-grouped-table__grouping-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 24px;
+  height: 24px;
+  padding: 0;
+  background: var(--vscode-button-secondaryBackground);
+  color: var(--vscode-button-secondaryForeground);
+  border: 1px solid var(--vscode-dropdown-border, transparent);
+  border-radius: var(--lg-radius-sm);
+  cursor: pointer;
+  transition: background var(--lg-transition-fast);
+}
+
+.lg-grouped-table__grouping-btn:hover:not(:disabled) {
+  background: var(--vscode-button-secondaryHoverBackground);
+}
+
+.lg-grouped-table__grouping-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.lg-grouped-table__grouping-value {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 32px;
+  padding: 0 var(--lg-space-sm);
+  height: 24px;
+  background: var(--vscode-input-background);
+  border: 1px solid var(--vscode-input-border, var(--vscode-editorWidget-border));
+  border-radius: var(--lg-radius-sm);
+  font-family: var(--vscode-editor-font-family, monospace);
+  font-size: var(--lg-font-md);
+  color: var(--vscode-input-foreground);
+}
+
+/* Table */
+.lg-grouped-table__table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+.lg-grouped-table__table th,
+.lg-grouped-table__table td {
+  padding: 6px 8px;
+  border-bottom: 1px solid var(--vscode-editorIndentGuide-background);
+  text-align: left;
+}
+
+.lg-grouped-table__table th {
+  user-select: none;
+  font-weight: 600;
+}
+
+.lg-grouped-table__table th.sortable {
+  cursor: pointer;
+  transition: background var(--lg-transition-fast);
+}
+
+.lg-grouped-table__table th.sortable:hover {
+  background: var(--vscode-list-hoverBackground);
+}
+
+.lg-grouped-table__table th.sortable .arrow {
+  opacity: 0.5;
+  margin-left: 6px;
+}
+
+.lg-grouped-table__table th.sortable.active .arrow {
+  opacity: 1;
+}
+
+.lg-grouped-table__table .right {
+  text-align: right;
+}
+
+.lg-grouped-table__table .monosmall {
+  font-family: var(--vscode-editor-font-family, monospace);
+  font-size: 11px;
+}
+
+/* Group rows */
+.lg-grouped-table__group-row {
+  background: var(--vscode-editor-background);
+  font-weight: 600;
+}
+
+.lg-grouped-table__group-row:hover {
+  background: var(--vscode-list-hoverBackground);
+}
+
+.lg-grouped-table__group-label {
+  display: flex;
+  align-items: center;
+  gap: var(--lg-space-sm);
+}
+
+.lg-grouped-table__group-icon {
+  font-size: 12px;
+  color: var(--vscode-icon-foreground);
+}
+
+/* File rows under groups */
+.lg-grouped-table__file-row {
+  cursor: pointer;
+}
+
+.lg-grouped-table__file-row:hover {
+  background: var(--vscode-list-hoverBackground);
+}
+
+.lg-grouped-table__file-label {
+  padding-left: var(--lg-space-xl);
+  color: var(--vscode-descriptionForeground);
+}
+
+/* Warning styles */
+.lg-grouped-table__table .warn {
+  color: var(--vscode-editorWarning-foreground);
+  font-weight: 600;
+}
+
+/* Empty state */
+.lg-grouped-table__empty {
+  padding: var(--lg-space-2xl);
+  text-align: center;
+  color: var(--vscode-descriptionForeground);
+  font-style: italic;
+}
+

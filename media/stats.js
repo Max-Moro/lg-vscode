@@ -119,131 +119,114 @@
       </div>
 
       <div class="section">
-
-      <div class="section">
         <h3>Files</h3>
-        <div class="filter">
-          <label class="muted">Filter:</label>
-          <input id="flt" class="lg-input filter-input" type="search" placeholder="path or ext" />
-        </div>
+        <div id="files-table-container"></div>
       </div>
-
-      <table aria-label="Per-file stats">
-        <thead>
-          <tr>
-            <th class="sortable" data-key="path"   data-dir-default="asc"   title="Относительный путь файла">Path <span class="arrow">▲▼</span></th>
-            <th class="sortable right" data-key="size"   data-dir-default="desc"  title="Размер исходного файла">Size <span class="arrow">▲▼</span></th>
-            <th class="sortable right" data-key="raw"    data-dir-default="desc"  title="Tokens Raw (с учётом кратности в context)">Raw <span class="arrow">▲▼</span></th>
-            <th class="sortable right" data-key="proc"   data-dir-default="desc"  title="Tokens Processed (с учётом кратности)">Processed <span class="arrow">▲▼</span></th>
-            ${!hideSaved ? `
-              <th class="sortable right" data-key="saved"  data-dir-default="desc"  title="Экономия в токенах">Saved <span class="arrow">▲▼</span></th>
-              <th class="sortable right" data-key="savedp" data-dir-default="desc"  title="Экономия в процентах">Saved% <span class="arrow">▲▼</span></th>
-            ` : ""}
-            <th class="sortable right" data-key="prompt" data-dir-default="desc"  title="Доля в сумме processed">Prompt% <span class="arrow">▲▼</span></th>
-            <th class="sortable right" data-key="ctx"    data-dir-default="desc"  title="Вклад файла в окно модели">Ctx% <span class="arrow">▲▼</span></th>
-          </tr>
-        </thead>
-        <tbody id="stats-body"></tbody>
-      </table>
     `;
 
-    // Sorting/filtering
-    let sortKey = "proc";
-    let sortDir = "desc";
-    let filter = "";
+    // Initialize grouped table
+    const columns = [
+      {
+        key: 'path',
+        label: 'Path',
+        align: 'left',
+        sortable: true,
+        sortDirDefault: 'asc',
+        title: 'Относительный путь файла'
+      },
+      {
+        key: 'sizeBytes',
+        label: 'Size',
+        align: 'right',
+        sortable: true,
+        sortDirDefault: 'desc',
+        title: 'Размер исходного файла',
+        format: (v) => hrSize(v)
+      },
+      {
+        key: 'tokensRaw',
+        label: 'Raw',
+        align: 'right',
+        sortable: true,
+        sortDirDefault: 'desc',
+        title: 'Tokens Raw (с учётом кратности в context)',
+        format: (v) => fmtInt(v)
+      },
+      {
+        key: 'tokensProcessed',
+        label: 'Processed',
+        align: 'right',
+        sortable: true,
+        sortDirDefault: 'desc',
+        title: 'Tokens Processed (с учётом кратности)',
+        format: (v) => fmtInt(v)
+      }
+    ];
 
-    const files = (data.files || []).slice();
-    const tbody = document.getElementById("stats-body");
-    const thead = document.querySelector("thead");
-    // Список сортируемых заголовков для обновления стрелок/классов
-    const ths = thead ? Array.from(thead.querySelectorAll("th.sortable")) : [];
-    const flt = document.getElementById("flt");
+    // Add conditional columns for saved tokens
+    if (!hideSaved) {
+      columns.push(
+        {
+          key: 'savedTokens',
+          label: 'Saved',
+          align: 'right',
+          sortable: true,
+          sortDirDefault: 'desc',
+          title: 'Экономия в токенах',
+          format: (v) => fmtInt(v)
+        },
+        {
+          key: 'savedPct',
+          label: 'Saved%',
+          align: 'right',
+          sortable: true,
+          sortDirDefault: 'desc',
+          title: 'Экономия в процентах',
+          format: (v) => fmtPct(v)
+        }
+      );
+    }
 
-    function cmpNum(a, b) { return sortDir === "asc" ? a - b : b - a; }
-    function cmpStr(a, b) { const r = String(a).localeCompare(String(b)); return sortDir === "asc" ? r : -r; }
+    // Add remaining columns
+    columns.push(
+      {
+        key: 'promptShare',
+        label: 'Prompt%',
+        align: 'right',
+        sortable: true,
+        sortDirDefault: 'desc',
+        title: 'Доля в сумме processed',
+        format: (v) => fmtPct(v)
+      },
+      {
+        key: 'ctxShare',
+        label: 'Ctx%',
+        align: 'right',
+        sortable: true,
+        sortDirDefault: 'desc',
+        title: 'Вклад файла в окно модели',
+        format: (v) => fmtPct(v),
+        warnIf: (v) => (v || 0) > 100
+      }
+    );
 
-    function sortData() {
-      files.sort((a, b) => {
-        switch (sortKey) {
-          case "path":   return cmpStr(a.path, b.path);
-          case "size":   return cmpNum(a.sizeBytes, b.sizeBytes);
-          case "raw":    return cmpNum(a.tokensRaw, b.tokensRaw);
-          case "proc":   return cmpNum(a.tokensProcessed, b.tokensProcessed);
-          case "saved":  return cmpNum(a.savedTokens, b.savedTokens);
-          case "savedp": return cmpNum(a.savedPct, b.savedPct);
-          case "prompt": return cmpNum(a.promptShare, b.promptShare);
-          case "ctx":    return cmpNum(a.ctxShare, b.ctxShare);
-          default: return 0;
+    // Create table after DOM is ready
+    setTimeout(() => {
+      const container = document.getElementById('files-table-container');
+      if (!container) return;
+
+      const { createGroupedTable } = LGUI;
+      const table = createGroupedTable(container, {
+        columns: columns,
+        data: data.files || [],
+        onRowClick: (path) => {
+          State.post('copy', { text: path });
         }
       });
-    }
 
-    function updateHeaders() {
-      if (!ths || !ths.length) return;
-      ths.forEach(th => {
-        th.classList.remove("active");
-        const key = th.getAttribute("data-key");
-        if (key === sortKey) th.classList.add("active");
-        const arrow = th.querySelector(".arrow");
-        if (arrow) arrow.textContent = sortDir === "asc" ? "▲" : "▼";
-      });
-    }
-
-    function renderBody() {
-      const s = (filter || "").toLowerCase();
-      const rows = files.filter(f => {
-        if (!s) return true;
-        return f.path.toLowerCase().includes(s) || (s.startsWith(".") && f.path.toLowerCase().endsWith(s));
-      }).map(f => {
-        const warn = (f.ctxShare || 0) > 100 ? " warn" : "";
-        return `<tr title="Double-click to copy path" data-path="${esc(f.path)}">
-          <td class="monosmall">${esc(f.path)}</td>
-          <td class="right">${hrSize(f.sizeBytes)}</td>
-          <td class="right">${fmtInt(f.tokensRaw)}</td>
-          <td class="right">${fmtInt(f.tokensProcessed)}</td>
-          ${!hideSaved ? `
-            <td class="right">${fmtInt(f.savedTokens)}</td>
-            <td class="right">${(f.savedPct ?? 0).toFixed(1)}%</td>
-          ` : ""}
-          <td class="right">${(f.promptShare ?? 0).toFixed(1)}%</td>
-          <td class="right${warn}">${(f.ctxShare ?? 0).toFixed(1)}%</td>
-        </tr>`;
-      }).join("");
-      const cols = !hideSaved ? 8 : 6;
-      tbody.innerHTML = rows || `<tr><td colspan="${cols}" class="muted">No files match the filter.</td></tr>`;
-    }
-
-    // Делегированная сортировка по клику в заголовке
-    if (thead) {
-      Events.delegate(thead, "th.sortable", "click", (th) => {
-        const key = th.getAttribute("data-key") || "path";
-        if (key === sortKey) {
-          sortDir = (sortDir === "asc") ? "desc" : "asc";
-        } else {
-          sortKey = key;
-          sortDir = th.getAttribute("data-dir-default") || "asc";
-        }
-        sortData(); updateHeaders(); renderBody();
-      });
-    }
-    // Дебаунс фильтра
-    if (flt) {
-      Events.on(flt, "input", Events.debounce((e) => {
-        filter = (e.target && e.target.value || "").trim();
-        renderBody();
-      }, 120));
-    }
-
-    // initial
-    sortData(); updateHeaders(); renderBody();
-
-    // Копирование пути по double-click на строке
-    if (tbody) {
-      Events.delegate(tbody, "tr[data-path]", "dblclick", (tr) => {
-        const p = tr.getAttribute("data-path");
-        if (p) State.post("copy", { text: p });
-      });
-    }
+      // Store table instance for cleanup if needed
+      app._filesTable = table;
+    }, 0);
 
     // Adapter Metrics and Raw JSON (debug)
     const metricsHtml = renderMetaSummary(total.metaSummary) || "";
