@@ -266,15 +266,21 @@
         const itemDiv = document.createElement("div");
         itemDiv.className = "tag-item";
         
+        // Use composite key to avoid ID conflicts when same tag appears in multiple sets
+        // Use '--' as separator (not ':') to avoid CSS selector issues
+        const compositeKey = `${tagSet.id}--${tag.id}`;
+        const domId = `tag-${compositeKey}`;
+        
         const checkbox = document.createElement("input");
         checkbox.type = "checkbox";
-        checkbox.id = `tag-${tag.id}`;
+        checkbox.id = domId;
         checkbox.value = tag.id;
+        checkbox.dataset.tagSetId = tagSet.id;
         checkbox.addEventListener("change", onTagChange);
         
         const label = document.createElement("label");
         label.className = "tag-item-label";
-        label.htmlFor = `tag-${tag.id}`;
+        label.htmlFor = domId;
         label.textContent = tag.title || tag.id;
         
         itemDiv.appendChild(checkbox);
@@ -318,7 +324,8 @@
     
     currentTagSets.forEach(tagSet => {
       (tagSet.tags || []).forEach(tag => {
-        const checkbox = DOM.qs(`#tag-${tag.id}`);
+        const compositeKey = `${tagSet.id}--${tag.id}`;
+        const checkbox = DOM.qs(`#tag-${compositeKey}`);
         if (checkbox) {
           checkbox.checked = tagIds.includes(tag.id);
         }
@@ -353,14 +360,18 @@
     
     currentTagSets.forEach(tagSet => {
       (tagSet.tags || []).forEach(tag => {
-        const checkbox = DOM.qs(`#tag-${tag.id}`);
+        const compositeKey = `${tagSet.id}--${tag.id}`;
+        const checkbox = DOM.qs(`#tag-${compositeKey}`);
         if (checkbox && checkbox.checked) {
           selectedTags.push(tag.id);
         }
       });
     });
     
-    const patch = { tags: selectedTags };
+    // Deduplicate tags (same tag can be selected in multiple sets)
+    const uniqueTags = Array.from(new Set(selectedTags));
+    
+    const patch = { tags: uniqueTags };
     State.merge(patch);
     State.post("setState", { state: patch });
   }
