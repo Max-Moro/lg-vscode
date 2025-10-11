@@ -266,46 +266,28 @@ export class GroupedTable {
   }
 
   /**
-   * Normalize paths so files don't mix with directories at any level
+   * Normalize paths: ensure all paths have at least 'depth' segments
+   * by inserting 'self' before the filename as needed
    */
   normalizePathsForGrouping(data, depth) {
     const pathCol = this.options.columns.find(c => c.key === 'path');
     if (!pathCol) return data;
 
-    // Collect all directory prefixes at each level up to depth
-    const dirPrefixes = new Set();
-    
-    for (const row of data) {
-      const path = row[pathCol.key] || '';
-      const parts = path.split('/').filter(Boolean);
-      
-      for (let d = 1; d <= Math.min(depth, parts.length - 1); d++) {
-        dirPrefixes.add(parts.slice(0, d).join('/'));
-      }
-    }
-
-    // Now normalize: if a file's parent dir has subdirs, insert 'self'
     return data.map(row => {
       const path = row[pathCol.key] || '';
       const parts = path.split('/').filter(Boolean);
       
+      // If path has <= depth segments, insert 'self' before filename
+      // until we have exactly 'depth + 1' segments (depth dirs + 1 file)
       if (parts.length <= depth) {
-        // File is at or above grouping level, no normalization needed
-        return { ...row, _normalizedPath: path };
+        // Insert 'self' at position (length - 1) repeatedly
+        while (parts.length <= depth) {
+          parts.splice(parts.length - 1, 0, 'self');
+        }
+        return { ...row, _normalizedPath: parts.join('/') };
       }
-
-      // Check if parent directory (at depth level) has children
-      const parentPrefix = parts.slice(0, depth).join('/');
-      const hasSubdirs = Array.from(dirPrefixes).some(dir => 
-        dir.startsWith(parentPrefix + '/') && dir !== parentPrefix
-      );
-
-      if (hasSubdirs) {
-        // Insert 'self' before filename
-        const normalized = [...parts.slice(0, depth), 'self', ...parts.slice(depth)].join('/');
-        return { ...row, _normalizedPath: normalized };
-      }
-
+      
+      // Path is already >= depth, no normalization needed
       return { ...row, _normalizedPath: path };
     });
   }
@@ -323,20 +305,18 @@ export class GroupedTable {
       const path = row._normalizedPath || row[pathCol.key] || '';
       const parts = path.split('/').filter(Boolean);
       
-      if (parts.length <= depth) {
-        // File at root or above depth - treat as individual
-        if (!tree.has(path)) {
-          tree.set(path, { files: [], children: new Map() });
-        }
-        tree.get(path).files.push(row);
-      } else {
-        // Group by prefix
-        const prefix = parts.slice(0, depth).join('/');
-        if (!tree.has(prefix)) {
-          tree.set(prefix, { files: [], children: new Map() });
-        }
-        tree.get(prefix).files.push(row);
+      // Группируем по префиксу длины depth
+      const prefix = parts.slice(0, depth).join('/');
+      
+      if (!prefix) {
+        // Файлы в корне (не должно быть при правильной нормализации)
+        continue;
       }
+      
+      if (!tree.has(prefix)) {
+        tree.set(prefix, { files: [], children: new Map() });
+      }
+      tree.get(prefix).files.push(row);
     }
 
     return tree;
