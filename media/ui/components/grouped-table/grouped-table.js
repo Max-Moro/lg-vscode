@@ -327,12 +327,17 @@ export class GroupedTable {
    */
   renderTree(tree) {
     const rows = [];
-    const sorted = Array.from(tree.entries()).sort((a, b) => a[0].localeCompare(b[0]));
+    
+    // Build array of groups with aggregated values
+    const groups = Array.from(tree.entries()).map(([prefix, group]) => ({
+      prefix,
+      aggregated: this.aggregateGroup(group.files)
+    }));
+    
+    // Sort groups by current sort key and direction
+    this.sortGroups(groups);
 
-    for (const [prefix, group] of sorted) {
-      // Aggregate values for group
-      const aggregated = this.aggregateGroup(group.files);
-      
+    for (const {prefix, aggregated} of groups) {
       // Clean up display path: remove trailing 'self' segments
       const displayPath = this.getDisplayPath(prefix);
       
@@ -363,6 +368,39 @@ export class GroupedTable {
     }
 
     return rows;
+  }
+
+  /**
+   * Sort groups by current sort key and direction
+   */
+  sortGroups(groups) {
+    if (!this.state.sortKey) {
+      // Default: sort by path alphabetically
+      groups.sort((a, b) => a.prefix.localeCompare(b.prefix));
+      return;
+    }
+    
+    const col = this.options.columns.find(c => c.key === this.state.sortKey);
+    if (!col) return;
+    
+    const dir = this.state.sortDir === 'asc' ? 1 : -1;
+    
+    groups.sort((a, b) => {
+      // Special handling for path column
+      if (this.state.sortKey === 'path') {
+        return dir * a.prefix.localeCompare(b.prefix);
+      }
+      
+      // Sort by aggregated values
+      const valA = a.aggregated[this.state.sortKey];
+      const valB = b.aggregated[this.state.sortKey];
+      
+      if (typeof valA === 'number' && typeof valB === 'number') {
+        return dir * (valA - valB);
+      }
+      
+      return dir * String(valA || '').localeCompare(String(valB || ''));
+    });
   }
 
   /**
