@@ -78,9 +78,7 @@ export async function runCli(cliArgs: string[], opts: { timeoutMs?: number; stdi
       logDebug(`[CLI] stdout bytes: ${out?.length ?? 0}`);
       return out;
     } catch (e: any) {
-      const stderr = String(e?.message || e || "");
-      const brief = briefFromStderr(stderr);
-      logError(`[CLI] ${cliArgs.join(" ")} — failed: ${brief}`, e);
+      logError(`[CLI] ${cliArgs.join(" ")} — failed`, e);
       throw e;
     }
   });
@@ -110,9 +108,7 @@ export async function runCliResult(
       if (res.stderr?.trim()) logDebug("[CLI] stderr (non-empty): " + res.stderr.trim().slice(0, 4000));
       return res;
     } catch (e: any) {
-      const stderr = String(e?.message || e || "");
-      const brief = briefFromStderr(stderr);
-      logError(`[CLI] ${cliArgs.join(" ")} (result) — failed: ${brief}`, e);
+      logError(`[CLI] ${cliArgs.join(" ")} (result) — failed`, e);
       throw e;
     }
   });
@@ -135,21 +131,4 @@ export async function locateCliOrOfferInstall(ctx: vscode.ExtensionContext): Pro
     return again?.cmd;
   }
   return undefined;
-}
-
-function stripAnsi(s: string): string {
-  return s.replace(/\x1B\[[0-9;]*[A-Za-z]/g, "");
-}
-function briefFromStderr(stderr: string): string {
-  const text = stripAnsi(String(stderr || "")).trim();
-  if (!text) return "(no stderr)";
-  const lines = text.split(/\r?\n/).map(l => l.trim()).filter(Boolean);
-  if (!lines.length) return "(no stderr)";
-  const hasTrace = lines.some(l => /^Traceback\b/.test(l));
-  if (hasTrace) {
-    // В пайтоновском трейсбэке последний осмысленный рядок — "<Type>Error: message"
-    const errLine = [...lines].reverse().find(l => /\b(Error|Exception|SyntaxError|SystemExit)\b/.test(l));
-    return errLine || lines[lines.length - 1];
-  }
-  return lines[0];
 }
