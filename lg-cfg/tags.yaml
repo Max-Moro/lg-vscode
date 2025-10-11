@@ -1,0 +1,32 @@
+tag-sets:
+  vscode-extension:
+    title: "Listing Generator extension for VS Code"
+    tags:
+      core:
+        title: "Ядро"
+      ui:
+        title: "Компонентная база UI"
+      control:
+        title: "Контрольная панель"
+      stats:
+        title: "Отчет статистики"
+      diag:
+        title: "Самодиагностика"
+      send-to-ai:
+        title: "Отправка в AI"
+      starter:
+        title: "Стартовая конфигурация"
+      included-tree:
+        title: "Древовидный предпросмотр секций"
+
+tags:
+  agent:
+    title: "Агентные возможности"
+  review:
+    title: "Правила проведения кодревью"
+  architecture:
+    title: "Архитектурная документация"
+  docs:
+    title: "Документация"
+  tools:
+    title: "Инструменты"

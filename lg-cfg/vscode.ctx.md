@@ -1,15 +1,20 @@
-# ${md:README}
+${md:README}
 
 ---
 
-# ${md:media/ui/README}
+${md:media/ui/README, if:TAGSET:vscode-extension:ui}
 
 ---
-
+{% if tag:review %}
+# Измененный исходный код VS Code Extension в текущей ветке
+{% else %}
 # Исходный код VS Code Extension
+{% endif %}
 
 ${src}
-{% if task %}
+{% if task AND scope:local %}
+---
+
 # Описание текущей задачи
 
 ${task}{% endif %}

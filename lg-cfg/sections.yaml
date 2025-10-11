@@ -8,14 +8,42 @@ src:
       - "/package.json"
     children:
       media:
-        mode: block
-        block:
-          - "/doctor**"
-          - "/control**"
+        mode: allow
+        when:
+          - condition: "TAGSET:vscode-extension:core"
+            allow:
+              - "base.css"
+              - "common.js"
+          - condition: "TAGSET:vscode-extension:ui"
+            allow: ["/ui/"]
+          - condition: "TAGSET:vscode-extension:control"
+            allow: ["control*"]
+          - condition: "TAGSET:vscode-extension:stats"
+            allow: ["stats*"]
+          - condition: "TAGSET:vscode-extension:diag"
+            allow: ["doctor*"]
       src:
         mode: block
-        block:
-          - "/services/ai/"
-          - "**doctor**"
-          - "**diag**"
-          - "**control**"
+        when:
+          - condition: "NOT TAGSET:vscode-extension:core"
+            block:
+              - "/cli/"
+              - "/runner/"
+              - "/logging/"
+          - condition: "NOT TAGSET:vscode-extension:ui"
+            block: ["/build-ui.ts"]
+          - condition: "NOT TAGSET:vscode-extension:control"
+            block:
+              - "/views/ControlPanelView.ts"
+              - "/services/CatalogService.ts"
+              - "/services/GitService.ts"
+          - condition: "NOT TAGSET:vscode-extension:stats"
+            block: ["**stats**"]
+          - condition: "NOT TAGSET:vscode-extension:diag"
+            block: ["**doctor**", "models/diag_report.ts"]
+          - condition: "NOT TAGSET:vscode-extension:send-to-ai"
+            block: ["/services/ai/"]
+          - condition: "NOT TAGSET:vscode-extension:starter"
+            block: ["/starter/"]
+          - condition: "NOT TAGSET:vscode-extension:included-tree"
+            block: ["/views/IncludedTree.ts"]
