@@ -1,7 +1,7 @@
 /**
  * Starter config wizard for Listing Generator — wraps `lg init`.
  * - Lists presets via `lg init --list-presets`
- * - Lets user pick options (examples/models)
+ * - Lets user pick a preset
  * - Handles conflicts (offers --force overwrite)
  * - Opens lg-cfg/sections.yaml on success
  */
@@ -24,19 +24,7 @@ export async function runInitWizard(): Promise<void> {
   });
   if (!preset) return;
 
-  // 2) Options: include example templates & models.yaml
-  const includeExamples =
-    (await vscode.window.showQuickPick(["Yes", "No"], {
-      placeHolder: "Include example templates (.tpl/.ctx)?",
-    })) !== "No";
-  const includeModels =
-    (await vscode.window.showQuickPick(["No", "Yes"], {
-      placeHolder: "Also include models.yaml?",
-    })) === "Yes";
-
-  const baseArgs = ["init", "--preset", preset]
-    .concat(includeExamples ? [] : ["--no-examples"])
-    .concat(includeModels ? ["--with-models"] : []);
+  const baseArgs = ["init", "--preset", preset];
 
   const runOnce = async (extra: string[] = []) => {
     const out = await runCli([...baseArgs, ...extra], { timeoutMs: 120_000 });
