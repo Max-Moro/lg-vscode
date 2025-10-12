@@ -54,10 +54,9 @@ export function spawn(
 
     child.stdout?.on("data", (d) => (out += d.toString()));
     
-    // Захватываем stderr только если нужно
-    if (captureStderr) {
-      child.stderr?.on("data", (d) => (err += d.toString()));
-    }
+    // ВСЕГДА захватываем stderr для обработки ошибок
+    // (даже если captureStderr: false, нужно для информативных сообщений об ошибках)
+    child.stderr?.on("data", (d) => (err += d.toString()));
 
     // Передаем данные через stdin, если указаны
     if (options.stdinData !== undefined && child.stdin) {
@@ -82,11 +81,13 @@ export function spawn(
       if (killTimer) clearTimeout(killTimer);
       if (code === 0) {
         const result: SpawnResult = { stdout: out };
+        // При успехе возвращаем stderr только если явно запрошено
         if (captureStderr) {
           result.stderr = err;
         }
         resolve(result);
       } else {
+        // При ошибке ВСЕГДА включаем stderr в сообщение (независимо от captureStderr)
         reject(new Error(err || `Exited with code ${code}`));
       }
     });
