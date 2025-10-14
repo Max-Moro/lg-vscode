@@ -1,0 +1,7 @@
+src-reference:
+  extensions: [".ts", ".json", ".html", ".css", ".js", ".svg"]
+  filters:
+    mode: allow
+    allow:
+      - "/media/lg.svg"
+      - "/package.json"
