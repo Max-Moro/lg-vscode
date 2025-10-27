@@ -1,42 +1,65 @@
-import { cliRender, cliReport, type CliOptions } from "../cli/CliClient";
+import * as vscode from "vscode";
+import { cliRender, cliReport } from "../cli/CliClient";
+import { ControlStateService } from "./ControlStateService";
 
-export interface ListingParams {
-  section?: string;
-  tokenizerLib: string;
-  encoder: string;
-  ctxLimit: number;
-  modes?: Record<string, string>;
-  tags?: string[];
-  taskText?: string;
-  targetBranch?: string;
-}
-
-export async function runListing(params: ListingParams): Promise<string> {
-  const target = params.section ? `sec:${params.section}` : "sec:all";
-  const options: CliOptions = {
-    tokenizerLib: params.tokenizerLib,
-    encoder: params.encoder,
-    ctxLimit: params.ctxLimit,
-    modes: params.modes,
-    tags: params.tags,
-    taskText: params.taskText,
-    targetBranch: params.targetBranch
-  };
-  return cliRender(target, options);
-}
-
-export async function runListIncludedJson(params: ListingParams): Promise<{ path: string; sizeBytes: number }[]> {
-  const target = params.section ? `sec:${params.section}` : "sec:all";
-  const options: CliOptions = {
-    tokenizerLib: params.tokenizerLib,
-    encoder: params.encoder,
-    ctxLimit: params.ctxLimit,
-    modes: params.modes,
-    tags: params.tags,
-    taskText: params.taskText,
-    targetBranch: params.targetBranch
-  };
-  const data = await cliReport(target, options);
-  const files = Array.isArray(data.files) ? data.files : [];
-  return files.map((f: any) => ({ path: f.path, sizeBytes: f.sizeBytes ?? 0 }));
+/**
+ * Сервис для работы с листингами секций.
+ * Получает все параметры из ControlStateService.
+ */
+export class ListingService {
+  private stateService: ControlStateService;
+  
+  constructor(context: vscode.ExtensionContext) {
+    this.stateService = ControlStateService.getInstance(context);
+  }
+  
+  /**
+   * Сгенерировать листинг для текущей секции из состояния
+   * @throws {Error} если секция не выбрана
+   */
+  async generateListing(): Promise<string> {
+    const state = this.stateService.getState();
+    if (!state.section) {
+      throw new Error("No section selected");
+    }
+    const target = `sec:${state.section}`;
+    return cliRender(target, state);
+  }
+  
+  /**
+   * Получить статистику для текущей секции
+   * @throws {Error} если секция не выбрана
+   */
+  async getStats(): Promise<import("../models/report").RunResult> {
+    const state = this.stateService.getState();
+    if (!state.section) {
+      throw new Error("No section selected");
+    }
+    const target = `sec:${state.section}`;
+    return cliReport(target, state);
+  }
+  
+  /**
+   * Получить список файлов, включенных в текущую секцию
+   * @throws {Error} если секция не выбрана
+   */
+  async getIncludedFiles(): Promise<{ path: string; sizeBytes: number }[]> {
+    const state = this.stateService.getState();
+    if (!state.section) {
+      throw new Error("No section selected");
+    }
+    const target = `sec:${state.section}`;
+    const data = await cliReport(target, state);
+    const files = Array.isArray(data.files) ? data.files : [];
+    return files.map((f: any) => ({ path: f.path, sizeBytes: f.sizeBytes ?? 0 }));
+  }
+  
+  /**
+   * Получить имя текущей секции
+   * @returns имя секции или пустую строку если не выбрана
+   */
+  getCurrentSection(): string {
+    const state = this.stateService.getState();
+    return state.section || "";
+  }
 }

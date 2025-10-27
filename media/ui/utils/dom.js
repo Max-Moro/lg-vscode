@@ -85,5 +85,67 @@ export const DOM = {
    */
   cssEscape(str) {
     return String(str).replace(/["'\\]/g, '\\$&');
+  },
+
+  /**
+   * Collect form values from elements with data-state-key attribute
+   * @param {Element} root - Root element to search within (default: document)
+   * @returns {Object} Key-value pairs from form controls
+   */
+  collectFormState(root = document) {
+    const state = {};
+    
+    this.qsa('[data-state-key]', root).forEach(el => {
+      const key = el.getAttribute('data-state-key');
+      if (!key) return;
+      
+      if (el.tagName === 'SELECT') {
+        state[key] = el.value;
+      } else if (el.tagName === 'INPUT') {
+        if (el.type === 'checkbox') {
+          state[key] = el.checked;
+        } else if (el.type === 'radio') {
+          if (el.checked) {
+            state[key] = el.value;
+          }
+        } else if (el.type === 'number') {
+          state[key] = parseInt(el.value, 10) || 0;
+        } else {
+          state[key] = el.value;
+        }
+      } else if (el.tagName === 'TEXTAREA') {
+        state[key] = el.value;
+      }
+    });
+    
+    return state;
+  },
+
+  /**
+   * Apply state values to form controls with data-state-key attribute
+   * @param {Object} state - State object with key-value pairs
+   * @param {Element} root - Root element to search within (default: document)
+   */
+  applyFormState(state, root = document) {
+    if (!state || typeof state !== 'object') return;
+    
+    this.qsa('[data-state-key]', root).forEach(el => {
+      const key = el.getAttribute('data-state-key');
+      if (!key || !(key in state)) return;
+      
+      const value = state[key];
+      
+      if (el.tagName === 'SELECT' || el.tagName === 'TEXTAREA') {
+        el.value = String(value ?? '');
+      } else if (el.tagName === 'INPUT') {
+        if (el.type === 'checkbox') {
+          el.checked = Boolean(value);
+        } else if (el.type === 'radio') {
+          el.checked = el.value === String(value);
+        } else {
+          el.value = String(value ?? '');
+        }
+      }
+    });
   }
 };

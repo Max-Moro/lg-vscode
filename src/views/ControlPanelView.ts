@@ -1,78 +1,78 @@
 import * as vscode from "vscode";
 import { VirtualDocProvider } from "./VirtualDocProvider";
 import { IncludedTree } from "./IncludedTree";
-import { runListIncludedJson, runListing, type ListingParams } from "../services/ListingService";
-import { runContext, runContextStatsJson, type ContextParams } from "../services/ContextService";
-import { runStatsJson, type StatsParams } from "../services/StatsService";
+import { ListingService } from "../services/ListingService";
+import { ContextService } from "../services/ContextService";
 import { listContextsJson, listTokenizerLibsJson, listEncodersJson, listSectionsJson, listModeSetsJson, listTagSetsJson } from "../services/CatalogService";
 import type { ModeSetsList } from "../models/mode_sets_list";
 import type { TagSetsList } from "../models/tag_sets_list";
 import { resetCache } from "../services/DoctorService";
 import { runDoctor } from "../diagnostics/Doctor";
 import { openConfigOrInit, runInitWizard } from "../starter/StarterConfig";
-import { GitService } from "../services/GitService";
 import { EXT_ID } from "../constants";
 import { getAiService } from "../extension";
-import type { CliOptions } from "../cli/CliClient";
-
-type PanelState = {
-  section: string;
-  template: string;
-  tokenizerLib: string;
-  encoder: string;
-  ctxLimit: number;
-  modes: Record<string, string>;
-  tags: string[];
-  taskText: string;
-  targetBranch: string;
-};
-
-const MKEY = "lg.control.state";
-const DEFAULT_STATE: PanelState = {
-  section: "all-src",
-  template: "",
-  tokenizerLib: "tiktoken",
-  encoder: "cl100k_base",
-  ctxLimit: 128000,
-  modes: {},
-  tags: [],
-  taskText: "",
-  targetBranch: ""
-};
+import { ControlStateService, type ControlPanelState } from "../services/ControlStateService";
 
 export class ControlPanelView implements vscode.WebviewViewProvider {
   private view?: vscode.WebviewView;
   /** Гарантия, что стартовую загрузку списков/state делаем ровно один раз. */
   private bootstrapped = false;
-  /** Git сервис для получения информации о ветках */
-  private gitService = new GitService();
+  /** Сервис управления состоянием панели */
+  private stateService: ControlStateService;
+  /** Бизнес-сервисы с доступом к состоянию */
+  private listingService: ListingService;
+  private contextService: ContextService;
+  /** Очередь запросов состояния для синхронизации */
+  private stateRequestId = 0;
+  private pendingStateRequests = new Map<number, { resolve: (state: Partial<ControlPanelState>) => void; reject: (error: Error) => void }>();
 
   constructor(
     private readonly context: vscode.ExtensionContext,
     private readonly vdocs: VirtualDocProvider,
     private readonly included: IncludedTree
-  ) {}
-
-  private getTokenizationParams(state: PanelState): { 
-    tokenizerLib: string;
-    encoder: string;
-    ctxLimit: number;
-  } {
-    return {
-      tokenizerLib: state.tokenizerLib || "tiktoken",
-      encoder: state.encoder || "cl100k_base",
-      ctxLimit: state.ctxLimit || 128000
-    };
+  ) {
+    this.stateService = ControlStateService.getInstance(context);
+    this.listingService = new ListingService(context);
+    this.contextService = new ContextService(context);
   }
 
-  private getFullCliOptions(state: PanelState): CliOptions {
-    return {
-      ...this.getTokenizationParams(state),
-      modes: Object.keys(state.modes || {}).length > 0 ? state.modes : undefined,
-      tags: Array.isArray(state.tags) && state.tags.length > 0 ? state.tags : undefined,
-      taskText: state.taskText && state.taskText.trim() ? state.taskText.trim() : undefined,
-      targetBranch: state.targetBranch && state.targetBranch.trim() ? state.targetBranch.trim() : undefined
-    };
+
+  /**
+   * Запрашивает актуальное состояние из WebView (pull-модель).
+   * Отправляет запрос в WebView и ожидает ответ с полным состоянием всех контролов.
+   * 
+   * @param timeoutMs - таймаут ожидания ответа (по умолчанию 5000ms)
+   * @returns Promise с актуальным состоянием из WebView
+   * @throws Error если WebView не инициализирован или таймаут истек
+   */
+  private async pullState(timeoutMs = 5000): Promise<Partial<ControlPanelState>> {
+    if (!this.view) {
+      throw new Error("WebView is not initialized");
+    }
+
+    const requestId = ++this.stateRequestId;
+    
+    return new Promise<Partial<ControlPanelState>>((resolve, reject) => {
+      // Сохраняем промис в очереди
+      this.pendingStateRequests.set(requestId, { resolve, reject });
+
+      // Устанавливаем таймаут
+      const timeout = setTimeout(() => {
+        this.pendingStateRequests.delete(requestId);
+        reject(new Error("State request timeout"));
+      }, timeoutMs);
+
+      // Отправляем запрос в WebView
+      this.post({ type: "getState", requestId });
+
+      // Очищаем таймаут при успешном разрешении
+      const originalResolve = resolve;
+      const wrappedResolve = (state: Partial<ControlPanelState>) => {
+        clearTimeout(timeout);
+        originalResolve(state);
+      };
+      this.pendingStateRequests.set(requestId, { resolve: wrappedResolve, reject });
+    });
   }
 
   private async onTokenizerLibChange(lib: string) {
@@ -80,10 +80,10 @@ export class ControlPanelView implements vscode.WebviewViewProvider {
     const encoders = await listEncodersJson(lib).catch(() => [] as any[]);
     
     // Обновляем библиотеку токенизации (encoder остается как есть, даже если это кастомное значение)
-    this.setState({ tokenizerLib: lib });
+    await this.stateService.setState({ tokenizerLib: lib });
     
     // Отправляем обновленный список энкодеров в webview
-    this.post({ type: "encoders", encoders });
+    this.post({ type: "encodersUpdated", encoders });
   }
 
   resolveWebviewView(view: vscode.WebviewView): void | Thenable<void> {
@@ -97,8 +97,13 @@ export class ControlPanelView implements vscode.WebviewViewProvider {
           case "init":
             await this.bootstrapOnce();
             break;
-          case "setState":
-            this.setState(msg.state as Partial<PanelState>);
+          case "stateResponse":
+            // Обработка ответа на запрос состояния (pull-модель)
+            const pending = this.pendingStateRequests.get(msg.requestId);
+            if (pending) {
+              this.pendingStateRequests.delete(msg.requestId);
+              pending.resolve(msg.state as Partial<ControlPanelState>);
+            }
             break;
           case "tokenizerLibChanged":
             await this.onTokenizerLibChange(msg.lib);
@@ -194,98 +199,107 @@ export class ControlPanelView implements vscode.WebviewViewProvider {
 
   // ——————————————— handlers ——————————————— //
   private async onGenerateListing() {
-    const s = this.getState();
-    const params: ListingParams = {
-      section: s.section,
-      ...this.getTokenizationParams(s),
-      ...this.getAdaptiveParams(s)
-    };
+    // Pull актуальное состояние из WebView
+    const state = await this.pullState();
+    await this.stateService.setState(state);
+    
+    const section = this.listingService.getCurrentSection();
+    if (!section) {
+      vscode.window.showWarningMessage("Select a section first.");
+      return;
+    }
+    
     const content = await vscode.window.withProgress(
-      { location: vscode.ProgressLocation.Notification, title: "LG: Generating listing…", cancellable: false },
-      () => runListing(params)
+      { location: vscode.ProgressLocation.Notification, title: `LG: Generating listing '${section}'…`, cancellable: false },
+      () => this.listingService.generateListing()
     );
-    await this.vdocs.open("listing", `Listing — ${s.section}.md`, content);
+    await this.vdocs.open("listing", `Listing — ${section}.md`, content);
   }
 
   private async onGenerateContext() {
-    const s = this.getState();
-    if (!s.template) {
+    // Pull актуальное состояние из WebView
+    const state = await this.pullState();
+    await this.stateService.setState(state);
+    
+    const template = this.contextService.getCurrentTemplate();
+    if (!template) {
       vscode.window.showWarningMessage("Select a template first.");
       return;
     }
-    const options = this.getFullCliOptions(s);
+    
     const content = await vscode.window.withProgress(
-      { location: vscode.ProgressLocation.Notification, title: `LG: Generating context '${s.template}'…`, cancellable: false },
-      () => runContext(s.template, options)
+      { location: vscode.ProgressLocation.Notification, title: `LG: Generating context '${template}'…`, cancellable: false },
+      () => this.contextService.generateContext()
     );
-    await this.vdocs.open("context", `Context — ${s.template}.md`, content);
+    await this.vdocs.open("context", `Context — ${template}.md`, content);
   }
 
   private async onShowContextStats() {
-    const s = this.getState();
-    if (!s.template) {
+    // Pull актуальное состояние из WebView
+    const state = await this.pullState();
+    await this.stateService.setState(state);
+    
+    const template = this.contextService.getCurrentTemplate();
+    if (!template) {
       vscode.window.showWarningMessage("Select a template first.");
       return;
     }
-    const params: ContextParams = {
-      template: s.template,
-      ...this.getTokenizationParams(s),
-      modes: Object.keys(s.modes || {}).length > 0 ? s.modes : undefined,
-      tags: Array.isArray(s.tags) && s.tags.length > 0 ? s.tags : undefined,
-      taskText: s.taskText && s.taskText.trim() ? s.taskText.trim() : undefined,
-      targetBranch: s.targetBranch && s.targetBranch.trim() ? s.targetBranch.trim() : undefined
-    };
+    
     const data = await vscode.window.withProgress(
-      { location: vscode.ProgressLocation.Notification, title: `LG: Computing stats for context '${s.template}'…`, cancellable: false },
-      () => runContextStatsJson(params)
+      { location: vscode.ProgressLocation.Notification, title: "LG: Computing stats for context…", cancellable: false },
+      () => this.contextService.getStats()
     );
+    
     const { showStatsWebview } = await import("./StatsWebview");
     await showStatsWebview(
+      this.context,
       data,
-      (taskText) => runContextStatsJson({ ...params, taskText }),
-      (taskText) => runContext(s.template, this.getFullCliOptions({ ...s, taskText: taskText || "" })),
-      s.taskText
+      () => this.contextService.getStats(),
+      () => this.contextService.generateContext()
     );
   }
 
   private async onShowIncluded() {
-    const s = this.getState();
-    const params: ListingParams = {
-      section: s.section,
-      ...this.getTokenizationParams(s),
-      modes: Object.keys(s.modes || {}).length > 0 ? s.modes : undefined,
-      tags: Array.isArray(s.tags) && s.tags.length > 0 ? s.tags : undefined,
-      taskText: s.taskText && s.taskText.trim() ? s.taskText.trim() : undefined,
-      targetBranch: s.targetBranch && s.targetBranch.trim() ? s.targetBranch.trim() : undefined
-    };
+    // Pull актуальное состояние из WebView
+    const state = await this.pullState();
+    await this.stateService.setState(state);
+    
+    const section = this.listingService.getCurrentSection();
+    if (!section) {
+      vscode.window.showWarningMessage("Select a section first.");
+      return;
+    }
+    
     const files = await vscode.window.withProgress(
       { location: vscode.ProgressLocation.Notification, title: "LG: Collecting included paths…", cancellable: false },
-      () => runListIncludedJson(params)
+      () => this.listingService.getIncludedFiles()
     );
     this.included.setPaths(files.map(f => f.path));
     await vscode.commands.executeCommand("lg.included.focus");
   }
 
   private async onShowStats() {
-    const s = this.getState();
-    const params: StatsParams = {
-      section: s.section,
-      ...this.getTokenizationParams(s),
-      modes: Object.keys(s.modes || {}).length > 0 ? s.modes : undefined,
-      tags: Array.isArray(s.tags) && s.tags.length > 0 ? s.tags : undefined,
-      taskText: s.taskText && s.taskText.trim() ? s.taskText.trim() : undefined,
-      targetBranch: s.targetBranch && s.targetBranch.trim() ? s.targetBranch.trim() : undefined
-    };
+    // Pull актуальное состояние из WebView
+    const state = await this.pullState();
+    await this.stateService.setState(state);
+    
+    const section = this.listingService.getCurrentSection();
+    if (!section) {
+      vscode.window.showWarningMessage("Select a section first.");
+      return;
+    }
+    
     const data = await vscode.window.withProgress(
       { location: vscode.ProgressLocation.Notification, title: "LG: Computing stats…", cancellable: false },
-      () => runStatsJson(params)
+      () => this.listingService.getStats()
     );
+    
     const { showStatsWebview } = await import("./StatsWebview");
     await showStatsWebview(
+      this.context,
       data,
-      (taskText) => runStatsJson({ ...params, taskText }),
-      (taskText) => runListing({ ...params, taskText }),
-      s.taskText
+      () => this.listingService.getStats(),
+      () => this.listingService.generateListing()
     );
   }
 
@@ -293,58 +307,36 @@ export class ControlPanelView implements vscode.WebviewViewProvider {
    * Обработчик кнопки "Send to AI"
    */
   private async onSendToAI() {
-    const s = this.getState();
+    // Pull актуальное состояние из WebView
+    const state = await this.pullState();
+    await this.stateService.setState(state);
+    
     const aiService = getAiService();
     
     // Определяем, что отправлять: контекст или секцию
-    if (s.template) {
+    const template = this.contextService.getCurrentTemplate();
+    if (template) {
       // Отправляем контекст
-      const targetName = s.template;
-      const options = this.getFullCliOptions(s);
-      
       await aiService.generateAndSend(
-        () => runContext(targetName, options),
-        `Generating context '${targetName}'...`
+        () => this.contextService.generateContext(),
+        `Generating context '${template}'...`
       );
     } else {
       // Отправляем секцию
-      const targetName = s.section || "all";
-      const params = {
-        section: s.section,
-        ...this.getTokenizationParams(s),
-        ...this.getAdaptiveParams(s)
-      };
+      const section = this.listingService.getCurrentSection();
+      if (!section) {
+        vscode.window.showWarningMessage("Select a section or template first.");
+        return;
+      }
       
       await aiService.generateAndSend(
-        () => runListing(params),
-        `Generating listing for '${targetName}'...`
+        () => this.listingService.generateListing(),
+        `Generating listing for '${section}'...`
       );
     }
   }
 
   // ——————————————— state & lists ——————————————— //
-  private getState(): PanelState {
-    return { ...DEFAULT_STATE, ...(this.context.workspaceState.get<PanelState>(MKEY) || {}) };
-  }
-  private setState(partial: Partial<PanelState>) {
-    const next = { ...this.getState(), ...partial };
-    this.context.workspaceState.update(MKEY, next);
-    this.post({ type: "state", state: next });
-  }
-
-  private getAdaptiveParams(state: PanelState): { 
-    modes?: Record<string, string>; 
-    tags?: string[];
-    taskText?: string;
-    targetBranch?: string;
-  } {
-    return {
-      modes: Object.keys(state.modes || {}).length > 0 ? state.modes : undefined,
-      tags: Array.isArray(state.tags) && state.tags.length > 0 ? state.tags : undefined,
-      taskText: state.taskText && state.taskText.trim() ? state.taskText.trim() : undefined,
-      targetBranch: state.targetBranch && state.targetBranch.trim() ? state.targetBranch.trim() : undefined
-    };
-  }
 
   // Очередь для последовательного выполнения listSectionsJson / listContextsJson / listModelsJson
   private listsChain: Promise<void> = Promise.resolve();
@@ -360,79 +352,28 @@ export class ControlPanelView implements vscode.WebviewViewProvider {
         const tokenizerLibs = await listTokenizerLibsJson().catch(() => [] as string[]);
         
         // Загружаем энкодеры для текущей библиотеки
-        const state = this.getState();
-        const currentLib = state.tokenizerLib || "tiktoken";
-        const encoders = await listEncodersJson(currentLib).catch(() => [] as any[]);
+        const currentState = this.stateService.getState();
+        const encoders = await listEncodersJson(currentState.tokenizerLib!).catch(() => [] as any[]);
         
         const modeSets = await listModeSetsJson().catch(() => ({ "mode-sets": [] } as ModeSetsList));
         const tagSets = await listTagSetsJson().catch(() => ({ "tag-sets": [] } as TagSetsList));
         
-        // Fetch Git branches if available
-        const branches = await this.fetchBranches();
-
-        let stateChanged = false;
+        // Актуализация состояния через сервис
+        await this.stateService.validateBasicParams(sections, contexts, tokenizerLibs);
+        await this.stateService.actualizeState(modeSets, tagSets);
         
-        // Валидация section
-        if (!sections.includes(state.section) && sections.length) {
-          state.section = sections[0];
-          stateChanged = true;
-        }
+        // Обновляем список веток через ControlStateService
+        const { branches } = await this.stateService.updateBranches();
         
-        // Валидация tokenizerLib
-        if (!tokenizerLibs.includes(state.tokenizerLib) && tokenizerLibs.length) {
-          state.tokenizerLib = tokenizerLibs[0];
-          stateChanged = true;
-        }
+        // Получаем актуальное состояние для отправки в webview
+        const state = this.stateService.getState();
         
-        // Валидация encoder - разрешаем произвольные значения, валидируем только если пусто
-        if (!state.encoder && encoders.length) {
-          const encoderNames = encoders.map(e => e.name);
-          state.encoder = encoderNames[0] || "cl100k_base";
-          stateChanged = true;
-        }
-        
-        // Валидация ctxLimit
-        if (!state.ctxLimit || state.ctxLimit < 1000 || state.ctxLimit > 2_000_000) {
-          state.ctxLimit = 128000;
-          stateChanged = true;
-        }
-        
-        if (stateChanged) {
-          await this.context.workspaceState.update(MKEY, state);
-        }
         this.post({ type: "data", sections, contexts, tokenizerLibs, encoders, modeSets, tagSets, branches, state });
       })
       .catch(() => {
         // Гасим ошибку, чтобы не «сломать» цепочку последующих вызовов
       });
     return this.listsChain;
-  }
-
-  private async fetchBranches(): Promise<string[]> {
-    try {
-      if (!(await this.gitService.isAvailable())) {
-        return [];
-      }
-      
-      const branchesInfo = await this.gitService.getAllBranches();
-      if (!branchesInfo) {
-        return [];
-      }
-      
-      // Combine local and remote branches, removing duplicates
-      const allBranches = [
-        ...branchesInfo.local.map(b => b.name).filter((n): n is string => !!n),
-        ...branchesInfo.remote.map(b => b.name).filter((n): n is string => !!n)
-      ];
-      
-      // Remove duplicates and sort
-      const uniqueBranches = Array.from(new Set(allBranches)).sort();
-      
-      return uniqueBranches;
-    } catch (error) {
-      // Fail silently if git is not available
-      return [];
-    }
   }
 
   private post(msg: any) {

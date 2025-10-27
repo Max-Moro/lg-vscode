@@ -1,64 +1,66 @@
 import { runCli } from "./CliResolver";
 import type { RunResult } from "../models/report";
 import type { DiagReport } from "../models/diag_report";
-
-export interface CliOptions {
-  tokenizerLib: string;
-  encoder: string;
-  ctxLimit: number;
-  modes?: Record<string, string>;
-  tags?: string[];
-  taskText?: string;
-  targetBranch?: string;
-}
+import type { ControlPanelState } from "../services/ControlStateService";
 
 /**
  * Внутренняя функция для сборки аргументов CLI команд render/report.
  *
  * @param command - команда CLI ("render" или "report")
  * @param target - цель (например, "ctx:name" или "sec:name")
- * @param options - опции запуска
+ * @param state - состояние панели управления
  * @returns объект с args и stdinData для передачи в runCli
  */
-function buildCliArgs(command: string, target: string, options: CliOptions): { args: string[]; stdinData?: string } {
+function buildCliArgs(command: string, target: string, state: Partial<ControlPanelState>): { args: string[]; stdinData?: string } {
   const args: string[] = [command, target];
   
-  args.push("--lib", options.tokenizerLib);
-  args.push("--encoder", options.encoder);
-  args.push("--ctx-limit", String(options.ctxLimit));
+  // Обязательные параметры токенизации
+  args.push("--lib", state.tokenizerLib!);
+  args.push("--encoder", state.encoder!);
+  args.push("--ctx-limit", String(state.ctxLimit!));
   
-  if (options.modes) {
-    for (const [modeset, mode] of Object.entries(options.modes)) {
+  // Режимы (modes)
+  if (state.modes) {
+    for (const [modeset, mode] of Object.entries(state.modes)) {
       if (mode) {
         args.push("--mode", `${modeset}:${mode}`);
       }
     }
   }
   
-  if (options.tags && options.tags.length > 0) {
-    args.push("--tags", options.tags.join(","));
+  // Теги (преобразуем из Record<tagSetId, tagId[]> в плоский список)
+  if (state.tags) {
+    const flatTags: string[] = [];
+    for (const tagIds of Object.values(state.tags)) {
+      flatTags.push(...tagIds);
+    }
+    if (flatTags.length > 0) {
+      args.push("--tags", flatTags.join(","));
+    }
   }
   
-  if (options.targetBranch && options.targetBranch.trim()) {
-    args.push("--target-branch", options.targetBranch.trim());
+  // Целевая ветка (для режима review)
+  if (state.targetBranch && state.targetBranch.trim()) {
+    args.push("--target-branch", state.targetBranch.trim());
   }
   
+  // Текст задачи (передаём через stdin)
   let stdinData: string | undefined;
-  if (options.taskText && options.taskText.trim()) {
+  if (state.taskText && state.taskText.trim()) {
     args.push("--task", "-");
-    stdinData = options.taskText.trim();
+    stdinData = state.taskText.trim();
   }
   
   return { args, stdinData };
 }
 
-export async function cliRender(target: string, options: CliOptions): Promise<string> {
-  const { args, stdinData } = buildCliArgs("render", target, options);
+export async function cliRender(target: string, state: Partial<ControlPanelState>): Promise<string> {
+  const { args, stdinData } = buildCliArgs("render", target, state);
   return runCli(args, { timeoutMs: 120_000, stdinData });
 }
 
-export async function cliReport(target: string, options: CliOptions): Promise<RunResult> {
-  const { args, stdinData } = buildCliArgs("report", target, options);
+export async function cliReport(target: string, state: Partial<ControlPanelState>): Promise<RunResult> {
+  const { args, stdinData } = buildCliArgs("report", target, state);
   const out = await runCli(args, { timeoutMs: 120_000, stdinData });
   const data = JSON.parse(out);
   return data as RunResult;

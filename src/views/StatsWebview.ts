@@ -6,12 +6,13 @@ import { getVirtualProvider } from "./virtualBus";
 import type { RunResult } from "../models/report";
 import { buildHtml, getExtensionUri, mediaUri, lgUiUri } from "../webview/webviewKit";
 import { getAiService } from "../extension";
+import { ControlStateService } from "../services/ControlStateService";
 
 export async function showStatsWebview(
+  context: vscode.ExtensionContext,
   data: RunResult,
-  refetch?: (taskText?: string) => Promise<RunResult>,
-  generate?: (taskText?: string) => Promise<string>, // returns rendered markdown text
-  taskText?: string // text of the current task
+  refetch: () => Promise<RunResult>,
+  generate: () => Promise<string>
 ) {
   const scope = data.scope === "context" ? "Context" : "Section";
   const name = data.target.startsWith("ctx:")
@@ -42,7 +43,7 @@ export async function showStatsWebview(
 
   // Текущее содержимое (обновляем после refresh)
   let current: RunResult = data;
-  let currentTaskText = taskText || ""; // локальное состояние task text
+  const stateService = ControlStateService.getInstance(context);
 
   // Рукопожатие: ждём "ready" из браузера и шлём данные
   panel.webview.onDidReceiveMessage((msg) => {
@@ -50,7 +51,7 @@ export async function showStatsWebview(
       panel.webview.postMessage({ 
         type: "runResult", 
         payload: current,
-        taskText: currentTaskText
+        taskText: stateService.getState().taskText
       });
     }
   });
@@ -58,33 +59,25 @@ export async function showStatsWebview(
   // Refresh handler (по кнопке в webview)
   panel.webview.onDidReceiveMessage(async (msg) => {
     if (msg?.type === "refresh") {
-      if (!refetch) {
-        vscode.window.showWarningMessage("Refresh is unavailable here.");
-        return;
-      }
       try {
         const next = await vscode.window.withProgress(
           { location: vscode.ProgressLocation.Notification, title: "LG: Refreshing stats…", cancellable: false },
-          () => refetch(currentTaskText)
+          () => refetch()
         );
         current = next;
-        panel.webview.postMessage({ type: "runResult", payload: current, taskText: currentTaskText });
+        panel.webview.postMessage({ type: "runResult", payload: current, taskText: stateService.getState().taskText });
       } catch (e: any) {
         vscode.window.showErrorMessage(`LG: ${e?.message || e}`);
       }
     } else if (msg?.type === "updateTaskText") {
-      currentTaskText = msg.taskText || "";
-      // Синхронизация с Control Panel через workspace state не требуется, 
-      // так как это локальное состояние для stats webview
+      // Обновляем состояние в ControlStateService
+      const newTaskText = msg.taskText || "";
+      await stateService.setState({ taskText: newTaskText });
     } else if (msg?.type === "generate") {
-      if (!generate) {
-        vscode.window.showWarningMessage("Generate is unavailable here.");
-        return;
-      }
       try {
         const text = await vscode.window.withProgress(
           { location: vscode.ProgressLocation.Notification, title: "LG: Rendering…", cancellable: false },
-          () => generate(currentTaskText)
+          () => generate()
         );
         // Закрываем вебвью статистики и открываем результат
         const vp = getVirtualProvider();
@@ -110,14 +103,9 @@ export async function showStatsWebview(
         vscode.window.showErrorMessage(`Copy failed: ${e?.message || e}`);
       }
     } else if (msg?.type === "sendToAI") {
-      if (!generate) {
-        vscode.window.showWarningMessage("Generate is unavailable here.");
-        return;
-      }
-      
       const aiService = getAiService();
       await aiService.generateAndSend(
-        () => generate(currentTaskText),
+        () => generate(),
         "LG: Generating content..."
       );
     }

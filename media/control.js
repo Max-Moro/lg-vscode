@@ -7,17 +7,7 @@
   // Try to instantly restore last selections (before TS sends data)
   const cached = State.get();
   if (cached && Object.keys(cached).length) {
-    applyStateToDOM(cached);
-  }
-
-  // ---- helper: apply state to DOM ----
-  function applyStateToDOM(state) {
-    for (const [key, value] of Object.entries(state)) {
-      const el = document.getElementById(key);
-      if (el && 'value' in el) {
-        el.value = String(value);
-      }
-    }
+    DOM.applyFormState(cached);
   }
 
   // ---- actions: one delegated handler for all buttons ----
@@ -28,6 +18,7 @@
   });
 
   // ---- state-bound controls (selects, radios) ----
+  // Сохраняем в локальный стор для восстановления при перезагрузке
   Events.delegate(document, "[data-state-key]", "change", (el) => {
     const key = el.getAttribute("data-state-key");
     if (!key) return;
@@ -35,7 +26,6 @@
     const value = el.value;
     const patch = { [key]: value };
     State.merge(patch);
-    State.post("setState", { state: patch });
   });
 
   // ---- state-bound textarea (live updates) ----
@@ -46,7 +36,6 @@
     const value = el.value;
     const patch = { [key]: value };
     State.merge(patch);
-    State.post("setState", { state: patch });
   }, 500)); // дебаунс 500ms для снижения частоты отправки
 
   // ---- специальный обработчик для смены библиотеки токенизации ----
@@ -77,10 +66,9 @@
       input.value = String(value);
     }
     
-    // Сохраняем
+    // Сохраняем в локальный стор
     const patch = { ctxLimit: value };
     State.merge(patch);
-    State.post("setState", { state: patch });
   });
 
   // ---- Autosuggest for encoder ----
@@ -108,7 +96,6 @@
       onSelect: (value) => {
         const patch = { encoder: value };
         State.merge(patch);
-        State.post("setState", { state: patch });
       }
     });
     
@@ -126,17 +113,76 @@
   let currentTagSets = [];
   let currentBranches = [];
 
+  // ---- helper: collect full state from DOM ----
+  function collectStateFromDOM() {
+    // Начинаем с закэшированного состояния из State utilities
+    const cached = State.get();
+    
+    // Собираем базовые поля форм через DOM.collectFormState()
+    const formState = DOM.collectFormState();
+    
+    // Объединяем кэш и форму (форма перезаписывает кэш)
+    const state = { ...cached, ...formState };
+    
+    // Специфичная логика для modes (не покрывается data-state-key)
+    const modes = {};
+    DOM.qsa(".mode-select").forEach(select => {
+      const modeSetId = select.dataset.modeSet;
+      if (modeSetId && select.value) {
+        modes[modeSetId] = select.value;
+      }
+    });
+    if (Object.keys(modes).length > 0) {
+      state.modes = modes;
+    }
+    
+    // Специфичная логика для tags (не покрывается data-state-key)
+    const tags = {};
+    currentTagSets.forEach(tagSet => {
+      const selectedTags = [];
+      (tagSet.tags || []).forEach(tag => {
+        const compositeKey = `${tagSet.id}--${tag.id}`;
+        const checkbox = DOM.qs(`#tag-${compositeKey}`);
+        if (checkbox && checkbox.checked) {
+          selectedTags.push(tag.id);
+        }
+      });
+      if (selectedTags.length > 0) {
+        tags[tagSet.id] = selectedTags;
+      }
+    });
+    if (Object.keys(tags).length > 0) {
+      state.tags = tags;
+    }
+    
+    return state;
+  }
+
   // ---- runtime updates from extension ----
   window.addEventListener("message", (e) => {
     const msg = e.data;
+    if (msg?.type === "getState") {
+      // Handle state request from extension (pull model)
+      const state = collectStateFromDOM();
+      State.post("stateResponse", { requestId: msg.requestId, state });
+      return;
+    }
     if (msg?.type === "data") {
       // fill selects with remote lists
-      LGUI.fillSelect(DOM.qs("#section"), msg.sections, { value: msg.state.section || "" });
-      LGUI.fillSelect(DOM.qs("#template"), msg.contexts, { value: msg.state.template || "" });
+      // Если значение из state есть - используем его, иначе выберется первый элемент
+      LGUI.fillSelect(DOM.qs("#section"), msg.sections, { 
+        value: msg.state.section,
+        keepValue: true 
+      });
+      LGUI.fillSelect(DOM.qs("#template"), msg.contexts, { 
+        value: msg.state.template,
+        keepValue: true 
+      });
       
       // fill tokenization selects
       LGUI.fillSelect(DOM.qs("#tokenizerLib"), msg.tokenizerLibs || [], { 
-        value: msg.state.tokenizerLib || "tiktoken" 
+        value: msg.state.tokenizerLib,
+        keepValue: true 
       });
       
       // fill encoder autosuggest (supports custom values)
@@ -153,44 +199,33 @@
       }
 
       applyState(msg.state);
-    } else if (msg?.type === "state") {
-      // обновление списка энкодеров после смены библиотеки
+    } else if (msg?.type === "encodersUpdated") {
+      // Обновление списка энкодеров после смены библиотеки токенизации
       const state = State.get();
       setupEncoderAutosuggest(msg.encoders, state.encoder);
-    } else if (msg?.type === "state") {
-      applyState(msg.state);
     } else if (msg?.type === "theme") {
       document.documentElement.dataset.vscodeThemeKind = String(msg.kind);
     }
   });
 
   function applyState(s) {
-    const next = {};
-    if (s.section !== undefined) next["section"] = s.section;
-    if (s.template !== undefined) next["template"] = s.template;
+    if (!s) return;
     
-    // Apply tokenization state
-    if (s.tokenizerLib !== undefined) next["tokenizerLib"] = s.tokenizerLib;
-    if (s.encoder !== undefined) next["encoder"] = s.encoder;
-    if (s.ctxLimit !== undefined) next["ctxLimit"] = s.ctxLimit;
+    // Apply basic form fields through DOM utilities
+    DOM.applyFormState(s);
     
-    if (s.taskText !== undefined) next["taskText"] = s.taskText;
-    if (s.targetBranch !== undefined) next["targetBranch"] = s.targetBranch;
-    
-    // Apply modes state
-    if (s.modes) {
+    // Apply modes state (специфичная логика)
+    if (s.modes !== undefined) {
       applyModesState(s.modes);
     }
     
-    // Apply tags state
-    if (s.tags) {
+    // Apply tags state (специфичная логика)
+    if (s.tags !== undefined) {
       applyTagsState(s.tags);
     }
     
-    if (Object.keys(next).length) {
-      applyStateToDOM(next);
-      State.merge(next); // keep cache in sync with authoritative state
-    }
+    // Merge into local cache
+    State.merge(s);
     
     // Update target branch visibility based on current modes
     updateTargetBranchVisibility();
@@ -320,14 +355,17 @@
   }
 
   function applyTagsState(tags) {
-    const tagIds = Array.isArray(tags) ? tags : [];
+    // tags это Record<string, string[]> (tagSetId -> [tagId, ...])
+    const tagsBySet = tags || {};
     
     currentTagSets.forEach(tagSet => {
+      const selectedTagsInSet = tagsBySet[tagSet.id] || [];
+      
       (tagSet.tags || []).forEach(tag => {
         const compositeKey = `${tagSet.id}--${tag.id}`;
         const checkbox = DOM.qs(`#tag-${compositeKey}`);
         if (checkbox) {
-          checkbox.checked = tagIds.includes(tag.id);
+          checkbox.checked = selectedTagsInSet.includes(tag.id);
         }
       });
     });
@@ -341,7 +379,6 @@
     
     const patch = { modes };
     State.merge(patch);
-    State.post("setState", { state: patch });
   }
 
   function onModeChange(event) {
@@ -356,24 +393,28 @@
   }
 
   function onTagChange() {
-    const selectedTags = [];
+    // Собираем теги по наборам: Record<tagSetId, tagId[]>
+    const tagsBySet = {};
     
     currentTagSets.forEach(tagSet => {
+      const selectedInSet = [];
+      
       (tagSet.tags || []).forEach(tag => {
         const compositeKey = `${tagSet.id}--${tag.id}`;
         const checkbox = DOM.qs(`#tag-${compositeKey}`);
         if (checkbox && checkbox.checked) {
-          selectedTags.push(tag.id);
+          selectedInSet.push(tag.id);
         }
       });
+      
+      // Добавляем набор только если в нем есть выбранные теги
+      if (selectedInSet.length > 0) {
+        tagsBySet[tagSet.id] = selectedInSet;
+      }
     });
     
-    // Deduplicate tags (same tag can be selected in multiple sets)
-    const uniqueTags = Array.from(new Set(selectedTags));
-    
-    const patch = { tags: uniqueTags };
+    const patch = { tags: tagsBySet };
     State.merge(patch);
-    State.post("setState", { state: patch });
   }
 
   function populateBranches(branches) {
