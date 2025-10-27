@@ -1,7 +1,6 @@
 /* global LGUI */
 (function () {
   const { DOM, Events, State } = LGUI;
-  const vscode = State.getVSCode();
 
   // ---- unified state cache (session) ----
   // Try to instantly restore last selections (before TS sends data)
@@ -165,6 +164,11 @@
       // Handle state request from extension (pull model)
       const state = collectStateFromDOM();
       State.post("stateResponse", { requestId: msg.requestId, state });
+      return;
+    }
+    if (msg?.type === "stateUpdate") {
+      // Handle state updates from other sources (e.g., Stats webview)
+      applyState(msg.state);
       return;
     }
     if (msg?.type === "data") {

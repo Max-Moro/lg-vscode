@@ -72,7 +72,7 @@ export async function showStatsWebview(
     } else if (msg?.type === "updateTaskText") {
       // Обновляем состояние в ControlStateService
       const newTaskText = msg.taskText || "";
-      await stateService.setState({ taskText: newTaskText });
+      await stateService.setState({ taskText: newTaskText }, "stats-webview");
     } else if (msg?.type === "generate") {
       try {
         const text = await vscode.window.withProgress(

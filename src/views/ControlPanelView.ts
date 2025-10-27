@@ -34,6 +34,22 @@ export class ControlPanelView implements vscode.WebviewViewProvider {
     this.stateService = ControlStateService.getInstance(context);
     this.listingService = new ListingService(context);
     this.contextService = new ContextService(context);
+    
+    // Подписываемся на изменения состояния из других источников
+    context.subscriptions.push(
+      this.stateService.onDidChangeState((partial: any) => {
+        // Игнорируем обновления, инициированные самой Control Panel
+        if (partial._source === "control-panel") {
+          return;
+        }
+        
+        // Удаляем служебное поле перед отправкой в WebView
+        const { _source, ...cleanPartial } = partial;
+        
+        // Отправляем изменения в WebView для синхронизации UI
+        this.post({ type: "stateUpdate", state: cleanPartial });
+      })
+    );
   }
 
 
@@ -80,7 +96,7 @@ export class ControlPanelView implements vscode.WebviewViewProvider {
     const encoders = await listEncodersJson(lib).catch(() => [] as any[]);
     
     // Обновляем библиотеку токенизации (encoder остается как есть, даже если это кастомное значение)
-    await this.stateService.setState({ tokenizerLib: lib });
+    await this.stateService.setState({ tokenizerLib: lib }, "control-panel");
     
     // Отправляем обновленный список энкодеров в webview
     this.post({ type: "encodersUpdated", encoders });
@@ -201,7 +217,7 @@ export class ControlPanelView implements vscode.WebviewViewProvider {
   private async onGenerateListing() {
     // Pull актуальное состояние из WebView
     const state = await this.pullState();
-    await this.stateService.setState(state);
+    await this.stateService.setState(state, "control-panel");
     
     const section = this.listingService.getCurrentSection();
     if (!section) {
@@ -219,7 +235,7 @@ export class ControlPanelView implements vscode.WebviewViewProvider {
   private async onGenerateContext() {
     // Pull актуальное состояние из WebView
     const state = await this.pullState();
-    await this.stateService.setState(state);
+    await this.stateService.setState(state, "control-panel");
     
     const template = this.contextService.getCurrentTemplate();
     if (!template) {
@@ -237,7 +253,7 @@ export class ControlPanelView implements vscode.WebviewViewProvider {
   private async onShowContextStats() {
     // Pull актуальное состояние из WebView
     const state = await this.pullState();
-    await this.stateService.setState(state);
+    await this.stateService.setState(state, "control-panel");
     
     const template = this.contextService.getCurrentTemplate();
     if (!template) {
@@ -262,7 +278,7 @@ export class ControlPanelView implements vscode.WebviewViewProvider {
   private async onShowIncluded() {
     // Pull актуальное состояние из WebView
     const state = await this.pullState();
-    await this.stateService.setState(state);
+    await this.stateService.setState(state, "control-panel");
     
     const section = this.listingService.getCurrentSection();
     if (!section) {
@@ -281,7 +297,7 @@ export class ControlPanelView implements vscode.WebviewViewProvider {
   private async onShowStats() {
     // Pull актуальное состояние из WebView
     const state = await this.pullState();
-    await this.stateService.setState(state);
+    await this.stateService.setState(state, "control-panel");
     
     const section = this.listingService.getCurrentSection();
     if (!section) {
@@ -309,7 +325,7 @@ export class ControlPanelView implements vscode.WebviewViewProvider {
   private async onSendToAI() {
     // Pull актуальное состояние из WebView
     const state = await this.pullState();
-    await this.stateService.setState(state);
+    await this.stateService.setState(state, "control-panel");
     
     const aiService = getAiService();
     

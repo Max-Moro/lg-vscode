@@ -39,6 +39,21 @@ export class ControlStateService {
   private static instance: ControlStateService | undefined;
   private gitService: GitService;
   
+  /** 
+   * Event emitter для уведомления об изменениях состояния.
+   * 
+   * Используется для синхронизации состояния между различными WebView
+   * (например, между Control Panel и Stats Webview).
+   * 
+   * Механизм работы:
+   * 1. Когда любой компонент вызывает setState(), сервис сохраняет изменения
+   * 2. Затем сервис уведомляет всех подписчиков через этот event emitter
+   * 3. Каждый подписчик может фильтровать события по полю _source,
+   *    чтобы избежать циклических обновлений
+   */
+  private readonly _onDidChangeState = new vscode.EventEmitter<Partial<ControlPanelState>>();
+  public readonly onDidChangeState = this._onDidChangeState.event;
+  
   private constructor(
     private readonly context: vscode.ExtensionContext
   ) {
@@ -79,11 +94,18 @@ export class ControlStateService {
   
   /**
    * Обновить состояние (частичное слияние)
+   * 
+   * @param partial - частичное состояние для обновления
+   * @param source - источник изменения (для предотвращения циклических обновлений)
    */
-  public async setState(partial: Partial<ControlPanelState>): Promise<void> {
+  public async setState(partial: Partial<ControlPanelState>, source?: string): Promise<void> {
     const current = this.getState();
     const next = { ...current, ...partial };
     await this.context.workspaceState.update(STATE_KEY, next);
+    
+    // Уведомляем подписчиков об изменении состояния
+    // Передаем source для фильтрации в подписчиках
+    this._onDidChangeState.fire({ ...partial, _source: source } as any);
   }
   
   /**
@@ -294,7 +316,7 @@ export class ControlStateService {
     
     // Обновляем состояние только если ветка изменилась
     if (changed) {
-      await this.setState({ targetBranch: newBranch });
+      await this.setState({ targetBranch: newBranch }, "git-service");
     }
     
     return { branches, changed };
