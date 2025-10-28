@@ -6,7 +6,7 @@
 
 ## Что это
 
-**VS Code Extension для [Listing Generator](../README.md)** — графическая оболочка над мощным CLI-инструментом формирования AI-контекстов.
+**VS Code Extension для [Listing Generator](https://github.com/Max-Moro/lg-cli/README.md)** — графическая оболочка над мощным CLI-инструментом формирования AI-контекстов.
 
 Расширение автоматизирует рутину:
 - **Не нужно помнить команды** — все действия через панели и кнопки
@@ -44,7 +44,7 @@
 - **Managed venv** — автоматическая установка CLI в изолированное окружение
 - **Watcher на lg-cfg/** — живое обновление списков секций/контекстов при правках конфигурации
 - **Миграции конфигов** — встроенная поддержка миграций формата `lg-cfg/` (совместимость с CLI)
-
+<!-- lg:comment:start -->
 ---
 
 ## Быстрый старт
@@ -61,10 +61,10 @@
 
 ## Документация
 
-- [Listing Generator CLI](../README.md) — основная документация по CLI и формату `lg-cfg/`
-- [Шаблоны и контексты](../docs/templates.md) — шаблонизация промтов
-- [Адаптивные возможности](../docs/adaptability.md) — режимы, теги, условная логика
-- [Языковые адаптеры](../docs/adapters.md) — оптимизация листингов
+- [Listing Generator CLI](https://github.com/Max-Moro/lg-cli/README.md) — основная документация по CLI и формату `lg-cfg/`
+- [Шаблоны и контексты](https://github.com/Max-Moro/lg-cli/docs/templates.md) — шаблонизация промтов
+- [Адаптивные возможности](https://github.com/Max-Moro/lg-cli/docs/adaptability.md) — режимы, теги, условная логика
+- [Языковые адаптеры](https://github.com/Max-Moro/lg-cli/docs/adapters.md) — оптимизация листингов
 
 ---
 
@@ -76,3 +76,4 @@
 - `lg.python.interpreter` — путь к Python интерпретатору (для managed venv)
 - `lg.cli.path` — явный путь к CLI (если установлен вручную)
 - `lg.openAsEditable` — открывать результаты как редактируемые файлы (вместо read-only виртуальных документов)
+<!-- lg:comment:end -->
