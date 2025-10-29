@@ -10,40 +10,73 @@ src:
       media:
         mode: allow
         when:
-          - condition: "TAGSET:vscode-extension:core"
+          - condition: >
+              TAGSET:vscode-extension:ui-core OR
+              TAGSET:vscode-extension:control OR
+              TAGSET:vscode-extension:stats OR
+              TAGSET:vscode-extension:diag
             allow:
               - "base.css"
               - "common.js"
-          - condition: "TAGSET:vscode-extension:ui"
-            allow: ["/ui/"]
+              - "/ui/core/"
+              - "/ui/utils/"
+          - condition: "TAGSET:vscode-extension:ui-components"
+            allow: ["/ui/components/"]
           - condition: "TAGSET:vscode-extension:control"
-            allow: ["control*"]
+            allow: 
+              - "control*"
+              - "/ui/components/autosuggest/autosuggest.js"
           - condition: "TAGSET:vscode-extension:stats"
-            allow: ["stats*"]
+            allow: 
+              - "stats*"
+              - "/ui/components/grouped-table/grouped-table.js"
+              - "/ui/components/textarea/textarea.js"
           - condition: "TAGSET:vscode-extension:diag"
-            allow: ["doctor*"]
+            allow: 
+              - "doctor*"
+              - "/ui/components/textarea/textarea.js"
       src:
-        mode: block
+        mode: allow
         when:
-          - condition: "NOT TAGSET:vscode-extension:core"
-            block:
-              - "/cli/"
-              - "/runner/"
+          - condition: "TAGSET:vscode-extension:core"
+            allow:
+              - "/extension.ts"
+              - "/constants.ts"
               - "/logging/"
-          - condition: "NOT TAGSET:vscode-extension:ui"
-            block: ["/build-ui.ts"]
-          - condition: "NOT TAGSET:vscode-extension:control"
-            block:
-              - "/views/ControlPanelView.ts"
+              - "/cli/CliClient.ts"
+              - "/services/ContextService.ts"
+              - "/services/ListingService.ts"
+              - "/services/ControlStateService.ts"
+              - "/webview/webviewKit.ts"
+          - condition: "TAGSET:vscode-extension:cli"
+            allow: ["/cli/", "/runner/"]
+          - condition: "TAGSET:vscode-extension:ui-components"
+            allow: ["/build-ui.ts"]
+          - condition: "TAGSET:vscode-extension:control"
+            allow: ["/views/ControlPanelView.ts"]
+          - condition: "TAGSET:vscode-extension:catalog"
+            allow:
               - "/services/CatalogService.ts"
               - "/services/GitService.ts"
-          - condition: "NOT TAGSET:vscode-extension:stats"
-            block: ["**stats**"]
-          - condition: "NOT TAGSET:vscode-extension:diag"
-            block: ["**doctor**", "models/diag_report.ts"]
-          - condition: "NOT TAGSET:vscode-extension:send-to-ai"
-            block: ["/services/ai/"]
-          - condition: "NOT TAGSET:vscode-extension:starter"
-            block: ["/starter/"]
-          - condition: "NOT TAGSET:vscode-extension:included-tree"
-            block: ["/views/IncludedTree.ts"]
+              - "/models/mode_sets_list.ts"
+              - "/models/tag_sets_list.ts"
+          - condition: "TAGSET:vscode-extension:stats"
+            allow:
+              - "/views/StatsWebview.ts"
+              - "/models/report.ts"
+          - condition: "TAGSET:vscode-extension:diag"
+            allow:
+              - "/services/DoctorService.ts"
+              - "/views/DoctorWebview.ts"
+              - "/diagnostics/Doctor.ts"
+              - "/models/diag_report.ts"
+          - condition: "TAGSET:vscode-extension:send-to-ai"
+            allow: ["/ai/"]
+          - condition: "TAGSET:vscode-extension:starter"
+            allow: ["/starter/StarterConfig.ts"]
+          - condition: "TAGSET:vscode-extension:included-tree"
+            allow: ["/views/IncludedTree.ts"]
+          - condition: "TAGSET:vscode-extension:generate"
+            allow:
+              - "/views/VirtualDocProvider.ts"
+              - "/views/virtualBus.ts"

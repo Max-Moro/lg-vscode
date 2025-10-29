@@ -2,7 +2,7 @@ ${md:README}
 
 ---
 
-${md:media/ui/README, if:TAGSET:vscode-extension:ui}
+${md:media/ui/README, if:TAGSET:vscode-extension:ui-components}
 
 ---
 {% if tag:review %}

@@ -4,10 +4,16 @@ tag-sets:
     tags:
       core:
         title: "Ядро"
-      ui:
+      ui-core:
+        title: "Ядро UI"
+      ui-components:
         title: "Компонентная база UI"
+      cli:
+        title: "CLI executable"
       control:
         title: "Контрольная панель"
+      catalog:
+        title: "Catalog Services"
       stats:
         title: "Отчет статистики"
       diag:
@@ -18,6 +24,8 @@ tag-sets:
         title: "Стартовая конфигурация"
       included-tree:
         title: "Древовидный предпросмотр секций"
+      generate:
+        title: "Генерация (для просмотра)"
 
 tags:
   agent:
