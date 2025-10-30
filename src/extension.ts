@@ -113,6 +113,31 @@ export function activate(context: vscode.ExtensionContext) {
       
       await context.secrets.store("lg.openai.apiKey", input);
       vscode.window.showInformationMessage("OpenAI API key saved successfully");
+    }),
+
+    // Toolbar команды (делегируем в Control Panel)
+    vscode.commands.registerCommand("lg.refreshCatalogs", async () => {
+      await control.handleCommand("refreshCatalogs");
+    }),
+    
+    vscode.commands.registerCommand("lg.createStarter", async () => {
+      await control.handleCommand("createStarter");
+    }),
+    
+    vscode.commands.registerCommand("lg.openConfig", async () => {
+      await control.handleCommand("openConfig");
+    }),
+    
+    vscode.commands.registerCommand("lg.doctor", async () => {
+      await control.handleCommand("doctor");
+    }),
+    
+    vscode.commands.registerCommand("lg.resetCache", async () => {
+      await control.handleCommand("resetCache");
+    }),
+    
+    vscode.commands.registerCommand("lg.openSettings", async () => {
+      await control.handleCommand("openSettings");
     })
   );
 

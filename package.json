@@ -37,6 +37,36 @@
       {
         "command": "lg.ai.configureOpenAI",
         "title": "LG: Configure OpenAI API Key"
+      },
+      {
+        "command": "lg.refreshCatalogs",
+        "title": "Refresh",
+        "icon": "$(refresh)"
+      },
+      {
+        "command": "lg.createStarter",
+        "title": "Create Starter Config",
+        "icon": "$(new-file)"
+      },
+      {
+        "command": "lg.openConfig",
+        "title": "Open Config",
+        "icon": "$(file)"
+      },
+      {
+        "command": "lg.doctor",
+        "title": "Doctor",
+        "icon": "$(pulse)"
+      },
+      {
+        "command": "lg.resetCache",
+        "title": "Reset Cache",
+        "icon": "$(trash)"
+      },
+      {
+        "command": "lg.openSettings",
+        "title": "Settings",
+        "icon": "$(gear)"
       }
     ],
     "views": {
@@ -60,6 +90,66 @@
           "command": "lg.toggleIncludedViewMode",
           "when": "view == lg.included",
           "group": "navigation@10"
+        },
+        {
+          "command": "lg.refreshCatalogs",
+          "when": "view == lg.control",
+          "group": "navigation@1"
+        },
+        {
+          "command": "lg.createStarter",
+          "when": "view == lg.control",
+          "group": "config@1"
+        },
+        {
+          "command": "lg.openConfig",
+          "when": "view == lg.control",
+          "group": "config@2"
+        },
+        {
+          "command": "lg.doctor",
+          "when": "view == lg.control",
+          "group": "diagnostics@1"
+        },
+        {
+          "command": "lg.resetCache",
+          "when": "view == lg.control",
+          "group": "diagnostics@2"
+        },
+        {
+          "command": "lg.openSettings",
+          "when": "view == lg.control",
+          "group": "settings@1"
+        }
+      ],
+      "commandPalette": [
+        {
+          "command": "lg.toggleIncludedViewMode",
+          "when": "false"
+        },
+        {
+          "command": "lg.refreshCatalogs",
+          "when": "false"
+        },
+        {
+          "command": "lg.createStarter",
+          "when": "false"
+        },
+        {
+          "command": "lg.openConfig",
+          "when": "false"
+        },
+        {
+          "command": "lg.doctor",
+          "when": "false"
+        },
+        {
+          "command": "lg.resetCache",
+          "when": "false"
+        },
+        {
+          "command": "lg.openSettings",
+          "when": "false"
         }
       ]
     },

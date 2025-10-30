@@ -51,6 +51,52 @@ export class ControlPanelView implements vscode.WebviewViewProvider {
     );
   }
 
+  /**
+   * Обработчик команд из toolbar
+   */
+  public async handleCommand(command: string): Promise<void> {
+    try {
+      switch (command) {
+        case "refreshCatalogs":
+          await this.onRefreshCatalogs();
+          break;
+        case "createStarter":
+          await runInitWizard();
+          break;
+        case "openConfig":
+          await openConfigOrInit();
+          break;
+        case "doctor":
+          await runDoctor();
+          break;
+        case "resetCache":
+          await this.onResetCache();
+          break;
+        case "openSettings":
+          vscode.commands.executeCommand("workbench.action.openSettings", `@ext:${EXT_ID}`);
+          break;
+      }
+    } catch (e: any) {
+      vscode.window.showErrorMessage(`LG: ${e?.message || e}`);
+    }
+  }
+
+  private async onRefreshCatalogs(): Promise<void> {
+    await vscode.window.withProgress(
+      { location: vscode.ProgressLocation.Notification, title: "LG: Refreshing catalogs…", cancellable: false },
+      () => this.pushListsAndState()
+    );
+    vscode.window.showInformationMessage("LG catalogs refreshed successfully");
+  }
+
+  private async onResetCache(): Promise<void> {
+    await vscode.window.withProgress(
+      { location: vscode.ProgressLocation.Notification, title: "LG: Resetting cache…", cancellable: false },
+      () => resetCache()
+    );
+    vscode.window.showInformationMessage("LG cache has been reset.");
+  }
+
 
   /**
    * Запрашивает актуальное состояние из WebView (pull-модель).
@@ -137,25 +183,6 @@ export class ControlPanelView implements vscode.WebviewViewProvider {
             break;
           case "showStats":
             await this.onShowStats();
-            break;
-          case "resetCache":
-            await vscode.window.withProgress(
-              { location: vscode.ProgressLocation.Notification, title: "LG: Resetting cache…", cancellable: false },
-              async () => resetCache()
-            );
-            vscode.window.showInformationMessage("LG cache has been reset.");
-            break;
-          case "createStarter":
-            await runInitWizard();
-            break;
-          case "openConfig":
-            await openConfigOrInit();
-            break;
-          case "doctor":
-            await runDoctor();
-            break;
-          case "openSettings":
-            vscode.commands.executeCommand("workbench.action.openSettings", `@ext:${EXT_ID}`);
             break;
           case "sendToAI":
             await this.onSendToAI();
