@@ -16,6 +16,8 @@ export interface ProviderDetector {
   detect(): Promise<boolean>;
 }
 
+import type { AiInteractionMode } from "../../models/AiInteractionMode";
+
 /**
  * Интерфейс провайдера AI
  */
@@ -28,9 +30,11 @@ export interface AiProvider {
 
   /**
    * Отправить контент в AI
+   * @param content - Контент для отправки
+   * @param mode - Режим AI-взаимодействия (ask/agent)
    * @throws Error при ошибке отправки
    */
-  send(content: string): Promise<void>;
+  send(content: string, mode: AiInteractionMode): Promise<void>;
 }
 
 /**

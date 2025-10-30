@@ -11,6 +11,9 @@ import * as vscode from "vscode";
 import type { ModeSetsList } from "../models/mode_sets_list";
 import type { TagSetsList } from "../models/tag_sets_list";
 import { GitService } from "./GitService";
+import { AiInteractionMode, parseAiInteractionMode } from "../models/AiInteractionMode";
+import { type ShellType, getDefaultShell } from "../models/ShellType";
+import { type ClaudeModel, getDefaultClaudeModel } from "../models/ClaudeModel";
 
 /**
  * Модель состояния панели управления
@@ -25,6 +28,11 @@ export interface ControlPanelState {
   tags: Record<string, string[]>;     // tagSetId -> [tagId, ...]
   taskText: string;
   targetBranch: string;
+  
+  // CLI-based AI provider settings
+  cliScope: string;                   // Workspace scope (subdirectory) for CLI execution
+  cliShell: ShellType;                // Terminal shell type
+  claudeModel: ClaudeModel;           // Claude model (haiku, sonnet, opus)
 }
 
 const STATE_KEY = "lg.control.state";
@@ -89,6 +97,8 @@ export class ControlStateService {
       tokenizerLib: raw.tokenizerLib || "tiktoken",
       encoder: raw.encoder || "cl100k_base",
       ctxLimit: raw.ctxLimit || 128000,
+      cliShell: raw.cliShell || getDefaultShell(),
+      claudeModel: raw.claudeModel || getDefaultClaudeModel(),
     };
   }
   
@@ -274,21 +284,14 @@ export class ControlStateService {
   // ==================== Проверка активных режимов ==================== //
   
   /**
-   * Проверить, активен ли режим "ask" (спросить AI)
+   * Получить текущий режим AI-взаимодействия.
+   * 
+   * @returns Типизированный режим AI-взаимодействия
    */
-  public isAskModeActive(): boolean {
+  public getAiInteractionMode(): AiInteractionMode {
     const state = this.getState();
     const aiInteractionMode = state.modes?.["ai-interaction"];
-    return aiInteractionMode === "ask";
-  }
-  
-  /**
-   * Проверить, активен ли режим "agent" (агентная работа с инструментами)
-   */
-  public isAgentModeActive(): boolean {
-    const state = this.getState();
-    const aiInteractionMode = state.modes?.["ai-interaction"];
-    return aiInteractionMode === "agent";
+    return parseAiInteractionMode(aiInteractionMode);
   }
   
   /**
@@ -321,5 +324,6 @@ export class ControlStateService {
     
     return { branches, changed };
   }
+  
 }
 

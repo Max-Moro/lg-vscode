@@ -120,10 +120,8 @@
           <label>Library:</label>
           <select class="lg-select" id="tokenizerLib" data-state-key="tokenizerLib"></select>
         </span>
-      </div>
       
-      <!-- Энкодер (зависит от библиотеки) -->
-      <div class="row">
+        <!-- Энкодер (зависит от библиотеки) -->
         <span class="cluster" title="Энкодер или модель токенизации">
           <label for="encoder">Encoder:</label>
           <input
@@ -135,16 +133,44 @@
             autocomplete="off"
           />
         </span>
-      </div>
       
-      <!-- Размер контекстного окна -->
-      <div class="row">
+        <!-- Размер контекстного окна -->
         <span class="cluster" title="Размер контекстного окна в токенах">
           <label>Context Limit:</label>
-     <input type="number" id="ctxLimit" data-state-key="ctxLimit" 
-       class="lg-input lg-input--number"
-                 min="1000" max="2000000" step="1000" 
-                 placeholder="128000" />
+          <input type="number" id="ctxLimit" data-state-key="ctxLimit"
+            class="lg-input lg-input--number"
+            min="1000" max="2000000" step="1000"
+            placeholder="128000" />
+        </span>
+      </div>
+    </div>
+
+    <!-- CLI Settings Block (shown only when CLI-based provider is selected) -->
+    <div id="cli-settings-block" class="block" style="display: none;">
+      <h3><span class="codicon codicon-terminal"></span> CLI Provider Settings</h3>
+      
+      <div class="row">
+        <span class="cluster" title="Relative path from workspace root (empty = root, e.g. 'backend', 'services/api')">
+          <label>Scope:</label>
+          <input
+            type="text"
+            id="cliScope"
+            data-state-key="cliScope"
+            class="lg-input"
+            autocomplete="off"
+          />
+        </span>
+        <span class="cluster" title="Terminal shell type for CLI execution">
+          <label>Shell:</label>
+          <select class="lg-select" id="cliShell" data-state-key="cliShell"></select>
+        </span>
+      </div>
+      
+      <!-- Claude Model selector (shown only for Claude CLI provider) -->
+      <div id="claude-model-container" class="row" style="display: none;">
+        <span class="cluster" title="Claude model family">
+          <label>Model:</label>
+          <select class="lg-select" id="claudeModel" data-state-key="claudeModel"></select>
         </span>
       </div>
     </div>

@@ -1,5 +1,6 @@
 import * as vscode from "vscode";
 import { BaseAiProvider } from "./BaseAiProvider";
+import type { AiInteractionMode } from "../../../models/AiInteractionMode";
 
 /**
  * Базовый класс для Network-based провайдеров
@@ -90,13 +91,16 @@ export abstract class BaseNetworkProvider extends BaseAiProvider {
    * 
    * Получает токен из секретов и вызывает sendToApi для выполнения запроса.
    */
-  async send(content: string): Promise<void> {
+  async send(content: string, mode: AiInteractionMode): Promise<void> {
     const token = await this.getApiToken();
+
+    // Не передаем режим AI-взаимодействия, так как Network-based провайдеры
+    // по своему физическому смыслу обладают тотлько семантикой ASK поведения.
     await this.sendToApi(content, token);
   }
 
   /**
-   * Метод для отправки контента в конкретный API
+   * Метод для отправки контента в конкретный API.
    * 
    * Реализуется наследниками для специфичной логики взаимодействия с API.
    * Должен обрабатывать формирование запроса, отправку и разбор ответа.

@@ -367,3 +367,15 @@ label {
     min-height: 48px;
   }
 }
+
+/* ========== CLI SETTINGS BLOCK ========== */
+
+/* Icon styling for CLI settings header */
+#cli-settings-block h3 .codicon-terminal {
+  color: var(--vscode-terminal-ansiGreen);
+}
+
+/* CLI scope input sizing */
+#cliScope {
+  max-width: 50px;
+}

@@ -25,7 +25,6 @@ src:
           - condition: "TAGSET:vscode-extension:control"
             allow: 
               - "control*"
-              - "/ui/components/autosuggest/autosuggest.js"
           - condition: "TAGSET:vscode-extension:stats"
             allow: 
               - "stats*"
@@ -70,7 +69,10 @@ src:
               - "/views/DoctorWebview.ts"
               - "/models/diag_report.ts"
           - condition: "TAGSET:vscode-extension:send-to-ai"
-            allow: ["/ai/"]
+            allow: 
+              - "/services/ai/"
+              - "/models/AiInteractionMode.ts"
+              - "/models/ShellType.ts"
           - condition: "TAGSET:vscode-extension:starter"
             allow: ["/starter/StarterConfig.ts"]
           - condition: "TAGSET:vscode-extension:included-tree"

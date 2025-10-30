@@ -1,5 +1,6 @@
 import * as vscode from "vscode";
 import { BaseExtensionProvider } from "../../base";
+import type { AiInteractionMode } from "../../../../models/AiInteractionMode";
 
 export class CopilotProvider extends BaseExtensionProvider {
   readonly id = "github.copilot";
@@ -27,7 +28,7 @@ export class CopilotProvider extends BaseExtensionProvider {
     );
   }
 
-  protected async sendToExtension(content: string): Promise<void> {
+  protected async sendToExtension(content: string, mode: AiInteractionMode): Promise<void> {
     // Убеждаемся, что implicit context отключен
     await this.ensureImplicitContextDisabled();
 

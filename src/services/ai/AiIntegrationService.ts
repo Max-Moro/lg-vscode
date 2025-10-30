@@ -1,6 +1,8 @@
 import * as vscode from "vscode";
 import type { ProviderModule } from "./types";
 import { logInfo, logDebug, logError } from "../../logging/log";
+import { ControlStateService } from "../ControlStateService";
+import type { AiInteractionMode } from "../../models/AiInteractionMode";
 
 /**
  * Центральный сервис управления AI провайдерами
@@ -62,7 +64,10 @@ export class AiIntegrationService {
   }
 
   /**
-   * Отправить контент в указанный провайдер
+   * Отправить контент в указанный провайдер с автоматическим определением режима.
+   * 
+   * @param providerId - ID провайдера
+   * @param content - Контент для отправки
    */
   async sendToProvider(providerId: string, content: string): Promise<void> {
     const module = this.providers.get(providerId);
@@ -71,18 +76,19 @@ export class AiIntegrationService {
       throw new Error(`Provider '${providerId}' not found`);
     }
 
-    logInfo(`Sending content to provider: ${providerId}`);
+    // Автоматически определяем режим из состояния панели
+    const mode = ControlStateService.getInstance(this.context).getAiInteractionMode();
+
+    logInfo(`Sending content to provider: ${providerId} (mode: ${mode})`);
 
     try {
-      // Для OpenAI провайдера устанавливаем context
-      if (providerId === "openai.api") {
-        const openaiProvider = module.provider as any;
-        if (openaiProvider.setContext) {
-          openaiProvider.setContext(this.context);
-        }
+      // Устанавливаем context для провайдеров, которые это требуют
+      const provider = module.provider as any;
+      if (provider.setContext) {
+        provider.setContext(this.context);
       }
 
-      await module.provider.send(content);
+      await module.provider.send(content, mode);
       logInfo(`Successfully sent content to ${providerId}`);
     } catch (e) {
       logError(`Failed to send content to ${providerId}`, e);

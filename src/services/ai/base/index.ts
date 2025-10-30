@@ -7,5 +7,5 @@
 export { BaseAiProvider } from "./BaseAiProvider";
 export { BaseExtensionProvider } from "./BaseExtensionProvider";
 export { BaseForkProvider } from "./BaseForkProvider";
-export { BaseCliProvider } from "./BaseCliProvider";
+export { BaseCliProvider, type CliExecutionContext } from "./BaseCliProvider";
 export { BaseNetworkProvider } from "./BaseNetworkProvider";

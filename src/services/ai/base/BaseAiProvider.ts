@@ -1,4 +1,5 @@
 import type { AiProvider } from "../types";
+import type { AiInteractionMode } from "../../../models/AiInteractionMode";
 
 /**
  * Базовый абстрактный класс для всех AI провайдеров
@@ -9,5 +10,5 @@ import type { AiProvider } from "../types";
 export abstract class BaseAiProvider implements AiProvider {
   abstract readonly id: string;
   abstract readonly name: string;
-  abstract send(content: string): Promise<void>;
+  abstract send(content: string, mode: AiInteractionMode): Promise<void>;
 }

@@ -201,12 +201,27 @@
         currentBranches = msg.branches;
         populateBranches(msg.branches);
       }
+      
+      // populate CLI settings
+      if (msg.cliShells) {
+        populateCliShells(msg.cliShells);
+      }
+      
+      if (msg.claudeModels) {
+        populateClaudeModels(msg.claudeModels);
+      }
 
       applyState(msg.state);
+      
+      // Update CLI block visibility based on current provider
+      updateCliSettingsVisibility();
     } else if (msg?.type === "encodersUpdated") {
       // Обновление списка энкодеров после смены библиотеки токенизации
       const state = State.get();
       setupEncoderAutosuggest(msg.encoders, state.encoder);
+    } else if (msg?.type === "providerSettingResponse") {
+      // Handle provider setting response for CLI block visibility
+      handleProviderSettingResponse(msg.providerId);
     } else if (msg?.type === "theme") {
       document.documentElement.dataset.vscodeThemeKind = String(msg.kind);
     }
@@ -446,6 +461,65 @@
     });
     
     container.style.display = hasReviewMode ? "flex" : "none";
+  }
+  
+  // ---- CLI settings functions ----
+  function populateCliShells(shells) {
+    const select = DOM.qs("#cliShell");
+    if (!select) return;
+    
+    LGUI.fillSelect(select, shells, {
+      getValue: it => (typeof it === "string" ? it : (it?.id ?? "")),
+      getLabel: it => (typeof it === "string" ? it : (it?.label ?? it?.id ?? "")),
+      keepValue: true
+    });
+  }
+  
+  function populateClaudeModels(models) {
+    const select = DOM.qs("#claudeModel");
+    if (!select) return;
+    
+    LGUI.fillSelect(select, models, {
+      getValue: it => (typeof it === "string" ? it : (it?.id ?? "")),
+      getLabel: it => {
+        if (typeof it === "string") return it;
+        const label = it?.label ?? it?.id ?? "";
+        const desc = it?.description ?? "";
+        return desc ? `${label} (${desc})` : label;
+      },
+      keepValue: true
+    });
+  }
+  
+  /**
+   * Update CLI settings block visibility based on current AI provider
+   * 
+   * Shows the block only when a CLI-based provider is selected.
+   * CLI-based providers: claude.cli
+   */
+  function updateCliSettingsVisibility() {
+    // Request current provider setting from VS Code
+    State.post("getProviderSetting");
+  }
+  
+  /**
+   * Handler for provider setting response
+   */
+  function handleProviderSettingResponse(providerId) {
+    const cliBlock = DOM.qs("#cli-settings-block");
+    const claudeModelContainer = DOM.qs("#claude-model-container");
+    if (!cliBlock) return;
+    
+    // List of CLI-based provider IDs
+    const cliProviders = ["claude.cli"];
+    
+    const shouldShow = cliProviders.includes(providerId);
+    cliBlock.style.display = shouldShow ? "flex" : "none";
+    
+    // Show Claude model selector only for Claude CLI provider
+    if (claudeModelContainer) {
+      claudeModelContainer.style.display = (providerId === "claude.cli") ? "flex" : "none";
+    }
   }
 
   // ---- tags panel management ----

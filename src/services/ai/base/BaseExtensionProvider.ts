@@ -1,5 +1,6 @@
 import * as vscode from "vscode";
 import { BaseAiProvider } from "./BaseAiProvider";
+import type { AiInteractionMode } from "../../../models/AiInteractionMode";
 
 /**
  * Базовый класс для Extension-based провайдеров
@@ -33,16 +34,17 @@ export abstract class BaseExtensionProvider extends BaseAiProvider {
    * Отправка контента через расширение
    * Сначала проверяет и активирует расширение, затем вызывает sendToExtension
    */
-  async send(content: string): Promise<void> {
+  async send(content: string, mode: AiInteractionMode): Promise<void> {
     await this.ensureExtensionActive();
-    await this.sendToExtension(content);
+    await this.sendToExtension(content, mode);
   }
 
   /**
-   * Метод для отправки контента в конкретное расширение
-   * Реализуется наследниками для специфичной логики взаимодействия
+   * Метод для отправки контента в конкретное расширение.
+   * Реализуется наследниками для специфичной логики взаимодействия.
    * 
    * @param content - Контент для отправки
+   * @param mode - Режим AI-взаимодействия
    */
-  protected abstract sendToExtension(content: string): Promise<void>;
+  protected abstract sendToExtension(content: string, mode: AiInteractionMode): Promise<void>;
 }

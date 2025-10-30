@@ -11,6 +11,8 @@ import { openConfigOrInit, runInitWizard } from "../starter/StarterConfig";
 import { EXT_ID } from "../constants";
 import { getAiService } from "../extension";
 import { ControlStateService, type ControlPanelState } from "../services/ControlStateService";
+import { getAvailableShells } from "../models/ShellType";
+import { getAvailableClaudeModels } from "../models/ClaudeModel";
 
 export class ControlPanelView implements vscode.WebviewViewProvider {
   private view?: vscode.WebviewView;
@@ -169,6 +171,12 @@ export class ControlPanelView implements vscode.WebviewViewProvider {
           case "tokenizerLibChanged":
             await this.onTokenizerLibChange(msg.lib);
             break;
+          case "getProviderSetting":
+            // Запрос текущей настройки AI провайдера для управления видимостью CLI блока
+            const config = vscode.workspace.getConfiguration();
+            const providerId = config.get<string>("lg.ai.provider") || "clipboard";
+            this.post({ type: "providerSettingResponse", providerId });
+            break;
           case "generateListing":
             await this.onGenerateListing();
             break;
@@ -225,6 +233,18 @@ export class ControlPanelView implements vscode.WebviewViewProvider {
       watcher.onDidDelete(scheduleRefresh, this);
       this.context.subscriptions.push(watcher);
     }
+    
+    // -------------------- watcher на смену AI провайдера -------------------- //
+    this.context.subscriptions.push(
+      vscode.workspace.onDidChangeConfiguration((e) => {
+        if (e.affectsConfiguration("lg.ai.provider")) {
+          // Уведомляем webview об изменении провайдера для обновления видимости CLI блока
+          const config = vscode.workspace.getConfiguration();
+          const providerId = config.get<string>("lg.ai.provider") || "clipboard";
+          this.post({ type: "providerSettingResponse", providerId });
+        }
+      })
+    );
   }
 
   /** Выполнить стартовую загрузку списков/состояния ровно один раз. */
@@ -407,17 +427,21 @@ export class ControlPanelView implements vscode.WebviewViewProvider {
         // Обновляем список веток через ControlStateService
         const { branches } = await this.stateService.updateBranches();
         
+        // Получаем списки для CLI настроек
+        const cliShells = getAvailableShells();
+        const claudeModels = getAvailableClaudeModels();
+        
         // Получаем актуальное состояние для отправки в webview
         const state = this.stateService.getState();
         
-        this.post({ type: "data", sections, contexts, tokenizerLibs, encoders, modeSets, tagSets, branches, state });
+        this.post({ type: "data", sections, contexts, tokenizerLibs, encoders, modeSets, tagSets, branches, cliShells, claudeModels, state });
       })
       .catch(() => {
         // Гасим ошибку, чтобы не «сломать» цепочку последующих вызовов
       });
     return this.listsChain;
   }
-
+  
   private post(msg: any) {
     this.view?.webview.postMessage(msg);
   }
