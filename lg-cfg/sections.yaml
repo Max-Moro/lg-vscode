@@ -68,7 +68,6 @@ src:
             allow:
               - "/services/DoctorService.ts"
               - "/views/DoctorWebview.ts"
-              - "/diagnostics/Doctor.ts"
               - "/models/diag_report.ts"
           - condition: "TAGSET:vscode-extension:send-to-ai"
             allow: ["/ai/"]

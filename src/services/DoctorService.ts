@@ -1,3 +1,4 @@
+import * as vscode from "vscode";
 import { cliDiag } from "../cli/CliClient";
 import { runCli, runCliResult } from "../cli/CliResolver";
 import type { DiagReport } from "../models/diag_report";
@@ -28,4 +29,27 @@ export async function runDoctorBundle(): Promise<{ data: DiagReport; bundlePath?
 /** Сброс кэша LG через CLI. */
 export async function resetCache(): Promise<void> {
   await runCli(["diag", "--rebuild-cache"], { timeoutMs: 60_000 });
+}
+
+/**
+ * Запустить Doctor с интерактивным UI через Webview.
+ */
+export async function runDoctor() {
+  const wf = vscode.workspace.workspaceFolders?.[0];
+  if (!wf) {
+    vscode.window.showErrorMessage("Open a folder to run LG Doctor.");
+    return;
+  }
+  try {
+    const data: DiagReport = await vscode.window.withProgress(
+      { location: vscode.ProgressLocation.Notification, title: "LG: Running Doctor…", cancellable: false },
+      async () => runDoctorJson()
+    );
+    
+    // Динамический импорт для избежания циклических зависимостей
+    const { showDoctorWebview } = await import("../views/DoctorWebview");
+    await showDoctorWebview(data);
+  } catch (e: any) {
+    vscode.window.showErrorMessage(`LG Doctor failed: ${e?.message || e}`);
+  }
 }
