@@ -1,10 +1,6 @@
 ${md:README}
 
 ---
-
-${md:media/ui/README, if:TAGSET:vscode-extension:ui-components}
-
----
 {% if tag:review %}
 # Измененный исходный код VS Code Extension в текущей ветке
 {% else %}
@@ -12,6 +8,10 @@ ${md:media/ui/README, if:TAGSET:vscode-extension:ui-components}
 {% endif %}
 
 ${src}
+
+---
+
+${md:media/ui/README, if:TAGSET:vscode-extension:ui-components}
 {% if task AND scope:local %}
 ---
 
