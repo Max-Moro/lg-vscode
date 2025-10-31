@@ -166,11 +166,15 @@
         </span>
       </div>
       
-      <!-- Claude Model selector (shown only for Claude CLI provider) -->
-      <div id="claude-model-container" class="row" style="display: none;">
+      <!-- Claude-specific settings (shown only for Claude CLI provider) -->
+      <div id="claude-settings-container" class="row" style="display: none;">
         <span class="cluster" title="Claude model family">
           <label>Model:</label>
           <select class="lg-select" id="claudeModel" data-state-key="claudeModel"></select>
+        </span>
+        <span class="cluster" title="Integration method with Claude Code">
+          <label>Method:</label>
+          <select class="lg-select" id="claudeIntegrationMethod" data-state-key="claudeIntegrationMethod"></select>
         </span>
       </div>
     </div>

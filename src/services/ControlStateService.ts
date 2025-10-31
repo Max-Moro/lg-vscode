@@ -14,6 +14,7 @@ import { GitService } from "./GitService";
 import { AiInteractionMode, parseAiInteractionMode } from "../models/AiInteractionMode";
 import { type ShellType, getDefaultShell } from "../models/ShellType";
 import { type ClaudeModel, getDefaultClaudeModel } from "../models/ClaudeModel";
+import { type ClaudeIntegrationMethod, getDefaultClaudeMethod } from "../models/ClaudeIntegrationMethod";
 
 /**
  * Модель состояния панели управления
@@ -33,6 +34,7 @@ export interface ControlPanelState {
   cliScope: string;                   // Workspace scope (subdirectory) for CLI execution
   cliShell: ShellType;                // Terminal shell type
   claudeModel: ClaudeModel;           // Claude model (haiku, sonnet, opus)
+  claudeIntegrationMethod: ClaudeIntegrationMethod; // Claude integration method (memory-file, session)
 }
 
 const STATE_KEY = "lg.control.state";
@@ -99,6 +101,7 @@ export class ControlStateService {
       ctxLimit: raw.ctxLimit || 128000,
       cliShell: raw.cliShell || getDefaultShell(),
       claudeModel: raw.claudeModel || getDefaultClaudeModel(),
+      claudeIntegrationMethod: raw.claudeIntegrationMethod || getDefaultClaudeMethod(),
     };
   }
   

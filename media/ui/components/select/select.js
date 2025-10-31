@@ -2,21 +2,23 @@
  * Select Component
  */
 
-import { DOM } from '../../utils/dom.js';
-
 export function fillSelect(select, items, options = {}) {
-  const { getValue, getLabel, keepValue, value } = options;
+  const { getValue, getLabel, getDescription, keepValue, value } = options;
   const current = select.value;
-  
+
   select.innerHTML = '';
-  
+
   for (const item of items || []) {
     const val = getValue ? getValue(item) : (typeof item === 'string' ? item : (item?.id ?? item?.value ?? ''));
     const label = getLabel ? getLabel(item) : (typeof item === 'string' ? item : (item?.label ?? item?.text ?? val));
-    
+    const desc = getDescription ? getDescription(item) : (typeof item === 'string' ? '' : (item?.description ?? ''));
+
     const option = document.createElement('option');
     option.value = String(val);
     option.textContent = String(label);
+    if (desc) {
+      option.title = String(desc);
+    }
     select.appendChild(option);
   }
   

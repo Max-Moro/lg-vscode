@@ -211,6 +211,10 @@
         populateClaudeModels(msg.claudeModels);
       }
 
+      if (msg.claudeIntegrationMethods) {
+        populateClaudeIntegrationMethods(msg.claudeIntegrationMethods);
+      }
+
       applyState(msg.state);
       
       // Update CLI block visibility based on current provider
@@ -478,15 +482,23 @@
   function populateClaudeModels(models) {
     const select = DOM.qs("#claudeModel");
     if (!select) return;
-    
+
     LGUI.fillSelect(select, models, {
       getValue: it => (typeof it === "string" ? it : (it?.id ?? "")),
-      getLabel: it => {
-        if (typeof it === "string") return it;
-        const label = it?.label ?? it?.id ?? "";
-        const desc = it?.description ?? "";
-        return desc ? `${label} (${desc})` : label;
-      },
+      getLabel: it => (typeof it === "string" ? it : (it?.label ?? it?.id ?? "")),
+      getDescription: it => (typeof it === "string" ? "" : (it?.description ?? "")),
+      keepValue: true
+    });
+  }
+
+  function populateClaudeIntegrationMethods(methods) {
+    const select = DOM.qs("#claudeIntegrationMethod");
+    if (!select) return;
+
+    LGUI.fillSelect(select, methods, {
+      getValue: it => (typeof it === "string" ? it : (it?.id ?? "")),
+      getLabel: it => (typeof it === "string" ? it : (it?.label ?? it?.id ?? "")),
+      getDescription: it => (typeof it === "string" ? "" : (it?.description ?? "")),
       keepValue: true
     });
   }
@@ -507,18 +519,18 @@
    */
   function handleProviderSettingResponse(providerId) {
     const cliBlock = DOM.qs("#cli-settings-block");
-    const claudeModelContainer = DOM.qs("#claude-model-container");
+    const claudeSettings = DOM.qs("#claude-settings-container");
     if (!cliBlock) return;
-    
+
     // List of CLI-based provider IDs
     const cliProviders = ["claude.cli"];
-    
+
     const shouldShow = cliProviders.includes(providerId);
     cliBlock.style.display = shouldShow ? "flex" : "none";
-    
-    // Show Claude model selector only for Claude CLI provider
-    if (claudeModelContainer) {
-      claudeModelContainer.style.display = (providerId === "claude.cli") ? "flex" : "none";
+
+    // Show Claude-specific settings only for Claude CLI provider
+    if (claudeSettings) {
+      claudeSettings.style.display = (providerId === "claude.cli") ? "flex" : "none";
     }
   }
 

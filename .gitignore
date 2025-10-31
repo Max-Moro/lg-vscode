@@ -6,3 +6,8 @@ dist/
 .idea/
 .ai-chat/
 .lg-cache/
+
+# Claude Code - local settings only
+.claude/settings.local.json
+.claude/*.local.json
+CLAUDE.local.md

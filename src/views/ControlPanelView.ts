@@ -13,6 +13,7 @@ import { getAiService } from "../extension";
 import { ControlStateService, type ControlPanelState } from "../services/ControlStateService";
 import { getAvailableShells } from "../models/ShellType";
 import { getAvailableClaudeModels } from "../models/ClaudeModel";
+import { getAvailableClaudeMethods } from "../models/ClaudeIntegrationMethod";
 
 export class ControlPanelView implements vscode.WebviewViewProvider {
   private view?: vscode.WebviewView;
@@ -430,11 +431,25 @@ export class ControlPanelView implements vscode.WebviewViewProvider {
         // Получаем списки для CLI настроек
         const cliShells = getAvailableShells();
         const claudeModels = getAvailableClaudeModels();
-        
+        const claudeIntegrationMethods = getAvailableClaudeMethods();
+
         // Получаем актуальное состояние для отправки в webview
         const state = this.stateService.getState();
-        
-        this.post({ type: "data", sections, contexts, tokenizerLibs, encoders, modeSets, tagSets, branches, cliShells, claudeModels, state });
+
+        this.post({
+          type: "data",
+          sections,
+          contexts,
+          tokenizerLibs,
+          encoders,
+          modeSets,
+          tagSets,
+          branches,
+          cliShells,
+          claudeModels,
+          claudeIntegrationMethods,
+          state
+        });
       })
       .catch(() => {
         // Гасим ошибку, чтобы не «сломать» цепочку последующих вызовов
