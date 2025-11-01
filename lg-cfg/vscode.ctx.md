@@ -1,3 +1,8 @@
+{% if scope:local AND tag:agent %}
+${tpl:agent/index}
+
+---
+{% endif %}
 ${md:README}
 
 ---

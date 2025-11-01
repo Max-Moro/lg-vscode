@@ -237,7 +237,9 @@
     "build:ui": "npx ts-node src/build-ui.ts",
     "vscode:prepublish": "npm run build && npm run build:ui",
     "package": "vsce package",
-    "publish:ovsx": "ovsx publish"
+    "publish:ovsx": "ovsx publish",
+    "lint": "eslint src",
+    "lint:fix": "eslint src --fix"
   },
   "dependencies": {
     "@vscode/codicons": "^0.0.36"
@@ -245,10 +247,14 @@
   "devDependencies": {
     "@types/node": "^20.11.30",
     "@types/vscode": "^1.85.0",
+    "@typescript-eslint/eslint-plugin": "^8.46.2",
+    "@typescript-eslint/parser": "^8.46.2",
+    "eslint": "^9.39.0",
     "json-schema-to-typescript": "^15.0.4",
     "ovsx": "^0.9.2",
     "ts-node": "^10.9.2",
     "typescript": "^5.4.0",
+    "typescript-eslint": "^8.46.2",
     "vsce": "^2.15.0"
   }
 }
