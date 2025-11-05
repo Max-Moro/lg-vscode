@@ -38,6 +38,7 @@ module.exports = tseslint.config(
       "node_modules/**",
       "out/**",
       "*.js", // Ignore JS files in root (like this config)
+      "media/**/*.js", // Media JS files are not part of TypeScript project
       "src/build-ui.ts", // Build scripts can have different rules
     ],
   }
