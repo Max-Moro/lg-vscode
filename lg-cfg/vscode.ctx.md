@@ -25,3 +25,6 @@ ${md@self:ai-integration/TZ-claude-session-integration, if:TAGSET:vscode-extensi
 # Описание текущей задачи
 
 ${task}{% endif %}
+{% if scope:local AND tag:agent %}
+${tpl:agent/footer}
+{% endif %}
