@@ -69,7 +69,7 @@ src:
               - "/views/DoctorWebview.ts"
               - "/models/diag_report.ts"
           - condition: "TAGSET:vscode-extension:send-to-ai"
-            allow: 
+            allow:
               - "/services/ai/"
               - "/models/AiInteractionMode.ts"
               - "/models/ShellType.ts"
@@ -81,3 +81,38 @@ src:
             allow:
               - "/views/VirtualDocProvider.ts"
               - "/views/virtualBus.ts"
+          - condition: "TAGSET:vscode-extension:send-to-ai AND TAGSET:ai-providers:claude-code-cli"
+            allow:
+              - "/models/ClaudeIntegrationMethod.ts"
+              - "/models/ClaudeModel.ts"
+              - "/models/ShellType.ts"
+        children:
+          services:
+            mode: block
+            children:
+              ai:
+                mode: block
+                children:
+                  base:
+                    mode: allow
+                    allow:
+                      - "/BaseAiProvider.ts"
+                      - "/index.ts"
+                    when:
+                      - condition: "TAGSET:ai-providers:github-copilot"
+                        allow: ["/BaseExtensionProvider.ts"]
+                      - condition: "TAGSET:ai-providers:claude-code-cli"
+                        allow: ["/BaseCliProvider.ts"]
+                      - condition: "TAGSET:ai-providers:cursor"
+                        allow: ["/BaseForkProvider.ts"]
+                  providers:
+                    mode: allow
+                    when:
+                      - condition: "TAGSET:ai-providers:clipboard"
+                        allow: ["/clipboard/"]
+                      - condition: "TAGSET:ai-providers:github-copilot"
+                        allow: ["/copilot/"]
+                      - condition: "TAGSET:ai-providers:cursor"
+                        allow: ["/cursor/"]
+                      - condition: "TAGSET:ai-providers:claude-code-cli"
+                        allow: ["/claude-cli/"]

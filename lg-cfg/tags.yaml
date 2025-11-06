@@ -27,14 +27,14 @@ tag-sets:
       generate:
         title: "Генерация (для просмотра)"
 
-tags:
-  agent:
-    title: "Агентные возможности"
-  review:
-    title: "Правила проведения кодревью"
-  architecture:
-    title: "Архитектурная документация"
-  docs:
-    title: "Документация"
-  tools:
-    title: "Инструменты"
+  ai-providers:
+    title: "AI-провайдеры"
+    tags:
+      clipboard:
+        title: "Clipboard"
+      github-copilot:
+        title: "GitHub Copilot"
+      cursor:
+        title: "Cursor"
+      claude-code-cli:
+        title: "Claude Code (CLI)"

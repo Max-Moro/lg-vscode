@@ -18,7 +18,6 @@ ${src}
 
 ${md:media/ui/README, if:TAGSET:vscode-extension:ui-components}
 
-${md@self:ai-integration/TZ-claude-session-integration, if:TAGSET:vscode-extension:send-to-ai}
 {% if task AND scope:local %}
 ---
 
