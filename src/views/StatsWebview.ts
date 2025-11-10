@@ -112,6 +112,7 @@ export async function showStatsWebview(
         () => generate(),
         "LG: Generating content..."
       );
+      panel.dispose();
     }
   });
 }
