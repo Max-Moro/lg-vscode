@@ -14,7 +14,7 @@ export class CopilotProvider extends BaseExtensionProvider {
   private async ensureImplicitContextDisabled(): Promise<void> {
     const config = vscode.workspace.getConfiguration();
     const currentValue = config.get<{ panel?: string }>("chat.implicitContext.enabled");
-    
+
     // Проверяем, установлена ли настройка правильно
     if (currentValue?.panel === "never") {
       return; // Настройка уже корректна
@@ -35,8 +35,13 @@ export class CopilotProvider extends BaseExtensionProvider {
     // Создаем новый чат
     await vscode.commands.executeCommand('workbench.action.chat.newChat');
 
-    // Отправляем контент напрямую
-    await vscode.commands.executeCommand('workbench.action.chat.open', { query: content });
+    // Выбираем команду в зависимости от режима
+    const command = mode === "ask"
+      ? 'workbench.action.chat.openask'
+      : 'workbench.action.chat.openagent';
+
+    // Отправляем контент в соответствующем режиме
+    await vscode.commands.executeCommand(command, { query: content });
   }
 }
 
