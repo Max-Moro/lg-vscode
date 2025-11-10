@@ -303,58 +303,86 @@
     currentTagSets = (tagSetsData?.["tag-sets"] || []).filter(tagSet => tagSet.id !== "global");
     const container = DOM.qs("#tag-sets-container");
     container.innerHTML = "";
-    
+
     if (!currentTagSets.length) {
       container.innerHTML = '<div class="empty-state">No tag sets available</div>';
       return;
     }
-    
+
+    // Get current state to check for selected tags
+    const state = State.get();
+    const currentTags = state.tags || {};
+
     currentTagSets.forEach(tagSet => {
       const div = document.createElement("div");
       div.className = "tag-set";
-      
-      const title = document.createElement("h4");
+
+      // Check if this tag-set has any selected tags
+      const hasSelectedTags = (currentTags[tagSet.id] || []).length > 0;
+
+      // Auto-expand if has selected tags
+      if (hasSelectedTags) {
+        div.classList.add("expanded");
+      }
+
+      // Create collapsible header
+      const header = document.createElement("div");
+      header.className = "tag-set-header";
+
+      const chevron = document.createElement("span");
+      chevron.className = "codicon codicon-chevron-right tag-set-chevron";
+
+      const title = document.createElement("span");
       title.className = "tag-set-title";
-      title.innerHTML = `<span class="codicon codicon-folder"></span>${tagSet.title || tagSet.id}`;
-      
+      title.textContent = tagSet.title || tagSet.id;
+
+      header.appendChild(chevron);
+      header.appendChild(title);
+
+      // Toggle collapse/expand on header click
+      header.addEventListener("click", () => {
+        div.classList.toggle("expanded");
+      });
+
+      // Create tags container
       const tagsContainer = document.createElement("div");
       tagsContainer.className = "tag-set-tags";
-      
+
       (tagSet.tags || []).forEach(tag => {
         const itemDiv = document.createElement("div");
         itemDiv.className = "tag-item";
-        
+
         // Use composite key to avoid ID conflicts when same tag appears in multiple sets
         // Use '--' as separator (not ':') to avoid CSS selector issues
         const compositeKey = `${tagSet.id}--${tag.id}`;
         const domId = `tag-${compositeKey}`;
-        
+
         const checkbox = document.createElement("input");
         checkbox.type = "checkbox";
         checkbox.id = domId;
         checkbox.value = tag.id;
         checkbox.dataset.tagSetId = tagSet.id;
         checkbox.addEventListener("change", onTagChange);
-        
+
         const label = document.createElement("label");
         label.className = "tag-item-label";
         label.htmlFor = domId;
         label.textContent = tag.title || tag.id;
-        
+
         itemDiv.appendChild(checkbox);
         itemDiv.appendChild(label);
-        
+
         if (tag.description) {
           const desc = document.createElement("div");
           desc.className = "tag-item-description";
           desc.textContent = tag.description;
           itemDiv.appendChild(desc);
         }
-        
+
         tagsContainer.appendChild(itemDiv);
       });
-      
-      div.appendChild(title);
+
+      div.appendChild(header);
       div.appendChild(tagsContainer);
       container.appendChild(div);
     });
@@ -380,10 +408,10 @@
   function applyTagsState(tags) {
     // tags это Record<string, string[]> (tagSetId -> [tagId, ...])
     const tagsBySet = tags || {};
-    
+
     currentTagSets.forEach(tagSet => {
       const selectedTagsInSet = tagsBySet[tagSet.id] || [];
-      
+
       (tagSet.tags || []).forEach(tag => {
         const compositeKey = `${tagSet.id}--${tag.id}`;
         const checkbox = DOM.qs(`#tag-${compositeKey}`);
@@ -392,6 +420,9 @@
         }
       });
     });
+
+    // Update tags button text with current selection count
+    updateTagsButtonText(tagsBySet);
   }
 
   function onModeChangeInternal(modeSetId, modeId) {
@@ -418,10 +449,10 @@
   function onTagChange() {
     // Собираем теги по наборам: Record<tagSetId, tagId[]>
     const tagsBySet = {};
-    
+
     currentTagSets.forEach(tagSet => {
       const selectedInSet = [];
-      
+
       (tagSet.tags || []).forEach(tag => {
         const compositeKey = `${tagSet.id}--${tag.id}`;
         const checkbox = DOM.qs(`#tag-${compositeKey}`);
@@ -429,15 +460,35 @@
           selectedInSet.push(tag.id);
         }
       });
-      
+
       // Добавляем набор только если в нем есть выбранные теги
       if (selectedInSet.length > 0) {
         tagsBySet[tagSet.id] = selectedInSet;
       }
     });
-    
+
     const patch = { tags: tagsBySet };
     State.merge(patch);
+
+    // Update tags button text with selection count
+    updateTagsButtonText(tagsBySet);
+  }
+
+  /**
+   * Update tags button text to show selection count
+   */
+  function updateTagsButtonText(tagsBySet) {
+    const button = DOM.qs("#tags-toggle .btn-text");
+    if (!button) return;
+
+    const totalSelected = Object.values(tagsBySet || {})
+      .reduce((sum, tags) => sum + tags.length, 0);
+
+    if (totalSelected > 0) {
+      button.textContent = `Configure Tags (${totalSelected})`;
+    } else {
+      button.textContent = "Configure Tags";
+    }
   }
 
   function populateBranches(branches) {

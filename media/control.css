@@ -26,7 +26,7 @@ h3 {
 .block {
   display: flex;
   flex-direction: column;
-  gap: 6px 0px;
+  gap: 6px 0;
   border: 1px solid var(--vscode-editorWidget-border, var(--vscode-editorIndentGuide-background));
   background: var(--vscode-editorWidget-background, transparent);
   border-radius: 6px;
@@ -259,27 +259,55 @@ label {
 .tag-set {
   display: flex;
   flex-direction: column;
-  gap: 8px;
+  gap: 0;
   border: 1px solid var(--vscode-editorIndentGuide-background);
   border-radius: 6px;
-  padding: 12px;
   background: var(--vscode-editorWidget-background);
+}
+
+.tag-set-header {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 12px;
+  cursor: pointer;
+  user-select: none;
+  background: var(--vscode-editorWidget-background);
+  border-radius: 6px 6px 0 0;
+  transition: background-color 0.1s ease;
+}
+
+.tag-set-header:hover {
+  background: var(--vscode-list-hoverBackground);
+}
+
+.tag-set-chevron {
+  transition: transform 0.2s ease;
+  font-size: 12px;
+  color: var(--vscode-descriptionForeground);
+}
+
+.tag-set.expanded .tag-set-chevron {
+  transform: rotate(90deg);
 }
 
 .tag-set-title {
   font-size: 13px;
   font-weight: 600;
   color: var(--vscode-foreground);
-  margin: 0 0 8px 0;
-  display: flex;
-  align-items: center;
-  gap: 6px;
+  margin: 0;
+  flex: 1;
 }
 
 .tag-set-tags {
-  display: flex;
+  display: none;
   flex-direction: column;
   gap: 6px;
+  padding: 8px 12px 12px;
+}
+
+.tag-set.expanded .tag-set-tags {
+  display: flex;
 }
 
 .tag-item {
@@ -316,14 +344,18 @@ label {
     right: 0;
     bottom: 0;
   }
-  
+
   .tag-sets-container {
     padding: 8px;
     gap: 12px;
   }
-  
-  .tag-set {
-    padding: 8px;
+
+  .tag-set-header {
+    padding: 6px 8px;
+  }
+
+  .tag-set-tags {
+    padding: 6px 8px 8px;
   }
 }
 
