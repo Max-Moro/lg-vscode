@@ -192,15 +192,14 @@
       // fill encoder autosuggest (supports custom values)
       setupEncoderAutosuggest(msg.encoders, msg.state.encoder);
 
-      // populate adaptive settings
-      populateModeSets(msg.modeSets);
-      populateTagSets(msg.tagSets);
-      
-      // populate branches
+      // populate branches first (needed for target branch)
       if (msg.branches) {
         currentBranches = msg.branches;
-        populateBranches(msg.branches);
       }
+
+      // populate adaptive settings (includes target branch)
+      populateModeSets(msg.modeSets);
+      populateTagSets(msg.tagSets);
       
       // populate CLI settings
       if (msg.cliShells) {
@@ -249,35 +248,37 @@
     
     // Merge into local cache
     State.merge(s);
-    
+
     // Update target branch visibility based on current modes
-    updateTargetBranchVisibility();
+    updateTargetBranch();
   }
 
   // ---- adaptive settings functions ----
   function populateModeSets(modeSetsData) {
     currentModeSets = modeSetsData?.["mode-sets"] || [];
-    const container = DOM.qs("#mode-sets-container");
+    const container = DOM.qs("#mode-sets-row");
+    if (!container) return;
+
     container.innerHTML = "";
-    
+
     if (!currentModeSets.length) {
       container.innerHTML = '<div class="empty-state">No mode sets available</div>';
       return;
     }
-    
+
     currentModeSets.forEach(modeSet => {
-      const div = document.createElement("div");
-      div.className = "mode-set";
-      
+      // Use .cluster for inline layout (label + select side by side)
+      const cluster = document.createElement("span");
+      cluster.className = "cluster";
+
       const label = document.createElement("label");
-      label.className = "mode-set-label";
-      label.textContent = modeSet.title || modeSet.id;
-      
+      label.textContent = (modeSet.title || modeSet.id) + ":";
+
       const select = document.createElement("select");
       select.id = `mode-${modeSet.id}`;
       select.dataset.modeSet = modeSet.id;
-      select.className = "lg-select mode-select";
-      
+      select.className = "lg-select";
+
       // Add mode options
       (modeSet.modes || []).forEach(mode => {
         const option = document.createElement("option");
@@ -288,14 +289,75 @@
         }
         select.appendChild(option);
       });
-      
+
       // Add change listener
       select.addEventListener("change", onModeChange);
-      
-      div.appendChild(label);
-      div.appendChild(select);
-      container.appendChild(div);
+
+      cluster.appendChild(label);
+      cluster.appendChild(select);
+      container.appendChild(cluster);
     });
+
+    // Add target branch selector if needed
+    updateTargetBranch();
+  }
+
+  function updateTargetBranch() {
+    const container = DOM.qs("#mode-sets-row");
+    if (!container) return;
+
+    // Check if review mode is active
+    let hasReviewMode = false;
+    currentModeSets.forEach(modeSet => {
+      const select = DOM.qs(`#mode-${modeSet.id}`);
+      if (select && select.value === "review") {
+        hasReviewMode = true;
+      }
+    });
+
+    // Remove existing target branch if present
+    const existingBranch = DOM.qs("#target-branch-cluster");
+    if (existingBranch) {
+      existingBranch.remove();
+    }
+
+    // Add target branch if review mode is active
+    if (hasReviewMode && currentBranches.length > 0) {
+      const cluster = document.createElement("span");
+      cluster.id = "target-branch-cluster";
+      cluster.className = "cluster";
+
+      const label = document.createElement("label");
+      label.textContent = "Target Branch:";
+
+      const select = document.createElement("select");
+      select.id = "targetBranch";
+      select.dataset.stateKey = "targetBranch";
+      select.className = "lg-select";
+
+      // Populate branches
+      currentBranches.forEach(branch => {
+        const option = document.createElement("option");
+        option.value = branch;
+        option.textContent = branch;
+        select.appendChild(option);
+      });
+
+      // Restore saved value
+      const state = State.get();
+      if (state.targetBranch && currentBranches.includes(state.targetBranch)) {
+        select.value = state.targetBranch;
+      }
+
+      // Add change listener
+      select.addEventListener("change", () => {
+        State.merge({ targetBranch: select.value });
+      });
+
+      cluster.appendChild(label);
+      cluster.appendChild(select);
+      container.appendChild(cluster);
+    }
   }
 
   function populateTagSets(tagSetsData) {
@@ -439,11 +501,11 @@
     const select = event.target;
     const modeSetId = select.dataset.modeSet;
     const modeId = select.value;
-    
+
     onModeChangeInternal(modeSetId, modeId);
-    
+
     // Update target branch visibility when mode changes
-    updateTargetBranchVisibility();
+    updateTargetBranch();
   }
 
   function onTagChange() {
@@ -491,33 +553,6 @@
     }
   }
 
-  function populateBranches(branches) {
-    const select = DOM.qs("#targetBranch");
-    if (!select) return;
-    
-    LGUI.fillSelect(select, branches, {
-      getValue: it => (typeof it === "string" ? it : (it?.name ?? "")),
-      getLabel: it => (typeof it === "string" ? it : (it?.name ?? "")),
-      keepValue: true
-    });
-  }
-
-  function updateTargetBranchVisibility() {
-    const container = DOM.qs("#target-branch-container");
-    if (!container) return;
-    
-    // Check if any mode set has "review" mode selected
-    let hasReviewMode = false;
-    currentModeSets.forEach(modeSet => {
-      const select = DOM.qs(`#mode-${modeSet.id}`);
-      if (select && select.value === "review") {
-        hasReviewMode = true;
-      }
-    });
-    
-    container.style.display = hasReviewMode ? "flex" : "none";
-  }
-  
   // ---- CLI settings functions ----
   function populateCliShells(shells) {
     const select = DOM.qs("#cliShell");
