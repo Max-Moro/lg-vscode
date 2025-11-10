@@ -2,11 +2,11 @@
  * Webview под таблицу статистики.
  */
 import * as vscode from "vscode";
-import { getVirtualProvider } from "./virtualBus";
-import type { RunResult } from "../models/report";
-import { buildHtml, getExtensionUri, mediaUri, lgUiUri } from "../webview/webviewKit";
-import { getAiService } from "../extension";
-import { ControlStateService } from "../services/ControlStateService";
+import {getVirtualProvider} from "./virtualBus";
+import type {RunResult} from "../models/report";
+import {buildHtml, getExtensionUri, lgUiUri, mediaUri} from "../webview/webviewKit";
+import {getAiService} from "../extension";
+import {ControlStateService} from "../services/ControlStateService";
 
 export async function showStatsWebview(
   context: vscode.ExtensionContext,
@@ -48,10 +48,10 @@ export async function showStatsWebview(
   // Рукопожатие: ждём "ready" из браузера и шлём данные
   panel.webview.onDidReceiveMessage((msg) => {
     if (msg?.type === "ready") {
-      panel.webview.postMessage({ 
-        type: "runResult", 
+      panel.webview.postMessage({
+        type: "runResult",
         payload: current,
-        taskText: stateService.getState().taskText
+        taskText: current.scope === "context" ? stateService.getState().taskText : undefined
       });
     }
   });
@@ -60,19 +60,23 @@ export async function showStatsWebview(
   panel.webview.onDidReceiveMessage(async (msg) => {
     if (msg?.type === "refresh") {
       try {
-        const next = await vscode.window.withProgress(
-          { location: vscode.ProgressLocation.Notification, title: "LG: Refreshing stats…", cancellable: false },
+        current = await vscode.window.withProgress(
+          {location: vscode.ProgressLocation.Notification, title: "LG: Refreshing stats…", cancellable: false},
           () => refetch()
         );
-        current = next;
-        panel.webview.postMessage({ type: "runResult", payload: current, taskText: stateService.getState().taskText });
+        panel.webview.postMessage({
+          type: "runResult",
+          payload: current,
+          taskText: current.scope === "context" ? stateService.getState().taskText : undefined
+        });
       } catch (e: any) {
         vscode.window.showErrorMessage(`LG: ${e?.message || e}`);
       }
     } else if (msg?.type === "updateTaskText") {
-      // Обновляем состояние в ControlStateService
-      const newTaskText = msg.taskText || "";
-      await stateService.setState({ taskText: newTaskText }, "stats-webview");
+      if (current.scope === "context") {
+        const newTaskText = msg.taskText || "";
+        await stateService.setState({ taskText: newTaskText }, "stats-webview");
+      }
     } else if (msg?.type === "generate") {
       try {
         const text = await vscode.window.withProgress(

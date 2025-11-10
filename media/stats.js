@@ -1,8 +1,8 @@
 /* global LGUI, LG */
 (function () {
-  const { DOM, Events, State } = LGUI;
+  const { Events, State } = LGUI;
   const { esc, fmtInt, fmtPct, hrSize } = LG;
-  const vscode = State.getVSCode();
+  State.getVSCode();
   const app = document.getElementById("app");
   
   let currentTaskText = ""; // локальное состояние task text
@@ -71,18 +71,24 @@
     const hideSaved = (total.savedTokens ?? 0) === 0;
 
     const genLabel = scope === "context" ? "Generate Context" : "Generate Listing";
-    app.innerHTML = `
-      <h2>${esc(scopeLabel)}: ${esc(name)} — Statistics</h2>
-      <p class="muted">Scope: <b>${esc(scope)}</b> • Name: <b>${esc(name)}</b> • Tokenizer: <b>${esc(data.tokenizerLib)}</b> • Encoder: <b>${esc(data.encoder)}</b> • Ctx limit: <b>${fmtInt(data.ctxLimit)}</b> tokens</p>
-      
+
+    // Task field только для контекстов (для секций не имеет смысла)
+    const taskFieldHtml = scope === "context" ? `
       <div class="task-context-wrapper">
-        <textarea 
-          id="statsTaskText" 
+        <textarea
+          id="statsTaskText"
           class="lg-chat-input"
           placeholder="Describe current task"
           rows="1"></textarea>
       </div>
-      
+    ` : "";
+
+    app.innerHTML = `
+      <h2>${esc(scopeLabel)}: ${esc(name)} — Statistics</h2>
+      <p class="muted">Scope: <b>${esc(scope)}</b> • Name: <b>${esc(name)}</b> • Tokenizer: <b>${esc(data.tokenizerLib)}</b> • Encoder: <b>${esc(data.encoder)}</b> • Ctx limit: <b>${fmtInt(data.ctxLimit)}</b> tokens</p>
+
+      ${taskFieldHtml}
+
       <div class="lg-toolbar">
         <button id="btn-send-to-ai" class="lg-btn lg-btn--primary" title="Generate and send to AI provider">Send to AI</button>
         <button id="btn-generate" class="lg-btn" title="Render the final prompt now">${esc(genLabel)}</button>
@@ -216,16 +222,14 @@
       if (!container) return;
 
       const { createGroupedTable } = LGUI;
-      const table = createGroupedTable(container, {
-        columns: columns,
-        data: data.files || [],
-        onRowClick: (path) => {
-          State.post('copy', { text: path });
-        }
-      });
-
       // Store table instance for cleanup if needed
-      app._filesTable = table;
+      app._filesTable = createGroupedTable(container, {
+          columns: columns,
+          data: data.files || [],
+          onRowClick: (path) => {
+              State.post('copy', {text: path});
+          }
+      });
     }, 0);
 
     // Adapter Metrics and Raw JSON (debug)
