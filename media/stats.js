@@ -188,7 +188,16 @@
           sortable: true,
           sortDirDefault: 'desc',
           title: 'Экономия в процентах',
-          format: (v) => fmtPct(v)
+          format: (v) => fmtPct(v),
+          aggregateFormula: (aggregated) => {
+            const saved = aggregated.savedTokens;
+            const raw = aggregated.tokensRaw;
+
+            if (saved != null && raw != null && raw > 0) {
+              return (saved / raw) * 100.0;
+            }
+            return 0.0;
+          }
         }
       );
     }

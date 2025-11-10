@@ -58,6 +58,31 @@ table.setData(newData);
 table.destroy();
 ```
 
+### Formula-based Aggregation
+
+Для вычисления агрегированных значений на основе других колонок используйте `aggregateFormula`:
+
+```javascript
+{
+  key: 'savedPct',
+  label: 'Saved%',
+  align: 'right',
+  format: (v) => v.toFixed(1) + '%',
+  aggregateFormula: (aggregated) => {
+    // Вычисляем процент экономии на основе агрегированных savedTokens и tokensRaw
+    const saved = aggregated.savedTokens;
+    const raw = aggregated.tokensRaw;
+
+    if (saved != null && raw != null && raw > 0) {
+      return (saved / raw) * 100.0;
+    }
+    return 0.0;
+  }
+}
+```
+
+**Важно**: Формула выполняется после агрегации всех остальных колонок, поэтому она имеет доступ к суммам/средним значениям других колонок в группе.
+
 ## Column Options
 
 - `key` (string, required): Ключ данных в объекте строки
@@ -67,6 +92,7 @@ table.destroy();
 - `sortDirDefault` (string): Направление сортировки по умолчанию ('asc' | 'desc')
 - `format` (function): Функция форматирования значения `(value, row) => string`
 - `aggregate` (string): Метод агрегации при группировке ('sum' | 'avg')
+- `aggregateFormula` (function): Функция для вычисления агрегированного значения на основе других колонок `(aggregated) => value`. Имеет приоритет над `aggregate`. Формула получает объект с уже агрегированными значениями других колонок.
 - `warnIf` (function): Условие для подсветки предупреждением `(value, row) => boolean`
 - `title` (string): Tooltip для заголовка колонки
 

@@ -3,8 +3,8 @@
  * Table with filtering, sorting, and hierarchical grouping
  */
 
-import { DOM } from '../../utils/dom.js';
-import { Events } from '../../utils/events.js';
+import {DOM} from '../../utils/dom.js';
+import {Events} from '../../utils/events.js';
 
 export class GroupedTable {
   constructor(container, options = {}) {
@@ -357,8 +357,7 @@ export class GroupedTable {
           td.appendChild(label);
         } else {
           const value = aggregated[col.key];
-          const formatted = col.format ? col.format(value, aggregated) : String(value ?? '');
-          td.innerHTML = formatted;
+          td.innerHTML = col.format ? col.format(value, aggregated) : String(value ?? '');
         }
 
         groupRow.appendChild(td);
@@ -425,15 +424,23 @@ export class GroupedTable {
 
   /**
    * Aggregate numeric columns for a group
+   *
+   * Two-pass aggregation:
+   * 1. First pass: aggregate all non-formula columns (SUM/AVG)
+   * 2. Second pass: calculate formula columns using aggregated values
    */
   aggregateGroup(files) {
     const result = { path: '' };
 
+    // First pass: aggregate all non-formula columns
     for (const col of this.options.columns) {
       if (col.key === 'path') continue;
 
+      // Skip formula columns in first pass
+      if (col.aggregateFormula) continue;
+
       const values = files.map(f => f[col.key]).filter(v => typeof v === 'number');
-      
+
       if (values.length > 0) {
         if (col.aggregate === 'avg') {
           result[col.key] = values.reduce((sum, v) => sum + v, 0) / values.length;
@@ -443,6 +450,16 @@ export class GroupedTable {
         }
       } else {
         result[col.key] = 0;
+      }
+    }
+
+    // Second pass: calculate formula columns
+    for (const col of this.options.columns) {
+      if (col.key === 'path') continue;
+
+      if (col.aggregateFormula) {
+        // Formula receives aggregated values from first pass
+        result[col.key] = col.aggregateFormula(result);
       }
     }
 
