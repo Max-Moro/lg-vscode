@@ -399,41 +399,47 @@ export class ControlPanelView implements vscode.WebviewViewProvider {
     }
   }
 
-  // ——————————————— state & lists ——————————————— //
+  // ——————————————— state ——————————————— //
 
-  // Очередь для последовательного выполнения listSectionsJson / listContextsJson / listModelsJson
+  // Очередь для защиты от конкурентных обновлений UI (сами CLI запросы внутри параллельны)
   private listsChain: Promise<void> = Promise.resolve();
 
   private pushListsAndState(): Promise<void> {
-    // Встраиваем вызов в цепочку, чтобы запросы шли строго последовательно.
+    // Встраиваем вызов в цепочку для защиты от конкурентных обновлений UI
     this.listsChain = this.listsChain
       .then(async () => {
-        const sections = await listSectionsJson().catch(() => [] as string[]);
-        const contexts = await listContextsJson().catch(() => [] as string[]);
-        
-        // Загружаем библиотеки токенизации
-        const tokenizerLibs = await listTokenizerLibsJson().catch(() => [] as string[]);
-        
-        // Загружаем энкодеры для текущей библиотеки
+        // Получаем текущее состояние для encoders
         const currentState = this.stateService.getState();
-        const encoders = await listEncodersJson(currentState.tokenizerLib!).catch(() => [] as any[]);
-        
-        const modeSets = await listModeSetsJson().catch(() => ({ "mode-sets": [] } as ModeSetsList));
-        const tagSets = await listTagSetsJson().catch(() => ({ "tag-sets": [] } as TagSetsList));
-        
-        // Актуализация состояния через сервис
+
+        // Параллельная загрузка всех независимых данных из CLI
+        const [
+          sections,
+          contexts,
+          tokenizerLibs,
+          encoders,
+          modeSets,
+          tagSets,
+          { branches }
+        ] = await Promise.all([
+          listSectionsJson().catch(() => [] as string[]),
+          listContextsJson().catch(() => [] as string[]),
+          listTokenizerLibsJson().catch(() => [] as string[]),
+          listEncodersJson(currentState.tokenizerLib!).catch(() => [] as any[]),
+          listModeSetsJson().catch(() => ({ "mode-sets": [] } as ModeSetsList)),
+          listTagSetsJson().catch(() => ({ "tag-sets": [] } as TagSetsList)),
+          this.stateService.updateBranches()
+        ]);
+
+        // Актуализация состояния (зависит от загруженных данных)
         await this.stateService.validateBasicParams(sections, contexts, tokenizerLibs);
         await this.stateService.actualizeState(modeSets, tagSets);
-        
-        // Обновляем список веток через ControlStateService
-        const { branches } = await this.stateService.updateBranches();
-        
-        // Получаем списки для CLI настроек
+
+        // Получение доступных списков для CLI настроек
         const cliShells = getAvailableShells();
         const claudeModels = getAvailableClaudeModels();
         const claudeIntegrationMethods = getAvailableClaudeMethods();
 
-        // Получаем актуальное состояние для отправки в webview
+        // Получаем финальное состояние для отправки в webview
         const state = this.stateService.getState();
 
         this.post({
