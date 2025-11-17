@@ -18,9 +18,4 @@ This project involves developing an extension for **VS Code**. It is a fairly tr
 
 ## Testing
 
-The project does not have automated tests. Testing is done through Extension Development Host (F5) by the user.
-<!-- lg:if tag:claude-code -->
-## File Paths
-
-This project runs on Windows. When using Read/Edit/Write tools, always use **backslashes** (`\`) in file paths.
-<!-- lg:endif -->
+The project does not have automated tests. The user does testing through Extension Development Host (F5).

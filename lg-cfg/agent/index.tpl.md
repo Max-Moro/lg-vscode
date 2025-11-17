@@ -9,3 +9,5 @@ ${md@self:agent/agents-pipeline, if:tag:claude-code-subagents}
 ${md@self:agent/software-design}
 
 ${md@self:agent/stack-vscode-extension}
+
+${md@self:agent/workspace-and-personal}
