@@ -1,5 +1,5 @@
 /**
- * Боковая панель со списком «включённых путей».
+ * Sidebar panel with a list of "included paths".
  */
 import * as vscode from "vscode";
 import * as path from "path";
@@ -34,18 +34,18 @@ export class IncludedTree implements vscode.TreeDataProvider<vscode.TreeItem> {
   getTreeItem(el: vscode.TreeItem): vscode.TreeItem { return el; }
 
   getChildren(element?: vscode.TreeItem): vscode.ProviderResult<vscode.TreeItem[]> {
-    // Если VS Code спрашивает детей у конкретной папки — отдаём их.
+    // If VS Code requests children for a specific folder, return them.
     if (element && (element as any).__children) {
       return (element as any).__children as vscode.TreeItem[];
     }
-    // Иначе — корневой список.
+    // Otherwise, return the root list.
     return this.items;
   }
 
   toggleViewMode() {
     this.viewMode = this.viewMode === "flat" ? "tree" : "flat";
     this.memento?.update(STATE_KEY, this.viewMode).then(undefined, () => void 0);
-    // Перестроим
+    // Rebuild
     this.setPaths(this.relPaths);
   }
 
@@ -62,11 +62,11 @@ class PathItem extends vscode.TreeItem {
       command: "vscode.open",
       arguments: [uri],
     };
-    // Оставляем resourceUri — VS Code сам подставит иконки по типу файла.
+    // Keep resourceUri — VS Code will automatically apply icons based on file type.
     this.resourceUri = uri;
     this.contextValue = "lg.path";
-    // Не задаём iconPath для файлов, чтобы не сломать авто-иконки.
-    // (Для папок iconPath остаётся в FolderItem.)
+    // Do not set iconPath for files to avoid breaking auto-icons.
+    // (For folders, iconPath is set in FolderItem.)
   }
 }
 
@@ -74,18 +74,18 @@ class FolderItem extends vscode.TreeItem {
   constructor(name: string, children: vscode.TreeItem[]) {
     super(name, vscode.TreeItemCollapsibleState.Collapsed);
     this.iconPath = new vscode.ThemeIcon("folder");
-    // Вложенные элементы возвращаем через override `children` (ниже храним ссылку)
+    // Return nested elements via override `children` (we store a reference below)
     (this as any).__children = children;
   }
 }
 
 function buildFlatItems(relPaths: string[]): vscode.TreeItem[] {
-  // Плоский режим: показываем полный относительный путь как label.
+  // Flat mode: show the full relative path as label.
   return relPaths.map((rel) => new PathItem(rel, rel, resolveRelPathToUri(rel)));
 }
 
 function buildTreeItems(relPaths: string[]): vscode.TreeItem[] {
-  // Строим простое дерево по сегментам POSIX-пути (CLI отдаёт POSIX).
+  // Build a simple tree from POSIX path segments (CLI returns POSIX format).
   type Node = { name: string; files: string[]; folders: Map<string, Node> };
   const root: Node = { name: "", files: [], folders: new Map() };
 
@@ -105,12 +105,12 @@ function buildTreeItems(relPaths: string[]): vscode.TreeItem[] {
     const folderItems: vscode.TreeItem[] = [];
     for (const [_, child] of Array.from(node.folders.entries()).sort(([a], [b]) => a.localeCompare(b))) {
       const children = [
-        ...toItems(child), // сначала подпапки
+        ...toItems(child), // subfolders first
         ...child.files
           .slice()
           .sort((a, b) => a.localeCompare(b))
           .map((rel) => {
-            // Древовидный режим: label — только basename (последний сегмент POSIX-пути)
+            // Tree mode: label — only basename (last segment of POSIX path)
             const parts = rel.split("/");
             const base = parts.length ? parts[parts.length - 1] : rel;
             return new PathItem(base, rel, resolveRelPathToUri(rel));
@@ -121,7 +121,7 @@ function buildTreeItems(relPaths: string[]): vscode.TreeItem[] {
     return folderItems;
   };
 
-  // Верхний уровень: папки + файлы верхнего уровня
+  // Top level: folders + top-level files
   const top: vscode.TreeItem[] = toItems(root);
   top.push(
     ...root.files
@@ -138,14 +138,14 @@ function buildTreeItems(relPaths: string[]): vscode.TreeItem[] {
 }
 
 /**
- * Разрешает относительный путь (POSIX из CLI) в абсолютный vscode.Uri.
- * Алгоритм:
- *  1) Пытаемся относительно effectiveWorkspaceRoot() — тот же корень, что использует CLI.
- *  2) Если файла там нет — пробуем последовательно все workspaceFolders.
- *  3) Фоллбек: возвращаем URI из шага (1), даже если файла нет (пусть VS Code сообщит корректно).
+ * Resolves a relative path (POSIX from CLI) to an absolute vscode.Uri.
+ * Algorithm:
+ *  1) Try relative to effectiveWorkspaceRoot() — the same root that CLI uses.
+ *  2) If the file is not found there — try all workspaceFolders sequentially.
+ *  3) Fallback: return the URI from step (1), even if the file doesn't exist (let VS Code report it correctly).
  */
 function resolveRelPathToUri(relPosixPath: string): vscode.Uri {
-  const relNative = path.normalize(relPosixPath); // нормализуем под текущую ОС
+  const relNative = path.normalize(relPosixPath); // normalize to current OS
 
   const root = effectiveWorkspaceRoot();
   if (root) {
@@ -155,7 +155,7 @@ function resolveRelPathToUri(relPosixPath: string): vscode.Uri {
     }
   }
 
-  // Фоллбек по всем папкам мультиворкспейса
+  // Fallback across all workspace folders
   const folders = vscode.workspace.workspaceFolders || [];
   for (const f of folders) {
     try {
@@ -164,11 +164,11 @@ function resolveRelPathToUri(relPosixPath: string): vscode.Uri {
         return vscode.Uri.file(abs);
       }
     } catch {
-      // игнорируем и пробуем следующий корень
+      // ignore and try next root
     }
   }
 
-  // Последний шанс: строим от effectiveWorkspaceRoot (даже если файла нет — VS Code покажет понятную ошибку)
+  // Last resort: build from effectiveWorkspaceRoot (even if file doesn't exist — VS Code will show an appropriate error)
   const base = root || (folders[0]?.uri.fsPath ?? "");
   return vscode.Uri.file(path.join(base, relNative));
 }

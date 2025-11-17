@@ -1,17 +1,17 @@
 /**
- * Базовые типы для AI Integration системы
+ * Base types for the AI Integration system
  */
 
 /**
- * Информация о детекторе провайдера
+ * Information about the provider detector
  */
 export interface ProviderDetector {
-  /** Приоритет провайдера (0-100, выше = предпочтительнее) */
+  /** Priority of the provider (0-100, higher = preferred) */
   priority: number;
 
   /**
-   * Проверка доступности провайдера
-   * Вызывается один раз при активации расширения
+   * Check provider availability
+   * Called once when the extension is activated
    */
   detect(): Promise<boolean>;
 }
@@ -19,26 +19,26 @@ export interface ProviderDetector {
 import type { AiInteractionMode } from "../../models/AiInteractionMode";
 
 /**
- * Интерфейс провайдера AI
+ * AI provider interface
  */
 export interface AiProvider {
-  /** Уникальный идентификатор провайдера */
+  /** Unique provider identifier */
   readonly id: string;
 
-  /** Человекочитаемое имя провайдера */
+  /** Human-readable provider name */
   readonly name: string;
 
   /**
-   * Отправить контент в AI
-   * @param content - Контент для отправки
-   * @param mode - Режим AI-взаимодействия (ask/agent)
-   * @throws Error при ошибке отправки
+   * Send content to AI
+   * @param content - Content to send
+   * @param mode - AI interaction mode (ask/agent)
+   * @throws Error on sending error
    */
   send(content: string, mode: AiInteractionMode): Promise<void>;
 }
 
 /**
- * Полная информация о провайдере с детектором
+ * Complete provider information with detector
  */
 export interface ProviderModule {
   provider: AiProvider;

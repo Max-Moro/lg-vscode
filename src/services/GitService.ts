@@ -5,7 +5,7 @@ import { effectiveWorkspaceRoot } from '../cli/CliResolver';
 import { logDebug, logError } from '../logging/log';
 
 /**
- * Интерфейс для Git API (встроенное расширение VS Code)
+ * Interface for Git API (VS Code built-in extension)
  */
 interface GitExtension {
     getAPI(version: number): GitAPI;
@@ -26,10 +26,10 @@ interface Ref {
 }
 
 /**
- * Сервис для работы с Git репозиторием проекта LG.
- * 
- * Работает только с репозиторием, где находится директория lg-cfg/.
- * Предоставляет минимальный набор методов для получения списка веток.
+ * Service for working with Git repository of LG project.
+ *
+ * Works only with the repository containing the lg-cfg/ directory.
+ * Provides a minimal set of methods for getting the list of branches.
  */
 export class GitService {
     private gitAPI: GitAPI | undefined;
@@ -37,8 +37,8 @@ export class GitService {
     private initPromise: Promise<void> | undefined;
 
     /**
-     * Ленивая инициализация Git API и поиск репозитория проекта.
-     * Вызывается один раз при первом обращении к сервису.
+     * Lazy initialization of Git API and project repository search.
+     * Called once on first access to the service.
      */
     private async ensureInitialized(): Promise<void> {
         if (this.initPromise) {
@@ -50,7 +50,7 @@ export class GitService {
     }
 
     /**
-     * Инициализация Git API и поиск репозитория проекта
+     * Initialize Git API and find project repository
      */
     private async initialize(): Promise<void> {
         try {
@@ -74,7 +74,7 @@ export class GitService {
     }
 
     /**
-     * Найти Git репозиторий для корня проекта (где находится lg-cfg/)
+     * Find Git repository for project root (where lg-cfg/ is located)
      */
     private findProjectRepository(): void {
         if (!this.gitAPI) {
@@ -93,7 +93,7 @@ export class GitService {
 
         const projectUri = vscode.Uri.file(projectRoot);
         const foundRepo = this.gitAPI.getRepository(projectUri);
-        
+
         if (foundRepo) {
             this.repository = foundRepo;
             logDebug(`[GitService] Repository found: ${foundRepo.rootUri.fsPath}`);
@@ -102,7 +102,7 @@ export class GitService {
                 const repoPath = repo.rootUri.fsPath;
                 return projectRoot.startsWith(repoPath) || repoPath.startsWith(projectRoot);
             });
-            
+
             if (this.repository) {
                 logDebug(`[GitService] Repository found: ${this.repository.rootUri.fsPath}`);
             } else {
@@ -112,7 +112,7 @@ export class GitService {
     }
 
     /**
-     * Проверка доступности Git API и репозитория проекта
+     * Check availability of Git API and project repository
      */
     public async isAvailable(): Promise<boolean> {
         await this.ensureInitialized();
@@ -120,11 +120,11 @@ export class GitService {
     }
 
   /**
-   * Получить все ветки проекта (локальные и удалённые)
+   * Get all project branches (local and remote)
    */
   public async getAllBranches(): Promise<{ local: Ref[]; remote: Ref[] }> {
     await this.ensureInitialized();
-    
+
     if (!this.repository) {
       return { local: [], remote: [] };
     }
@@ -144,61 +144,61 @@ export class GitService {
   }
   
   /**
-   * Получить список всех веток в виде массива строк (для UI)
-   * Объединяет локальные и удалённые ветки, удаляя дубликаты и сортируя
+   * Get list of all branches as string array (for UI)
+   * Combines local and remote branches, removing duplicates and sorting
    */
   public async getBranchNames(): Promise<string[]> {
     const branchesInfo = await this.getAllBranches();
-    
+
     // Combine local and remote branches, removing duplicates
     const allBranches = [
       ...branchesInfo.local.map(b => b.name).filter((n): n is string => !!n),
       ...branchesInfo.remote.map(b => b.name).filter((n): n is string => !!n)
     ];
-    
+
     // Remove duplicates and sort
     const uniqueBranches = Array.from(new Set(allBranches)).sort();
-    
+
     return uniqueBranches;
   }
 
   /**
-   * Выбрать лучшую целевую ветку из доступных.
-   * 
-   * @param currentBranch - текущая выбранная ветка
-   * @param availableBranches - список доступных веток
-   * @returns лучшая целевая ветка
+   * Select the best target branch from available ones.
+   *
+   * @param currentBranch - currently selected branch
+   * @param availableBranches - list of available branches
+   * @returns best target branch
    */
   public selectBestTargetBranch(currentBranch: string, availableBranches: string[]): string {
     if (availableBranches.length === 0) {
       return "";
     }
-    
+
     const branchSet = new Set(availableBranches);
     const candidates = [
       currentBranch,
       "main",
-      "master", 
+      "master",
       "origin/main",
       "origin/master"
     ];
-    
+
     return candidates.find(b => b && branchSet.has(b)) || availableBranches[0];
   }
 
   /**
-   * Актуализировать целевую ветку на основе списка доступных веток.
-   * 
-   * Получает актуальный список веток из репозитория и выбирает
-   * лучшую целевую ветку для текущего состояния.
-   * 
-   * @param currentBranch - текущая выбранная ветка
-   * @returns объект с новой веткой, списком доступных веток и флагом изменения
+   * Actualize target branch based on list of available branches.
+   *
+   * Gets the current list of branches from the repository and selects
+   * the best target branch for the current state.
+   *
+   * @param currentBranch - currently selected branch
+   * @returns object with new branch, list of available branches, and change flag
    */
   public async actualizeBranch(
     currentBranch: string
   ): Promise<{ branch: string; branches: string[]; changed: boolean }> {
-    // Получаем список веток
+    // Get list of branches
     let branches: string[] = [];
     try {
       if (await this.isAvailable()) {
@@ -208,11 +208,11 @@ export class GitService {
       // Fail silently if git is not available
       branches = [];
     }
-    
-    // Выбираем лучшую ветку
+
+    // Select the best branch
     const newBranch = this.selectBestTargetBranch(currentBranch, branches);
     const changed = newBranch !== currentBranch;
-    
+
     return { branch: newBranch, branches, changed };
   }
 }

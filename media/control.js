@@ -17,7 +17,7 @@
   });
 
   // ---- state-bound controls (selects, radios) ----
-  // Сохраняем в локальный стор для восстановления при перезагрузке
+  // Save to local storage for restoration on reload
   Events.delegate(document, "[data-state-key]", "change", (el) => {
     const key = el.getAttribute("data-state-key");
     if (!key) return;
@@ -31,41 +31,41 @@
   Events.delegate(document, "textarea[data-state-key]", "input", Events.debounce((el) => {
     const key = el.getAttribute("data-state-key");
     if (!key) return;
-    
+
     const value = el.value;
     const patch = { [key]: value };
     State.merge(patch);
-  }, 500)); // дебаунс 500ms для снижения частоты отправки
+  }, 500)); // debounce 500ms to reduce send frequency
 
-  // ---- специальный обработчик для смены библиотеки токенизации ----
+  // ---- special handler for tokenizer library change ----
   Events.delegate(document, "#tokenizerLib", "change", (el) => {
     const lib = el.value;
-    
-    // Сохраняем в локальный стор
+
+    // Save to local storage
     State.merge({ tokenizerLib: lib });
-    
-    // Уведомляем TS сторону о смене (чтобы перезагрузить энкодеры)
+
+    // Notify TS side of the change (to reload encoders)
     State.post("tokenizerLibChanged", { lib });
   });
 
-  // ---- валидация ctxLimit на клиенте ----
+  // ---- client-side validation of ctxLimit ----
   Events.delegate(document, "#ctxLimit", "change", (el) => {
     const input = el;
     let value = parseInt(input.value, 10);
-    
-    // Проверяем границы
+
+    // Check boundaries
     if (isNaN(value) || value < 1000) {
       value = 1000;
     } else if (value > 2000000) {
       value = 2000000;
     }
-    
-    // Обновляем значение если было скорректировано
+
+    // Update value if it was corrected
     if (input.value !== String(value)) {
       input.value = String(value);
     }
-    
-    // Сохраняем в локальный стор
+
+    // Save to local storage
     const patch = { ctxLimit: value };
     State.merge(patch);
   });
@@ -114,16 +114,16 @@
 
   // ---- helper: collect full state from DOM ----
   function collectStateFromDOM() {
-    // Начинаем с закэшированного состояния из State utilities
+    // Start with cached state from State utilities
     const cached = State.get();
-    
-    // Собираем базовые поля форм через DOM.collectFormState()
+
+    // Collect basic form fields via DOM.collectFormState()
     const formState = DOM.collectFormState();
-    
-    // Объединяем кэш и форму (форма перезаписывает кэш)
+
+    // Merge cache and form (form overwrites cache)
     const state = { ...cached, ...formState };
-    
-    // Специфичная логика для modes (не покрывается data-state-key)
+
+    // Specific logic for modes (not covered by data-state-key)
     const modes = {};
     DOM.qsa(".mode-select").forEach(select => {
       const modeSetId = select.dataset.modeSet;
@@ -134,8 +134,8 @@
     if (Object.keys(modes).length > 0) {
       state.modes = modes;
     }
-    
-    // Специфичная логика для tags (не покрывается data-state-key)
+
+    // Specific logic for tags (not covered by data-state-key)
     const tags = {};
     currentTagSets.forEach(tagSet => {
       const selectedTags = [];
@@ -153,7 +153,7 @@
     if (Object.keys(tags).length > 0) {
       state.tags = tags;
     }
-    
+
     return state;
   }
 
@@ -173,7 +173,7 @@
     }
     if (msg?.type === "data") {
       // fill selects with remote lists
-      // Если значение из state есть - используем его, иначе выберется первый элемент
+      // If value from state exists - use it, otherwise the first element will be selected
       LGUI.fillSelect(DOM.qs("#section"), msg.sections, { 
         value: msg.state.section,
         keepValue: true 
@@ -219,7 +219,7 @@
       // Update CLI block visibility based on current provider
       updateCliSettingsVisibility();
     } else if (msg?.type === "encodersUpdated") {
-      // Обновление списка энкодеров после смены библиотеки токенизации
+      // Update encoder list after tokenizer library change
       const state = State.get();
       setupEncoderAutosuggest(msg.encoders, state.encoder);
     } else if (msg?.type === "providerSettingResponse") {
@@ -232,20 +232,20 @@
 
   function applyState(s) {
     if (!s) return;
-    
+
     // Apply basic form fields through DOM utilities
     DOM.applyFormState(s);
-    
-    // Apply modes state (специфичная логика)
+
+    // Apply modes state (specific logic)
     if (s.modes !== undefined) {
       applyModesState(s.modes);
     }
-    
-    // Apply tags state (специфичная логика)
+
+    // Apply tags state (specific logic)
     if (s.tags !== undefined) {
       applyTagsState(s.tags);
     }
-    
+
     // Merge into local cache
     State.merge(s);
 
@@ -458,8 +458,8 @@
         const savedMode = modes[modeSet.id];
         const defaultMode = modeSet.modes[0].id;
         select.value = savedMode || defaultMode;
-        
-        // If we're using the default, save it to state
+
+        // If using the default, save it to state
         if (!savedMode) {
           onModeChangeInternal(modeSet.id, defaultMode);
         }
@@ -468,7 +468,7 @@
   }
 
   function applyTagsState(tags) {
-    // tags это Record<string, string[]> (tagSetId -> [tagId, ...])
+    // tags is Record<string, string[]> (tagSetId -> [tagId, ...])
     const tagsBySet = tags || {};
 
     currentTagSets.forEach(tagSet => {
@@ -509,7 +509,7 @@
   }
 
   function onTagChange() {
-    // Собираем теги по наборам: Record<tagSetId, tagId[]>
+    // Collect tags by sets: Record<tagSetId, tagId[]>
     const tagsBySet = {};
 
     currentTagSets.forEach(tagSet => {
@@ -523,7 +523,7 @@
         }
       });
 
-      // Добавляем набор только если в нем есть выбранные теги
+      // Add set only if it has selected tags
       if (selectedInSet.length > 0) {
         tagsBySet[tagSet.id] = selectedInSet;
       }
@@ -634,7 +634,7 @@
   // ---- additional action handlers ----
   Events.delegate(document, "#tags-toggle", "click", showTagsPanel);
   Events.delegate(document, "#tags-close", "click", hideTagsPanel);
-  
+
   // Close tags panel when clicking outside (but not on the button)
   Events.delegate(document, "#tags-panel", "click", (el, event) => {
     if (event.target === el) {

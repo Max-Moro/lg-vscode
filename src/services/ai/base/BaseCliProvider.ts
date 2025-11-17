@@ -18,40 +18,40 @@ export interface CliExecutionContext {
 }
 
 /**
- * Базовый класс для CLI-based провайдеров
- * 
- * Используется для провайдеров, которые работают через CLI утилиты в терминале
- * (например, Claude CLI).
- * 
- * Основные возможности:
- * - Управление терминалом (создание, переиспользование)
- * - Инициализация shell с задержкой
- * - Поддержка scope (workspace subdirectory) и shell type
- * - Детекция незавершенных процессов в терминале
+ * Base class for CLI-based providers
+ *
+ * Used for providers that work through CLI utilities in the terminal
+ * (e.g., Claude CLI).
+ *
+ * Main capabilities:
+ * - Terminal management (creation, reuse)
+ * - Shell initialization with delay
+ * - Support for scope (workspace subdirectory) and shell type
+ * - Detection of incomplete processes in the terminal
  */
 export abstract class BaseCliProvider extends BaseAiProvider {
-  /** Extension context для доступа к ControlStateService */
+  /** Extension context for accessing ControlStateService */
   protected context?: vscode.ExtensionContext;
 
   /**
-   * Установить extension context
-   * Должен быть вызван перед использованием провайдера
+   * Set extension context
+   * Must be called before using the provider
    */
   setContext(context: vscode.ExtensionContext): void {
     this.context = context;
   }
   
   /**
-   * Получить базовый CLI execution context из ControlStateService
+   * Get basic CLI execution context from ControlStateService
    * @param mode - AI interaction mode
-   * @returns Базовый CLI execution context с настройками scope, shell и claudeModel
+   * @returns Basic CLI execution context with scope, shell, and claudeModel settings
    */
   protected async getCliBaseContext(mode: AiInteractionMode): Promise<CliExecutionContext> {
     if (!this.context) {
       throw new Error("Extension context not set for CLI provider");
     }
     
-    // Импортируем ControlStateService
+    // Import ControlStateService
     const { ControlStateService } = await import("../../ControlStateService");
     const stateService = ControlStateService.getInstance(this.context);
     const state = stateService.getState();
@@ -65,11 +65,11 @@ export abstract class BaseCliProvider extends BaseAiProvider {
   }
 
   /**
-   * Проверить, занят ли терминал незавершенным процессом.
+   * Check if the terminal is busy with an incomplete process.
    *
-   * @param terminal - Терминал для проверки
-   * @param ctx - Базовый CLI execution context с настройками scope
-   * @returns объект с флагом busy и сообщением для пользователя
+   * @param terminal - Terminal to check
+   * @param ctx - Basic CLI execution context with scope settings
+   * @returns object with busy flag and message for the user
    */
   protected abstract checkTerminalBusy(
     terminal: vscode.Terminal,
@@ -80,32 +80,32 @@ export abstract class BaseCliProvider extends BaseAiProvider {
   }>;
 
   /**
-   * Создать и подготовить терминал
-   * 
-   * Переиспользует существующий терминал с тем же именем если он не занят,
-   * или создает новый. Показывает терминал пользователю и дает время на 
-   * инициализацию shell. Терминал запускается в директории effectiveWorkspaceRoot.
-   * 
-   * @param ctx - Базовый CLI execution context для проверки занятости терминала
-   * @returns Объект с терминалом и флагом isNew, или undefined если терминал занят
+   * Create and prepare a terminal
+   *
+   * Reuses an existing terminal with the same name if it is not busy,
+   * or creates a new one. Shows the terminal to the user and gives time for
+   * shell initialization. The terminal starts in the effectiveWorkspaceRoot directory.
+   *
+   * @param ctx - Basic CLI execution context to check terminal availability
+   * @returns Object with terminal and isNew flag, or undefined if terminal is busy
    */
   protected async ensureTerminal(
     ctx: CliExecutionContext
   ): Promise<{ terminal: vscode.Terminal; isNew: boolean } | undefined> {
-    // Проверяем существующий терминал
+    // Check for an existing terminal
     const existing = vscode.window.terminals.find(t => t.name === this.name);
     
     if (existing) {
-      // Проверяем, был ли терминал корректно завершен
+      // Check if the terminal was properly closed
       if (existing.exitStatus !== undefined) {
-        // Терминал завершен — нельзя переиспользовать, нужно создать новый
+        // Terminal is closed — cannot reuse, need to create a new one
         existing.dispose();
       } else {
-        // Терминал активен — проверяем, занят ли он процессом
+        // Terminal is active — check if it is busy with a process
         const { busy, message } = await this.checkTerminalBusy(existing, ctx);
         
         if (busy) {
-          // Показываем предупреждение пользователю с возможностью показать терминал
+          // Show warning to the user with option to show terminal
           vscode.window.showWarningMessage(
             message || "Previous CLI session is still running. Please complete it before starting a new one.",
             "Show Terminal"
@@ -115,57 +115,57 @@ export abstract class BaseCliProvider extends BaseAiProvider {
             }
           });
           
-          // Возвращаем undefined — терминал занят, операция прервана
+          // Return undefined — terminal is busy, operation cancelled
           return undefined;
         }
         
-        // Терминал свободен — переиспользуем
+        // Terminal is free — reuse it
         return { terminal: existing, isNew: false };
       }
     }
 
-    // Получаем эффективный workspace root из CliResolver
+    // Get effective workspace root from CliResolver
     const { effectiveWorkspaceRoot } = await import("../../../cli/CliResolver");
     const workspaceRoot = effectiveWorkspaceRoot()!;
 
-    // Создаем новый терминал в директории effectiveWorkspaceRoot
+    // Create a new terminal in the effectiveWorkspaceRoot directory
     const terminal = vscode.window.createTerminal({
       name: this.name,
       hideFromUser: false,
       cwd: workspaceRoot
     });
 
-    // Показываем терминал
+    // Show the terminal
     terminal.show(true);
 
-    // Даем время на инициализацию shell (простая задержка)
+    // Give time for shell initialization (simple delay)
     await new Promise(resolve => setTimeout(resolve, 500));
 
     return { terminal, isNew: true };
   }
 
   /**
-   * Отправка контента через CLI
-   * 
-   * Получает CLI execution context, готовит терминал,
-   * применяет смену директории (если нужно) и
-   * вызывает executeInTerminal для выполнения команды.
+   * Send content via CLI
+   *
+   * Gets CLI execution context, prepares the terminal,
+   * applies directory change if needed, and
+   * calls executeInTerminal to execute the command.
    */
   async send(content: string, mode: AiInteractionMode): Promise<void> {
-    // Получаем базовый CLI execution context
+    // Get basic CLI execution context
     const baseCtx = await this.getCliBaseContext(mode);
        
-    // Создаем терминал и получаем флаг isNew
+    // Create terminal and get isNew flag
     const result = await this.ensureTerminal(baseCtx);
     
-    // Если терминал занят, тихо прерываем выполнение (пользователь уже предупрежден)
+    // If terminal is busy, silently abort (user is already warned)
     if (!result) {
       return;
     }
     
-    // Смена директории для нового терминала (если scope задан)
+    // Change directory for new terminal (if scope is set)
     if (result.isNew && baseCtx.scope && baseCtx.scope.trim()) {
-      // Валидация scope — проверка что это относительный путь.
+      // Validate scope — check that it is a relative path.
       const path = require("path");
       if (path.isAbsolute(baseCtx.scope)) {
           throw new Error("Scope must be a relative path");
@@ -173,23 +173,23 @@ export abstract class BaseCliProvider extends BaseAiProvider {
 
       result.terminal.sendText(`cd "${baseCtx.scope}"`, true);
       
-      // Небольшая задержка для завершения cd
+      // Small delay for cd to complete
       await new Promise(resolve => setTimeout(resolve, 100));
     }
     
-    // Выполняем провайдер-специфичную команду
+    // Execute provider-specific command
     await this.executeInTerminal(content, result.terminal, baseCtx);
   }
 
   /**
-   * Метод для выполнения CLI команды в терминале.
+   * Method to execute CLI command in the terminal.
    *
-   * Реализуется наследниками для формирования специфичной команды.
-   * К моменту вызова терминал уже находится в нужной директории (если scope был задан).
+   * Implemented by subclasses to form provider-specific command.
+   * By the time of calling, the terminal is already in the correct directory (if scope was set).
    *
-   * @param content - Контент для отправки
-   * @param terminal - Подготовленный терминал (уже в нужной директории)
-   * @param ctx - Базовый CLI execution context с настройками scope, shell и mode
+   * @param content - Content to send
+   * @param terminal - Prepared terminal (already in the correct directory)
+   * @param ctx - Basic CLI execution context with scope, shell, and mode settings
    */
   protected abstract executeInTerminal(
     content: string,

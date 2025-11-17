@@ -8,7 +8,7 @@
 .kv { width: 100%; border-collapse: collapse; }
 .kv td { padding: 4px 6px; border-bottom: 1px dashed var(--vscode-editorIndentGuide-background); }
 
-/* Adapter Metrics: ограничим ширину и добавим стиль групп */
+/* Adapter Metrics: limit width and add group styling */
 .kv-group { max-width: 480px; margin: 12px 0; }
 .kv-group h4 {
   margin: 4px 0;
@@ -19,7 +19,7 @@
   padding-bottom: 2px;
 }
 
-/* ——— Debug row: два независимых спойлера в одну строку ——— */
+/* ——— Debug row: two independent spoilers in one row ——— */
 .debug-row {
   display: flex;
   gap: 16px;

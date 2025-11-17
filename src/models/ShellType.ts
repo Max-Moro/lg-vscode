@@ -1,10 +1,10 @@
 /**
- * Типы оболочек терминала
+ * Types of terminal shells
  */
 export type ShellType = "bash" | "zsh" | "sh" | "powershell" | "cmd";
 
 /**
- * Описание оболочки для UI
+ * Description of shell for UI
  */
 export interface ShellDescriptor {
   id: ShellType;
@@ -12,7 +12,7 @@ export interface ShellDescriptor {
 }
 
 /**
- * Получить дефолтную оболочку для текущей платформы
+ * Get default shell for current platform
  */
 export function getDefaultShell(): ShellType {
   const platform = process.platform;
@@ -26,7 +26,7 @@ export function getDefaultShell(): ShellType {
 }
 
 /**
- * Получить список доступных оболочек для текущей платформы
+ * Get list of available shells for current platform
  */
 export function getAvailableShells(): ShellDescriptor[] {
   const platform = process.platform;

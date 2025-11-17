@@ -3,8 +3,8 @@ import { cliRender, cliReport } from "../cli/CliClient";
 import { ControlStateService } from "./ControlStateService";
 
 /**
- * Сервис для работы с листингами секций.
- * Получает все параметры из ControlStateService.
+ * Service for working with section listings.
+ * Gets all parameters from ControlStateService.
  */
 export class ListingService {
   private stateService: ControlStateService;
@@ -14,8 +14,8 @@ export class ListingService {
   }
   
   /**
-   * Сгенерировать листинг для текущей секции из состояния
-   * @throws {Error} если секция не выбрана
+   * Generate listing for current section from state
+   * @throws {Error} if section is not selected
    */
   async generateListing(): Promise<string> {
     const state = this.stateService.getState();
@@ -27,8 +27,8 @@ export class ListingService {
   }
   
   /**
-   * Получить статистику для текущей секции
-   * @throws {Error} если секция не выбрана
+   * Get statistics for current section
+   * @throws {Error} if section is not selected
    */
   async getStats(): Promise<import("../models/report").RunResult> {
     const state = this.stateService.getState();
@@ -40,8 +40,8 @@ export class ListingService {
   }
   
   /**
-   * Получить список файлов, включенных в текущую секцию
-   * @throws {Error} если секция не выбрана
+   * Get list of files included in the current section
+   * @throws {Error} if section is not selected
    */
   async getIncludedFiles(): Promise<{ path: string; sizeBytes: number }[]> {
     const state = this.stateService.getState();
@@ -55,8 +55,8 @@ export class ListingService {
   }
   
   /**
-   * Получить имя текущей секции
-   * @returns имя секции или пустую строку если не выбрана
+   * Get current section name
+   * @returns section name or empty string if not selected
    */
   getCurrentSection(): string {
     const state = this.stateService.getState();

@@ -1,11 +1,11 @@
 /**
- * Типизированный режим AI-взаимодействия.
- * 
- * Соответствует набору режимов `ai-interaction` из lg-cfg/modes.yaml:
- * - ask: Базовый режим вопрос-ответ
- * - agent: Режим с инструментами и агентными возможностями
- * 
- * Используется для унификации поведения AI-провайдеров.
+ * Typed AI interaction mode.
+ *
+ * Corresponds to the set of `ai-interaction` modes from lg-cfg/modes.yaml:
+ * - ask: Basic question-answer mode
+ * - agent: Mode with tools and agent capabilities
+ *
+ * Used for unifying behavior of AI providers.
  */
 export enum AiInteractionMode {
   ASK = "ask",
@@ -13,7 +13,7 @@ export enum AiInteractionMode {
 }
 
 /**
- * Парсинг режима из строки
+ * Parsing mode from string
  */
 export function parseAiInteractionMode(value: string | undefined): AiInteractionMode {
   switch (value) {

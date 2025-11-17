@@ -1,5 +1,5 @@
 /**
- * Webview под таблицу статистики.
+ * Webview for statistics table.
  */
 import * as vscode from "vscode";
 import {getVirtualProvider} from "./virtualBus";
@@ -41,11 +41,11 @@ export async function showStatsWebview(
     commonJsUri: mediaUri(panel.webview, "common.js"),
   });
 
-  // Текущее содержимое (обновляем после refresh)
+  // Current content (updated after refresh)
   let current: RunResult = data;
   const stateService = ControlStateService.getInstance(context);
 
-  // Рукопожатие: ждём "ready" из браузера и шлём данные
+  // Handshake: wait for "ready" from browser and send data
   panel.webview.onDidReceiveMessage((msg) => {
     if (msg?.type === "ready") {
       panel.webview.postMessage({
@@ -56,7 +56,7 @@ export async function showStatsWebview(
     }
   });
 
-  // Refresh handler (по кнопке в webview)
+  // Refresh handler (on button click in webview)
   panel.webview.onDidReceiveMessage(async (msg) => {
     if (msg?.type === "refresh") {
       try {
@@ -83,7 +83,7 @@ export async function showStatsWebview(
           { location: vscode.ProgressLocation.Notification, title: "LG: Rendering…", cancellable: false },
           () => generate()
         );
-        // Закрываем вебвью статистики и открываем результат
+        // Close stats webview and open result
         const vp = getVirtualProvider();
         const kind = current.scope === "context" ? "context" : "listing";
         const title = current.scope === "context" ? `Context — ${name}.md` : `Listing — ${name}.md`;

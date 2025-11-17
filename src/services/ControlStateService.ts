@@ -1,11 +1,11 @@
 /**
- * Централизованный сервис для управления состоянием панели управления.
- * 
- * Предоставляет:
- * - Единую точку доступа к состоянию (workspace singleton)
- * - Логику работы с дефолтами и эффективными значениями
- * - Автоматическую актуализацию состояния при изменении конфигурации
- * - Преобразование состояния для CLI команд
+ * Centralized service for managing the control panel state.
+ *
+ * Provides:
+ * - Single point of access to state (workspace singleton)
+ * - Logic for working with defaults and effective values
+ * - Automatic state actualization on configuration changes
+ * - State transformation for CLI commands
  */
 import * as vscode from "vscode";
 import type { ModeSetsList } from "../models/mode_sets_list";
@@ -17,7 +17,7 @@ import { type ClaudeModel, getDefaultClaudeModel } from "../models/ClaudeModel";
 import { type ClaudeIntegrationMethod, getDefaultClaudeMethod } from "../models/ClaudeIntegrationMethod";
 
 /**
- * Модель состояния панели управления
+ * Control panel state model
  */
 export interface ControlPanelState {
   section: string;
@@ -29,7 +29,7 @@ export interface ControlPanelState {
   tags: Record<string, string[]>;     // tagSetId -> [tagId, ...]
   taskText: string;
   targetBranch: string;
-  
+
   // CLI-based AI provider settings
   cliScope: string;                   // Workspace scope (subdirectory) for CLI execution
   cliShell: ShellType;                // Terminal shell type
@@ -40,26 +40,26 @@ export interface ControlPanelState {
 const STATE_KEY = "lg.control.state";
 
 /**
- * Сервис управления состоянием панели управления
- * 
- * Этот сервис является workspace singleton и предоставляет централизованное
- * управление состоянием для всех компонентов расширения.
+ * Control panel state management service
+ *
+ * This service is a workspace singleton and provides centralized state management
+ * for all extension components.
  */
 export class ControlStateService {
   private static instance: ControlStateService | undefined;
   private gitService: GitService;
   
-  /** 
-   * Event emitter для уведомления об изменениях состояния.
-   * 
-   * Используется для синхронизации состояния между различными WebView
-   * (например, между Control Panel и Stats Webview).
-   * 
-   * Механизм работы:
-   * 1. Когда любой компонент вызывает setState(), сервис сохраняет изменения
-   * 2. Затем сервис уведомляет всех подписчиков через этот event emitter
-   * 3. Каждый подписчик может фильтровать события по полю _source,
-   *    чтобы избежать циклических обновлений
+  /**
+   * Event emitter for notifying about state changes.
+   *
+   * Used to synchronize state between different WebViews
+   * (for example, between Control Panel and Stats WebView).
+   *
+   * How it works:
+   * 1. When any component calls setState(), the service saves the changes
+   * 2. Then the service notifies all subscribers through this event emitter
+   * 3. Each subscriber can filter events by the _source field
+   *    to avoid cyclic updates
    */
   private readonly _onDidChangeState = new vscode.EventEmitter<Partial<ControlPanelState>>();
   public readonly onDidChangeState = this._onDidChangeState.event;
@@ -71,7 +71,7 @@ export class ControlStateService {
   }
   
   /**
-   * Получить singleton инстанс сервиса
+   * Get singleton instance of the service
    */
   public static getInstance(context: vscode.ExtensionContext): ControlStateService {
     if (!ControlStateService.instance) {
@@ -80,20 +80,20 @@ export class ControlStateService {
     return ControlStateService.instance;
   }
   
-  // ==================== Базовые операции с состоянием ==================== //
+  // ==================== Basic state operations ==================== //
   
   /**
-   * Получить текущее состояние из хранилища с автоматическим применением дефолтов.
-   * 
-   * Гарантирует, что критичные поля (tokenizerLib, encoder, ctxLimit) всегда
-   * имеют валидные значения, даже при первом запуске.
-   * 
-   * @returns Partial<ControlPanelState> с примененными дефолтами
+   * Get current state from storage with automatic defaults applied.
+   *
+   * Ensures that critical fields (tokenizerLib, encoder, ctxLimit) always
+   * have valid values, even on first run.
+   *
+   * @returns Partial<ControlPanelState> with defaults applied
    */
   public getState(): Partial<ControlPanelState> {
     const raw = this.context.workspaceState.get<Partial<ControlPanelState>>(STATE_KEY) || {};
     
-    // Применяем дефолты для критичных полей
+    // Apply defaults for critical fields
     return {
       ...raw,
       tokenizerLib: raw.tokenizerLib || "tiktoken",
@@ -106,38 +106,38 @@ export class ControlStateService {
   }
   
   /**
-   * Обновить состояние (частичное слияние)
-   * 
-   * @param partial - частичное состояние для обновления
-   * @param source - источник изменения (для предотвращения циклических обновлений)
+   * Update state (partial merge)
+   *
+   * @param partial - partial state to update
+   * @param source - source of change (to prevent cyclic updates)
    */
   public async setState(partial: Partial<ControlPanelState>, source?: string): Promise<void> {
     const current = this.getState();
     const next = { ...current, ...partial };
     await this.context.workspaceState.update(STATE_KEY, next);
     
-    // Уведомляем подписчиков об изменении состояния
-    // Передаем source для фильтрации в подписчиках
+    // Notify subscribers about state change
+    // Pass source for filtering in subscribers
     this._onDidChangeState.fire({ ...partial, _source: source } as any);
   }
   
   /**
-   * Сбросить состояние к дефолтным значениям
+   * Reset state to default values
    */
   public async resetState(): Promise<void> {
     await this.context.workspaceState.update(STATE_KEY, undefined);
   }
   
-  
-  // ==================== Актуализация состояния ==================== //
+
+  // ==================== State actualization ==================== //
   
   /**
-   * Актуализировать состояние на основе доступных списков из CLI.
-   * Удаляет устаревшие режимы и теги, которых больше нет в манифестах.
-   * 
-   * @param modeSets - список наборов режимов из 'lg list mode-sets'
-   * @param tagSets - список наборов тегов из 'lg list tag-sets'
-   * @returns true если состояние было изменено
+   * Actualize state based on available lists from CLI.
+   * Removes outdated modes and tags that no longer exist in manifests.
+   *
+   * @param modeSets - list of mode sets from 'lg list mode-sets'
+   * @param tagSets - list of tag sets from 'lg list tag-sets'
+   * @returns true if state was changed
    */
   public async actualizeState(
     modeSets: ModeSetsList,
@@ -146,7 +146,7 @@ export class ControlStateService {
     const state = this.getState();
     let changed = false;
     
-    // Актуализация режимов
+    // Actualize modes
     const modesResult = this.actualizeModes(state.modes || {}, modeSets);
     if (modesResult.changed) {
       const updated = { ...state, modes: modesResult.validatedModes };
@@ -154,10 +154,10 @@ export class ControlStateService {
       changed = true;
     }
     
-    // Актуализация тегов
+    // Actualize tags
     const tagsResult = this.actualizeTags(state.tags || {}, tagSets);
     if (tagsResult.changed) {
-      const currentState = this.getState(); // перечитать актуальное состояние
+      const currentState = this.getState(); // Re-read current state
       const updated = { ...currentState, tags: tagsResult.validatedTags };
       await this.context.workspaceState.update(STATE_KEY, updated);
       changed = true;
@@ -167,7 +167,7 @@ export class ControlStateService {
   }
   
   /**
-   * Актуализировать режимы: удалить несуществующие наборы и режимы
+   * Actualize modes: remove non-existent sets and modes
    */
   private actualizeModes(
     currentModes: Record<string, string>,
@@ -178,19 +178,19 @@ export class ControlStateService {
     
     for (const [modeSetId, modeId] of Object.entries(currentModes || {})) {
       if (availableModeSetIds.has(modeSetId)) {
-        // Набор режимов существует - проверяем, существует ли конкретный режим
+        // Mode set exists - check if the specific mode exists
         const modeSet = modeSets["mode-sets"]?.find(ms => ms.id === modeSetId);
         const modeExists = modeSet?.modes?.some(m => m.id === modeId);
-        
+
         if (modeExists) {
           validatedModes[modeSetId] = modeId;
         }
-        // Если режим не существует, просто не добавляем его (будет выбран дефолтный в UI)
+        // If mode doesn't exist, just don't add it (default will be selected in UI)
       }
-      // Если набор режимов не существует, пропускаем его (не добавляем в validatedModes)
+      // If mode set doesn't exist, skip it (don't add to validatedModes)
     }
     
-    // Проверяем, были ли изменения
+    // Check if there were changes
     const changed = 
       Object.keys(currentModes).length !== Object.keys(validatedModes).length ||
       Object.keys(currentModes).some(key => currentModes[key] !== validatedModes[key]);
@@ -199,7 +199,7 @@ export class ControlStateService {
   }
   
   /**
-   * Актуализировать теги: удалить несуществующие наборы тегов и теги
+   * Actualize tags: remove non-existent tag sets and tags
    */
   private actualizeTags(
     currentTags: Record<string, string[]>,
@@ -216,21 +216,21 @@ export class ControlStateService {
     const validatedTags: Record<string, string[]> = {};
     
     for (const [tagSetId, tagIds] of Object.entries(currentTags || {})) {
-      // Проверяем, существует ли набор тегов
+      // Check if tag set exists
       if (availableTagSetIds.has(tagSetId)) {
         const availableTagsInSet = tagSetToTags.get(tagSetId) || new Set();
-        // Фильтруем теги, оставляя только существующие в этом наборе
+        // Filter tags, keeping only those that exist in this set
         const validTagsInSet = tagIds.filter(tagId => availableTagsInSet.has(tagId));
-        
-        // Добавляем в результат только если остались валидные теги
+
+        // Add to result only if valid tags remain
         if (validTagsInSet.length > 0) {
           validatedTags[tagSetId] = validTagsInSet;
         }
       }
-      // Если набор тегов не существует, пропускаем его целиком
+      // If tag set doesn't exist, skip it entirely
     }
     
-    // Сравниваем структуры для определения изменений
+    // Compare structures to determine changes
     const changed = 
       Object.keys(currentTags).length !== Object.keys(validatedTags).length ||
       Object.keys(currentTags).some(key => {
@@ -243,13 +243,13 @@ export class ControlStateService {
   }
   
   /**
-   * Валидировать и скорректировать базовые параметры состояния
+   * Validate and correct basic state parameters
    * (section, template, tokenizerLib)
-   * 
-   * @param availableSections - доступные секции
-   * @param availableContexts - доступные контексты (шаблоны)
-   * @param availableLibs - доступные библиотеки токенизации
-   * @returns true если состояние было изменено
+   *
+   * @param availableSections - available sections
+   * @param availableContexts - available contexts (templates)
+   * @param availableLibs - available tokenization libraries
+   * @returns true if state was changed
    */
   public async validateBasicParams(
     availableSections: string[],
@@ -259,19 +259,19 @@ export class ControlStateService {
     const state = this.getState();
     let changed = false;
     
-    // Валидация section
+    // Validate section
     if (state.section && !availableSections.includes(state.section) && availableSections.length > 0) {
       state.section = availableSections[0];
       changed = true;
     }
     
-    // Валидация template
+    // Validate template
     if (state.template && !availableContexts.includes(state.template) && availableContexts.length > 0) {
       state.template = availableContexts[0];
       changed = true;
     }
     
-    // Валидация tokenizerLib
+    // Validate tokenizerLib
     if (state.tokenizerLib && !availableLibs.includes(state.tokenizerLib) && availableLibs.length > 0) {
       state.tokenizerLib = availableLibs[0];
       changed = true;
@@ -284,12 +284,12 @@ export class ControlStateService {
     return changed;
   }
   
-  // ==================== Проверка активных режимов ==================== //
+  // ==================== Checking active modes ==================== //
   
   /**
-   * Получить текущий режим AI-взаимодействия.
-   * 
-   * @returns Типизированный режим AI-взаимодействия
+   * Get current AI interaction mode.
+   *
+   * @returns Typed AI interaction mode
    */
   public getAiInteractionMode(): AiInteractionMode {
     const state = this.getState();
@@ -298,7 +298,7 @@ export class ControlStateService {
   }
   
   /**
-   * Проверить, активен ли режим "review" (кодревью)
+   * Check if "review" mode (code review) is active
    */
   public isReviewModeActive(): boolean {
     const state = this.getState();
@@ -306,21 +306,21 @@ export class ControlStateService {
   }
   
   /**
-   * Обновить список доступных веток и актуализировать выбранную ветку.
-   * 
-   * Получает актуальный список веток через GitService и обновляет состояние
-   * если текущая ветка недоступна.
-   * 
-   * @returns объект с списком веток и флагом изменения состояния
+   * Update the list of available branches and actualize the selected branch.
+   *
+   * Gets the current branch list through GitService and updates state
+   * if the current branch is not available.
+   *
+   * @returns object with branch list and state change flag
    */
   public async updateBranches(): Promise<{ branches: string[]; changed: boolean }> {
     const state = this.getState();
     const currentBranch = state.targetBranch || "";
     
-    // GitService сам получает ветки и актуализирует
+    // GitService gets branches and actualizes itself
     const { branch: newBranch, branches, changed } = await this.gitService.actualizeBranch(currentBranch);
-    
-    // Обновляем состояние только если ветка изменилась
+
+    // Update state only if branch changed
     if (changed) {
       await this.setState({ targetBranch: newBranch }, "git-service");
     }

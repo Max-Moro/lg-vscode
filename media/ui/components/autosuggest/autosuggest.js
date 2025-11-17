@@ -1,6 +1,6 @@
 /**
  * Autosuggest Component
- * Комбобокс с автодополнением и поддержкой произвольного ввода
+ * Combobox with autocomplete and custom input support
  */
 
 import { DOM } from '../../utils/dom.js';
@@ -69,14 +69,14 @@ export class Autosuggest {
 
     this.cleanups.push(
       Events.on(this.input, 'focus', () => {
-        // При фокусе не открываем автоматически - позволяем пользователю просто вводить текст
+        // On focus, don't open automatically - allow user to just type text
       })
     );
 
-    // Click toggle - открываем/закрываем dropdown при клике на поле
+    // Click toggle - open/close dropdown on field click
     this.cleanups.push(
       Events.on(this.input, 'click', (e) => {
-        // Останавливаем всплытие, чтобы не сработал document click
+        // Stop propagation to prevent document click from firing
         e.stopPropagation();
         if (this.isOpen) {
           this.close();
@@ -181,7 +181,7 @@ export class Autosuggest {
 
   filter(query) {
     const lowerQuery = query.toLowerCase();
-    
+
     if (this.options.filterFn) {
       this.filteredItems = this.options.filterFn(this.options.items, query);
     } else {
@@ -209,7 +209,7 @@ export class Autosuggest {
     this.filteredItems.forEach((item, index) => {
       const value = this.options.getValue(item);
       const isCached = this.options.isItemCached(item);
-      
+
       const children = [value];
       if (isCached) {
         children.push(
@@ -233,18 +233,18 @@ export class Autosuggest {
 
   selectNext() {
     if (this.filteredItems.length === 0) return;
-    
+
     this.selectedIndex = Math.min(
       this.selectedIndex + 1,
       this.filteredItems.length - 1
     );
-    
+
     this.updateSelection();
   }
 
   selectPrevious() {
     if (this.filteredItems.length === 0) return;
-    
+
     this.selectedIndex = Math.max(this.selectedIndex - 1, 0);
     this.updateSelection();
   }
@@ -259,7 +259,7 @@ export class Autosuggest {
 
   updateSelection() {
     const options = this.dropdown.querySelectorAll('.lg-autosuggest__option:not(.lg-autosuggest__option--empty)');
-    
+
     options.forEach((opt, index) => {
       if (index === this.selectedIndex) {
         opt.classList.add('lg-autosuggest__option--selected');
@@ -273,32 +273,32 @@ export class Autosuggest {
   selectValue(value) {
     this.input.value = value;
     this.close();
-    
+
     if (this.options.onSelect) {
       this.options.onSelect(value);
     }
-    
+
     // Trigger change event
     this.input.dispatchEvent(new Event('change', { bubbles: true }));
   }
 
   open() {
     if (this.isOpen) return;
-    
+
     this.isOpen = true;
     this.container.classList.add('lg-autosuggest--open');
     this.dropdown.classList.add('lg-autosuggest__dropdown--open');
-    
+
     // Filter with current value
     this.filter(this.input.value || '');
-    
+
     // Position dropdown
     this.positionDropdown();
   }
 
   close() {
     if (!this.isOpen) return;
-    
+
     this.isOpen = false;
     this.container.classList.remove('lg-autosuggest--open');
     this.dropdown.classList.remove('lg-autosuggest__dropdown--open');
@@ -307,18 +307,18 @@ export class Autosuggest {
 
   positionDropdown() {
     if (!this.isOpen) return;
-    
+
     const inputRect = this.input.getBoundingClientRect();
     const viewportHeight = window.innerHeight;
     const dropdownMaxHeight = 200; // matches CSS max-height
-    
+
     // Calculate available space below and above
     const spaceBelow = viewportHeight - inputRect.bottom;
     const spaceAbove = inputRect.top;
-    
+
     // Determine if we should show dropdown above or below
     const showAbove = spaceBelow < dropdownMaxHeight && spaceAbove > spaceBelow;
-    
+
     if (showAbove) {
       // Position above input
       this.dropdown.style.bottom = `${viewportHeight - inputRect.top + 2}px`;
@@ -328,7 +328,7 @@ export class Autosuggest {
       this.dropdown.style.top = `${inputRect.bottom + 2}px`;
       this.dropdown.style.bottom = 'auto';
     }
-    
+
     // Set horizontal position and width to match input
     this.dropdown.style.left = `${inputRect.left}px`;
     this.dropdown.style.width = `${inputRect.width}px`;
@@ -352,10 +352,10 @@ export class Autosuggest {
   destroy() {
     this.cleanups.forEach(cleanup => cleanup());
     this.cleanups = [];
-    
+
     // Remove dropdown from body
     DOM.remove(this.dropdown);
-    
+
     // Unwrap input
     const parent = this.container.parentNode;
     if (parent) {

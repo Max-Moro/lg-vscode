@@ -4,7 +4,7 @@ export const detector: ProviderDetector = {
   priority: 10,
 
   async detect(): Promise<boolean> {
-    // Clipboard всегда доступен
+    // Clipboard is always available
     return true;
   }
 };

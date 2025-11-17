@@ -5,22 +5,22 @@ import { getWorkspacePath, buildClaudeCommand } from "./common";
 import {CliExecutionContext} from "../../base";
 
 /**
- * Способ интеграции: Memory File (CLAUDE.local.md)
+ * Integration method: Memory File (CLAUDE.local.md)
  *
- * Преимущества:
- * - Стабильный, проверенный временем
- * - Простая реализация
- * - Быстрый (нет дополнительных запросов)
+ * Advantages:
+ * - Stable, proven over time
+ * - Simple implementation
+ * - Fast (no additional requests)
  *
- * Недостатки:
- * - CLAUDE.local.md виден всем субагентам (засоряет контекст)
+ * Disadvantages:
+ * - CLAUDE.local.md is visible to all subagents (clutters context)
  */
 
 export const CLAUDE_LOCAL_FILE = "CLAUDE.local.md";
 const ACTIVATION_PROMPT = "Process the context from CLAUDE.local.md and complete the task specified there. Communicate with the user in the language that is predominantly used in the Memory files section.";
 
 /**
- * Записать контент в CLAUDE.local.md
+ * Write content to CLAUDE.local.md
  */
 export async function writeMemoryFile(
   content: string,
@@ -42,7 +42,7 @@ export async function writeMemoryFile(
 }
 
 /**
- * Выполнить метод Memory File: записать CLAUDE.local.md и запустить Claude Code
+ * Execute Memory File method: write CLAUDE.local.md and launch Claude Code
  */
 export async function executeMemoryFileMethod(
   content: string,
@@ -54,10 +54,10 @@ export async function executeMemoryFileMethod(
 
   logDebug(`[Claude CLI] Using memory-file method`);
 
-  // Записываем контент в CLAUDE.local.md
+  // Write content to CLAUDE.local.md
   await writeMemoryFile(content, ctx.scope);
 
-  // Формируем команду с cleanup
+  // Build command with cleanup
   const claudeCommand = buildClaudeCommand(
     permissionMode,
     ctx.shell,

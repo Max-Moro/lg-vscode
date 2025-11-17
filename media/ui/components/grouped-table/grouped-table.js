@@ -35,11 +35,11 @@ export class GroupedTable {
 
   init() {
     this.container.classList.add('lg-grouped-table');
-    
+
     // Calculate max depth from data
     this.state.maxDepth = this.calculateMaxDepth();
     this.state.groupLevel = this.state.maxDepth + 1; // Start with no grouping
-    
+
     this.render();
     this.bindEvents();
   }
@@ -52,7 +52,7 @@ export class GroupedTable {
     for (const row of this.options.data) {
       const pathCol = this.options.columns.find(c => c.key === 'path');
       if (!pathCol) continue;
-      
+
       const path = row[pathCol.key] || '';
       const depth = path.split('/').filter(Boolean).length - 1; // -1 because filename doesn't count
       max = Math.max(max, depth);
@@ -194,7 +194,7 @@ export class GroupedTable {
     return this.options.data.filter(row => {
       const pathCol = this.options.columns.find(c => c.key === 'path');
       if (!pathCol) return true;
-      
+
       const path = String(row[pathCol.key] || '').toLowerCase();
       return path.includes(query) || (query.startsWith('.') && path.endsWith(query));
     });
@@ -241,7 +241,7 @@ export class GroupedTable {
 
         const value = row[col.key];
         const formatted = col.format ? col.format(value, row) : String(value ?? '');
-        
+
         if (col.warnIf && col.warnIf(value, row)) {
           td.classList.add('warn');
         }
@@ -257,10 +257,10 @@ export class GroupedTable {
   renderGroupedRows(data) {
     // Normalize paths: files alongside dirs go into 'self'
     const normalized = this.normalizePathsForGrouping(data, this.state.groupLevel);
-    
+
     // Build tree structure
     const tree = this.buildGroupTree(normalized, this.state.groupLevel);
-    
+
     // Render tree as rows
     return this.renderTree(tree);
   }
@@ -276,7 +276,7 @@ export class GroupedTable {
     return data.map(row => {
       const path = row[pathCol.key] || '';
       const parts = path.split('/').filter(Boolean);
-      
+
       // If path has <= depth segments, insert 'self' before filename
       // until we have exactly 'depth + 1' segments (depth dirs + 1 file)
       if (parts.length <= depth) {
@@ -286,7 +286,7 @@ export class GroupedTable {
         }
         return { ...row, _normalizedPath: parts.join('/') };
       }
-      
+
       // Path is already >= depth, no normalization needed
       return { ...row, _normalizedPath: path };
     });
@@ -304,15 +304,15 @@ export class GroupedTable {
     for (const row of data) {
       const path = row._normalizedPath || row[pathCol.key] || '';
       const parts = path.split('/').filter(Boolean);
-      
-      // Группируем по префиксу длины depth
+
+      // Group by prefix of length depth
       const prefix = parts.slice(0, depth).join('/');
-      
+
       if (!prefix) {
-        // Файлы в корне (не должно быть при правильной нормализации)
+        // Files in root (shouldn't happen with proper normalization)
         continue;
       }
-      
+
       if (!tree.has(prefix)) {
         tree.set(prefix, { files: [], children: new Map() });
       }
@@ -327,23 +327,23 @@ export class GroupedTable {
    */
   renderTree(tree) {
     const rows = [];
-    
+
     // Build array of groups with aggregated values
     const groups = Array.from(tree.entries()).map(([prefix, group]) => ({
       prefix,
       aggregated: this.aggregateGroup(group.files)
     }));
-    
+
     // Sort groups by current sort key and direction
     this.sortGroups(groups);
 
     for (const {prefix, aggregated} of groups) {
       // Clean up display path: remove trailing 'self' segments
       const displayPath = this.getDisplayPath(prefix);
-      
+
       // Group header row
       const groupRow = DOM.create('tr', { class: 'lg-grouped-table__group-row' });
-      
+
       for (const col of this.options.columns) {
         const td = DOM.create('td', {
           class: col.align === 'right' ? 'right' : ''
@@ -362,7 +362,7 @@ export class GroupedTable {
 
         groupRow.appendChild(td);
       }
-      
+
       rows.push(groupRow);
     }
 
@@ -381,23 +381,23 @@ export class GroupedTable {
     
     const col = this.options.columns.find(c => c.key === this.state.sortKey);
     if (!col) return;
-    
+
     const dir = this.state.sortDir === 'asc' ? 1 : -1;
-    
+
     groups.sort((a, b) => {
       // Special handling for path column
       if (this.state.sortKey === 'path') {
         return dir * a.prefix.localeCompare(b.prefix);
       }
-      
+
       // Sort by aggregated values
       const valA = a.aggregated[this.state.sortKey];
       const valB = b.aggregated[this.state.sortKey];
-      
+
       if (typeof valA === 'number' && typeof valB === 'number') {
         return dir * (valA - valB);
       }
-      
+
       return dir * String(valA || '').localeCompare(String(valB || ''));
     });
   }
@@ -407,17 +407,17 @@ export class GroupedTable {
    */
   getDisplayPath(prefix) {
     const parts = prefix.split('/').filter(Boolean);
-    
+
     // Remove trailing 'self' segments
     while (parts.length > 0 && parts[parts.length - 1] === 'self') {
       parts.pop();
     }
-    
+
     // If nothing left (was all 'self'), show root
     if (parts.length === 0) {
       return '/';
     }
-    
+
     // Add trailing slash to indicate it's a group
     return parts.join('/') + '/';
   }

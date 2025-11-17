@@ -8,19 +8,19 @@ export class CopilotProvider extends BaseExtensionProvider {
   protected extensionId = "GitHub.copilot-chat";
 
   /**
-   * Проверяет и устанавливает настройку chat.implicitContext.enabled = { panel: "never" }
-   * если она не установлена в это значение.
+   * Checks and sets the chat.implicitContext.enabled = { panel: "never" } setting
+   * if it is not set to this value.
    */
   private async ensureImplicitContextDisabled(): Promise<void> {
     const config = vscode.workspace.getConfiguration();
     const currentValue = config.get<{ panel?: string }>("chat.implicitContext.enabled");
 
-    // Проверяем, установлена ли настройка правильно
+    // Check if the setting is correctly configured
     if (currentValue?.panel === "never") {
-      return; // Настройка уже корректна
+      return; // Setting is already correct
     }
 
-    // Устанавливаем нужное значение в глобальных настройках
+    // Set the required value in global settings
     await config.update(
       "chat.implicitContext.enabled",
       { panel: "never" },
@@ -29,18 +29,18 @@ export class CopilotProvider extends BaseExtensionProvider {
   }
 
   protected async sendToExtension(content: string, mode: AiInteractionMode): Promise<void> {
-    // Убеждаемся, что implicit context отключен
+    // Ensure that implicit context is disabled
     await this.ensureImplicitContextDisabled();
 
-    // Создаем новый чат
+    // Create a new chat
     await vscode.commands.executeCommand('workbench.action.chat.newChat');
 
-    // Выбираем команду в зависимости от режима
+    // Select a command depending on the mode
     const command = mode === "ask"
       ? 'workbench.action.chat.openask'
       : 'workbench.action.chat.openagent';
 
-    // Отправляем контент в соответствующем режиме
+    // Send the content in the corresponding mode
     await vscode.commands.executeCommand(command, { query: content });
   }
 }

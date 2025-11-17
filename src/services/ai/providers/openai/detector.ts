@@ -5,9 +5,9 @@ export const detector: ProviderDetector = {
   priority: 35,
 
   async detect(): Promise<boolean> {
-    // Проверяем наличие токена в секретах
-    // Не можем получить context здесь, поэтому просто возвращаем false
-    // Пользователь должен явно выбрать этот провайдер и настроить токен
+    // Check for token in secrets
+    // We cannot get context here, so we simply return false
+    // User must explicitly select this provider and configure the token
     return false;
   }
 };

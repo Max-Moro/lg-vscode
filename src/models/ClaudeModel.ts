@@ -4,7 +4,7 @@
 export type ClaudeModel = "haiku" | "sonnet" | "opus";
 
 /**
- * Описание модели Claude для UI
+ * Description of Claude model for UI
  */
 export interface ClaudeModelDescriptor {
   id: ClaudeModel;
@@ -13,14 +13,14 @@ export interface ClaudeModelDescriptor {
 }
 
 /**
- * Получить дефолтную модель Claude
+ * Get default Claude model
  */
 export function getDefaultClaudeModel(): ClaudeModel {
   return "sonnet";
 }
 
 /**
- * Получить список доступных моделей Claude
+ * Get list of available Claude models
  */
 export function getAvailableClaudeModels(): ClaudeModelDescriptor[] {
   return [

@@ -1,36 +1,36 @@
 /**
- * Универсальный запуск внешнего процесса.
- * 
- * Этот модуль предоставляет единую функцию для запуска внешних процессов
- * с поддержкой timeout, stdin и разных режимов возврата результата.
+ * Universal external process execution.
+ *
+ * This module provides a single function to spawn external processes
+ * with support for timeout, stdin, and different result return modes.
  */
 import * as cp from "child_process";
 
 export interface SpawnOptions extends cp.SpawnOptions {
   timeoutMs?: number;
-  stdinData?: string; // данные для передачи через stdin
-  captureStderr?: boolean; // захватывать ли stderr (по умолчанию true)
+  stdinData?: string; // data to pass via stdin
+  captureStderr?: boolean; // whether to capture stderr (defaults to true)
 }
 
 export interface SpawnResult {
   stdout: string;
-  stderr?: string; // опционально - возвращается только если captureStderr !== false
+  stderr?: string; // optional - returned only if captureStderr !== false
 }
 
 /**
- * Универсальная функция запуска процесса.
- * 
- * @param cmd - команда для запуска
- * @param args - аргументы команды
- * @param options - опции запуска
- * @returns Promise<SpawnResult> с stdout и опциональным stderr
- * 
+ * Universal process execution function.
+ *
+ * @param cmd - command to execute
+ * @param args - command arguments
+ * @param options - execution options
+ * @returns Promise<SpawnResult> with stdout and optional stderr
+ *
  * @example
- * // Получить только stdout (stderr не захватывается)
+ * // Get only stdout (stderr not captured)
  * const result = await spawn('python', ['--version'], { captureStderr: false });
  * console.log(result.stdout);
- * 
- * // Получить stdout + stderr (по умолчанию)
+ *
+ * // Get stdout + stderr (default)
  * const result = await spawn('python', ['script.py'], {});
  * console.log(result.stdout, result.stderr);
  */
@@ -39,12 +39,12 @@ export function spawn(
   args: string[],
   options: SpawnOptions = {}
 ): Promise<SpawnResult> {
-  const captureStderr = options.captureStderr !== false; // по умолчанию true
-  
+  const captureStderr = options.captureStderr !== false; // default to true
+
   return new Promise((resolve, reject) => {
     const env = {
       ...process.env,
-      // Гарантируем UTF-8 для Python-процесса (и вообще для stdout/err)
+      // Ensure UTF-8 for Python processes (and stdout/stderr in general)
       PYTHONUTF8: "1",
       PYTHONIOENCODING: "utf-8"
     };
@@ -53,12 +53,12 @@ export function spawn(
     let err = "";
 
     child.stdout?.on("data", (d) => (out += d.toString()));
-    
-    // ВСЕГДА захватываем stderr для обработки ошибок
-    // (даже если captureStderr: false, нужно для информативных сообщений об ошибках)
+
+    // ALWAYS capture stderr for error handling
+    // (even if captureStderr: false, needed for informative error messages)
     child.stderr?.on("data", (d) => (err += d.toString()));
 
-    // Передаем данные через stdin, если указаны
+    // Pass data via stdin if provided
     if (options.stdinData !== undefined && child.stdin) {
       try {
         child.stdin.write(options.stdinData, "utf8");
@@ -81,13 +81,13 @@ export function spawn(
       if (killTimer) clearTimeout(killTimer);
       if (code === 0) {
         const result: SpawnResult = { stdout: out };
-        // При успехе возвращаем stderr только если явно запрошено
+        // On success, return stderr only if explicitly requested
         if (captureStderr) {
           result.stderr = err;
         }
         resolve(result);
       } else {
-        // При ошибке ВСЕГДА включаем stderr в сообщение (независимо от captureStderr)
+        // On error, ALWAYS include stderr in message (regardless of captureStderr)
         reject(new Error(err || `Exited with code ${code}`));
       }
     });

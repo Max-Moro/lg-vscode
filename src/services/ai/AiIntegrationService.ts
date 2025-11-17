@@ -5,7 +5,7 @@ import { ControlStateService } from "../ControlStateService";
 import type { AiInteractionMode } from "../../models/AiInteractionMode";
 
 /**
- * Центральный сервис управления AI провайдерами
+ * Central service for managing AI providers
  */
 export class AiIntegrationService {
   private providers = new Map<string, ProviderModule>();
@@ -16,7 +16,7 @@ export class AiIntegrationService {
   }
 
   /**
-   * Регистрация провайдера
+   * Register a provider
    */
   registerProvider(module: ProviderModule): void {
     this.providers.set(module.provider.id, module);
@@ -24,8 +24,8 @@ export class AiIntegrationService {
   }
 
   /**
-   * Первичная детекция доступных провайдеров
-   * Вызывается один раз при активации расширения
+   * Initial detection of available providers
+   * Called once when the extension is activated
    */
   async detectBestProvider(): Promise<string> {
     const available: Array<{ id: string; priority: number }> = [];
@@ -47,7 +47,7 @@ export class AiIntegrationService {
       return "clipboard";
     }
 
-    // Сортируем по убыванию приоритета
+    // Sort by priority in descending order
     available.sort((a, b) => b.priority - a.priority);
 
     const best = available[0];
@@ -57,17 +57,17 @@ export class AiIntegrationService {
   }
 
   /**
-   * Получить имя провайдера по ID
+   * Get provider name by ID
    */
   getProviderName(id: string): string {
     return this.providers.get(id)?.provider.name ?? id;
   }
 
   /**
-   * Отправить контент в указанный провайдер с автоматическим определением режима.
-   * 
-   * @param providerId - ID провайдера
-   * @param content - Контент для отправки
+   * Send content to the specified provider with automatic mode detection.
+   *
+   * @param providerId - Provider ID
+   * @param content - Content to send
    */
   async sendToProvider(providerId: string, content: string): Promise<void> {
     const module = this.providers.get(providerId);
@@ -76,13 +76,13 @@ export class AiIntegrationService {
       throw new Error(`Provider '${providerId}' not found`);
     }
 
-    // Автоматически определяем режим из состояния панели
+    // Automatically detect mode from panel state
     const mode = ControlStateService.getInstance(this.context).getAiInteractionMode();
 
     logInfo(`Sending content to provider: ${providerId} (mode: ${mode})`);
 
     try {
-      // Устанавливаем context для провайдеров, которые это требуют
+      // Set context for providers that require it
       const provider = module.provider as any;
       if (provider.setContext) {
         provider.setContext(this.context);
@@ -97,18 +97,18 @@ export class AiIntegrationService {
   }
 
   /**
-   * Общий метод для генерации и отправки контента в AI провайдер
-   * с полной обработкой ошибок и UI взаимодействием
-   * 
-   * @param generateContent - Функция для генерации контента (асинхронная)
-   * @param generateTitle - Заголовок прогресс-бара генерации (опционально)
-   * @returns true если отправка успешна, false если отменена
+   * General method for generating and sending content to an AI provider
+   * with full error handling and UI interaction
+   *
+   * @param generateContent - Function to generate content (asynchronous)
+   * @param generateTitle - Title for the generation progress bar (optional)
+   * @returns true if sending is successful, false if cancelled
    */
   async generateAndSend(
     generateContent: () => Promise<string>,
     generateTitle?: string
   ): Promise<boolean> {
-    // 1. Проверяем наличие настроенного провайдера
+    // 1. Check for a configured provider
     const config = vscode.workspace.getConfiguration();
     const providerId = config.get<string>("lg.ai.provider");
 
@@ -128,7 +128,7 @@ export class AiIntegrationService {
     let generatedContent: string | undefined;
 
     try {
-      // 2. Генерируем контент с прогресс-баром
+      // 2. Generate content with progress bar
       generatedContent = await vscode.window.withProgress(
         {
           location: vscode.ProgressLocation.Notification,
@@ -138,7 +138,7 @@ export class AiIntegrationService {
         generateContent
       );
 
-      // 3. Отправляем в AI провайдер
+      // 3. Send to AI provider
       const providerName = this.getProviderName(providerId);
 
       await vscode.window.withProgress(
@@ -152,7 +152,7 @@ export class AiIntegrationService {
 
       return true;
     } catch (error: any) {
-      // 4. Обработка ошибок с опциями восстановления
+      // 4. Error handling with recovery options
       const providerName = this.getProviderName(providerId);
 
       const options = generatedContent 
@@ -167,7 +167,7 @@ export class AiIntegrationService {
       if (choice === "Open Settings") {
         vscode.commands.executeCommand("workbench.action.openSettings", "lg.ai.provider");
       } else if (choice === "Copy to Clipboard" && generatedContent) {
-        // Фоллбек на clipboard в случае ошибки
+        // Fallback to clipboard in case of error
         await this.sendToProvider("clipboard", generatedContent);
       }
 

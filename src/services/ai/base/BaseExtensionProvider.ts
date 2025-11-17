@@ -3,22 +3,22 @@ import { BaseAiProvider } from "./BaseAiProvider";
 import type { AiInteractionMode } from "../../../models/AiInteractionMode";
 
 /**
- * Базовый класс для Extension-based провайдеров
- * 
- * Используется для провайдеров, которые работают через другие расширения VS Code
- * (например, GitHub Copilot).
- * 
- * Основные возможности:
- * - Автоматическая активация расширения при необходимости
- * - Проверка наличия расширения
- * - Обработка ошибок отсутствия расширения
+ * Base class for Extension-based providers
+ *
+ * Used for providers that work through other VS Code extensions
+ * (e.g., GitHub Copilot).
+ *
+ * Main capabilities:
+ * - Automatic extension activation when needed
+ * - Extension availability check
+ * - Handling missing extension errors
  */
 export abstract class BaseExtensionProvider extends BaseAiProvider {
   protected abstract extensionId: string;
 
   /**
-   * Проверка активности расширения и его активация при необходимости
-   * @throws Error если расширение не найдено
+   * Check extension activity and activate it if needed
+   * @throws Error if extension is not found
    */
   protected async ensureExtensionActive(): Promise<void> {
     const ext = vscode.extensions.getExtension(this.extensionId);
@@ -31,8 +31,8 @@ export abstract class BaseExtensionProvider extends BaseAiProvider {
   }
 
   /**
-   * Отправка контента через расширение
-   * Сначала проверяет и активирует расширение, затем вызывает sendToExtension
+   * Send content through the extension
+   * First checks and activates the extension, then calls sendToExtension
    */
   async send(content: string, mode: AiInteractionMode): Promise<void> {
     await this.ensureExtensionActive();
@@ -40,11 +40,11 @@ export abstract class BaseExtensionProvider extends BaseAiProvider {
   }
 
   /**
-   * Метод для отправки контента в конкретное расширение.
-   * Реализуется наследниками для специфичной логики взаимодействия.
-   * 
-   * @param content - Контент для отправки
-   * @param mode - Режим AI-взаимодействия
+   * Method to send content to a specific extension.
+   * Implemented by subclasses for provider-specific interaction logic.
+   *
+   * @param content - Content to send
+   * @param mode - AI interaction mode
    */
   protected abstract sendToExtension(content: string, mode: AiInteractionMode): Promise<void>;
 }

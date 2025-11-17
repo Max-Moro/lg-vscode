@@ -68,7 +68,7 @@ export async function runInitWizard(): Promise<void> {
           vscode.window.showInformationMessage("LG: Starter config initialized (overwritten).");
           return;
         }
-        return; // user cancelled overwrite
+        return; // User cancelled overwrite
       }
       // No conflicts field — bubble up generic error (e.g., preset not found)
       throw new Error(res?.error || "Failed to initialize lg-cfg");
@@ -83,7 +83,7 @@ export async function runInitWizard(): Promise<void> {
 
 // ----------------------------- internals ----------------------------- //
 
-/** Открыть lg-cfg/sections.yaml, при отсутствии — предложить создать стартовую конфигурацию. */
+/** Open lg-cfg/sections.yaml, if missing — offer to create starter config. */
 export async function openConfigOrInit(): Promise<void> {
   const root = effectiveWorkspaceRoot();
   if (!root) {

@@ -20,19 +20,19 @@ import { executeMemoryFileMethod, CLAUDE_LOCAL_FILE } from "./method-memory-file
 const SESSION_LOCK_FILE = ".claude-session.lock";
 
 /**
- * Claude CLI Provider с поддержкой двух методов интеграции:
+ * Claude CLI Provider with support for two integration methods:
  *
- * 1. Memory File (CLAUDE.local.md) - стабильный, но видимый субагентам
- * 2. Session (сохраненные сессии) - лучшая изоляция от субагентов
+ * 1. Memory File (CLAUDE.local.md) - stable but visible to subagents
+ * 2. Session (saved sessions) - better isolation from subagents
  *
- * Метод выбирается через настройку lg.claude.integrationMethod
+ * The method is selected via the lg.claude.integrationMethod setting
  */
 export class ClaudeCliProvider extends BaseCliProvider {
   readonly id = "claude.cli";
   readonly name = "Claude CLI";
 
   /**
-   * Получить предпочитаемый метод интеграции из состояния
+   * Get the preferred integration method from the state
    */
   private async getIntegrationMethod(): Promise<ClaudeIntegrationMethod> {
     if (!this.context) {
@@ -65,7 +65,7 @@ export class ClaudeCliProvider extends BaseCliProvider {
   }
 
   /**
-   * Проверка наличия lock-файла
+   * Check for the presence of a lock file
    */
   private async checkLockFile(
     lockFile: string,
@@ -99,7 +99,7 @@ export class ClaudeCliProvider extends BaseCliProvider {
   }
 
   /**
-   * Метод интеграции: Session (сохраненные сессии)
+   * Integration method: Session (saved sessions)
    */
   private async executeSessionMethod(
     content: string,
@@ -117,17 +117,17 @@ export class ClaudeCliProvider extends BaseCliProvider {
     let sessionId: string;
 
     try {
-      // Основной способ: самостоятельное формирование
+      // Primary method: manual session creation
       logDebug(`[Claude CLI] Trying primary: manual session creation`);
       sessionId = await createSessionManually(content, ctx.scope);
     } catch (error: any) {
-      // Резервный способ: headless + замена
+      // Fallback method: headless + replacement
       logWarn(`[Claude CLI] Primary method failed: ${error.message}`);
       logDebug(`[Claude CLI] Trying fallback: headless session creation`);
       sessionId = await createSessionFromHeadless(content, ctx.scope);
     }
 
-    // Обновляем history.jsonl
+    // Update history.jsonl
     await addToHistoryIndex({
       sessionId,
       cwd,
@@ -135,7 +135,7 @@ export class ClaudeCliProvider extends BaseCliProvider {
     });
     logDebug(`[Claude CLI] History index updated`);
 
-    // Создаём lock-файл
+    // Create lock file
     const lockFilePath = await getWorkspacePath(SESSION_LOCK_FILE, ctx.scope);
 
     try {
@@ -145,7 +145,7 @@ export class ClaudeCliProvider extends BaseCliProvider {
       logWarn(`[Claude CLI] Failed to create lock file: ${error.message}`);
     }
 
-    // Запуск Claude Code с автоудалением lock-файла
+    // Run Claude Code with auto-cleanup of lock file
     const claudeCommand = buildClaudeCommand(
       permissionMode,
       ctx.shell!,

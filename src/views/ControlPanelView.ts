@@ -17,14 +17,14 @@ import { getAvailableClaudeMethods } from "../models/ClaudeIntegrationMethod";
 
 export class ControlPanelView implements vscode.WebviewViewProvider {
   private view?: vscode.WebviewView;
-  /** Гарантия, что стартовую загрузку списков/state делаем ровно один раз. */
+  /** Guarantee that startup list/state loading is performed exactly once. */
   private bootstrapped = false;
-  /** Сервис управления состоянием панели */
+  /** Service for managing panel state */
   private stateService: ControlStateService;
-  /** Бизнес-сервисы с доступом к состоянию */
+  /** Business services with access to state */
   private listingService: ListingService;
   private contextService: ContextService;
-  /** Очередь запросов состояния для синхронизации */
+  /** Queue of state requests for synchronization */
   private stateRequestId = 0;
   private pendingStateRequests = new Map<number, { resolve: (state: Partial<ControlPanelState>) => void; reject: (error: Error) => void }>();
 
@@ -37,25 +37,25 @@ export class ControlPanelView implements vscode.WebviewViewProvider {
     this.listingService = new ListingService(context);
     this.contextService = new ContextService(context);
     
-    // Подписываемся на изменения состояния из других источников
+    // Subscribe to state changes from other sources
     context.subscriptions.push(
       this.stateService.onDidChangeState((partial: any) => {
-        // Игнорируем обновления, инициированные самой Control Panel
+        // Ignore updates initiated by Control Panel itself
         if (partial._source === "control-panel") {
           return;
         }
-        
-        // Удаляем служебное поле перед отправкой в WebView
+
+        // Remove service field before sending to WebView
         const { _source, ...cleanPartial } = partial;
-        
-        // Отправляем изменения в WebView для синхронизации UI
+
+        // Send changes to WebView for UI synchronization
         this.post({ type: "stateUpdate", state: cleanPartial });
       })
     );
   }
 
   /**
-   * Обработчик команд из toolbar
+   * Handler for commands from toolbar
    */
   public async handleCommand(command: string): Promise<void> {
     try {
@@ -102,12 +102,12 @@ export class ControlPanelView implements vscode.WebviewViewProvider {
 
 
   /**
-   * Запрашивает актуальное состояние из WebView (pull-модель).
-   * Отправляет запрос в WebView и ожидает ответ с полным состоянием всех контролов.
-   * 
-   * @param timeoutMs - таймаут ожидания ответа (по умолчанию 5000ms)
-   * @returns Promise с актуальным состоянием из WebView
-   * @throws Error если WebView не инициализирован или таймаут истек
+   * Requests current state from WebView (pull model).
+   * Sends a request to WebView and waits for a response with the complete state of all controls.
+   *
+   * @param timeoutMs - timeout for waiting for response (default 5000ms)
+   * @returns Promise with current state from WebView
+   * @throws Error if WebView is not initialized or timeout expires
    */
   private async pullState(timeoutMs = 5000): Promise<Partial<ControlPanelState>> {
     if (!this.view) {
@@ -115,21 +115,21 @@ export class ControlPanelView implements vscode.WebviewViewProvider {
     }
 
     const requestId = ++this.stateRequestId;
-    
+
     return new Promise<Partial<ControlPanelState>>((resolve, reject) => {
-      // Сохраняем промис в очереди
+      // Save promise in queue
       this.pendingStateRequests.set(requestId, { resolve, reject });
 
-      // Устанавливаем таймаут
+      // Set timeout
       const timeout = setTimeout(() => {
         this.pendingStateRequests.delete(requestId);
         reject(new Error("State request timeout"));
       }, timeoutMs);
 
-      // Отправляем запрос в WebView
+      // Send request to WebView
       this.post({ type: "getState", requestId });
 
-      // Очищаем таймаут при успешном разрешении
+      // Clear timeout on successful resolution
       const originalResolve = resolve;
       const wrappedResolve = (state: Partial<ControlPanelState>) => {
         clearTimeout(timeout);
@@ -140,13 +140,13 @@ export class ControlPanelView implements vscode.WebviewViewProvider {
   }
 
   private async onTokenizerLibChange(lib: string) {
-    // При смене библиотеки перезагружаем список энкодеров
+    // When library changes, reload the encoders list
     const encoders = await listEncodersJson(lib).catch(() => [] as any[]);
-    
-    // Обновляем библиотеку токенизации (encoder остается как есть, даже если это кастомное значение)
+
+    // Update tokenization library (encoder remains as is, even if custom value)
     await this.stateService.setState({ tokenizerLib: lib }, "control-panel");
-    
-    // Отправляем обновленный список энкодеров в webview
+
+    // Send updated encoders list to webview
     this.post({ type: "encodersUpdated", encoders });
   }
 
@@ -162,7 +162,7 @@ export class ControlPanelView implements vscode.WebviewViewProvider {
             await this.bootstrapOnce();
             break;
           case "stateResponse":
-            // Обработка ответа на запрос состояния (pull-модель)
+            // Handle response to state request (pull model)
             const pending = this.pendingStateRequests.get(msg.requestId);
             if (pending) {
               this.pendingStateRequests.delete(msg.requestId);
@@ -173,7 +173,7 @@ export class ControlPanelView implements vscode.WebviewViewProvider {
             await this.onTokenizerLibChange(msg.lib);
             break;
           case "getProviderSetting":
-            // Запрос текущей настройки AI провайдера для управления видимостью CLI блока
+            // Request current AI provider setting to control CLI block visibility
             const config = vscode.workspace.getConfiguration();
             const providerId = config.get<string>("lg.ai.provider") || "clipboard";
             this.post({ type: "providerSettingResponse", providerId });
@@ -205,14 +205,14 @@ export class ControlPanelView implements vscode.WebviewViewProvider {
       }
     });
 
-    // Первичная инициализация (возможен двойной триггер: здесь и по "init" из webview)
-    // Благодаря guard в bootstrapOnce() фактически выполнится ровно один раз.
+    // Primary initialization (double trigger possible: here and from "init" in webview)
+    // Thanks to guard in bootstrapOnce() it will actually execute exactly once.
     this.bootstrapOnce().catch(() => void 0);
-    // Отправим текущую тему сразу при инициализации
+    // Send current theme immediately upon initialization
     this.postTheme(vscode.window.activeColorTheme.kind);
 
 
-    // -------------------- watcher на lg-cfg -------------------- //
+    // -------------------- watcher for lg-cfg -------------------- //
     const { effectiveWorkspaceRoot } = require("../cli/CliResolver");
     const root = effectiveWorkspaceRoot();
     if (root) {
@@ -235,11 +235,11 @@ export class ControlPanelView implements vscode.WebviewViewProvider {
       this.context.subscriptions.push(watcher);
     }
     
-    // -------------------- watcher на смену AI провайдера -------------------- //
+    // -------------------- watcher for AI provider changes -------------------- //
     this.context.subscriptions.push(
       vscode.workspace.onDidChangeConfiguration((e) => {
         if (e.affectsConfiguration("lg.ai.provider")) {
-          // Уведомляем webview об изменении провайдера для обновления видимости CLI блока
+          // Notify webview about provider change to update CLI block visibility
           const config = vscode.workspace.getConfiguration();
           const providerId = config.get<string>("lg.ai.provider") || "clipboard";
           this.post({ type: "providerSettingResponse", providerId });
@@ -248,30 +248,30 @@ export class ControlPanelView implements vscode.WebviewViewProvider {
     );
   }
 
-  /** Выполнить стартовую загрузку списков/состояния ровно один раз. */
+  /** Execute startup list/state loading exactly once. */
   private async bootstrapOnce(): Promise<void> {
     if (this.bootstrapped) return;
     this.bootstrapped = true;
     await this.pushListsAndState();
   }
 
-  /** Публичный метод: безопасно отправить в webview информацию о теме */
+  /** Public method: safely send theme information to webview */
   public postTheme(kind: vscode.ColorThemeKind) {
     this.view?.webview.postMessage({ type: "theme", kind });
   }
 
   // ——————————————— handlers ——————————————— //
   private async onGenerateListing() {
-    // Pull актуальное состояние из WebView
+    // Pull current state from WebView
     const state = await this.pullState();
     await this.stateService.setState(state, "control-panel");
-    
+
     const section = this.listingService.getCurrentSection();
     if (!section) {
       vscode.window.showWarningMessage("Select a section first.");
       return;
     }
-    
+
     const content = await vscode.window.withProgress(
       { location: vscode.ProgressLocation.Notification, title: `LG: Generating listing '${section}'…`, cancellable: false },
       () => this.listingService.generateListing()
@@ -280,16 +280,16 @@ export class ControlPanelView implements vscode.WebviewViewProvider {
   }
 
   private async onGenerateContext() {
-    // Pull актуальное состояние из WebView
+    // Pull current state from WebView
     const state = await this.pullState();
     await this.stateService.setState(state, "control-panel");
-    
+
     const template = this.contextService.getCurrentTemplate();
     if (!template) {
       vscode.window.showWarningMessage("Select a template first.");
       return;
     }
-    
+
     const content = await vscode.window.withProgress(
       { location: vscode.ProgressLocation.Notification, title: `LG: Generating context '${template}'…`, cancellable: false },
       () => this.contextService.generateContext()
@@ -298,21 +298,21 @@ export class ControlPanelView implements vscode.WebviewViewProvider {
   }
 
   private async onShowContextStats() {
-    // Pull актуальное состояние из WebView
+    // Pull current state from WebView
     const state = await this.pullState();
     await this.stateService.setState(state, "control-panel");
-    
+
     const template = this.contextService.getCurrentTemplate();
     if (!template) {
       vscode.window.showWarningMessage("Select a template first.");
       return;
     }
-    
+
     const data = await vscode.window.withProgress(
       { location: vscode.ProgressLocation.Notification, title: "LG: Computing stats for context…", cancellable: false },
       () => this.contextService.getStats()
     );
-    
+
     const { showStatsWebview } = await import("./StatsWebview");
     await showStatsWebview(
       this.context,
@@ -323,16 +323,16 @@ export class ControlPanelView implements vscode.WebviewViewProvider {
   }
 
   private async onShowIncluded() {
-    // Pull актуальное состояние из WebView
+    // Pull current state from WebView
     const state = await this.pullState();
     await this.stateService.setState(state, "control-panel");
-    
+
     const section = this.listingService.getCurrentSection();
     if (!section) {
       vscode.window.showWarningMessage("Select a section first.");
       return;
     }
-    
+
     const files = await vscode.window.withProgress(
       { location: vscode.ProgressLocation.Notification, title: "LG: Collecting included paths…", cancellable: false },
       () => this.listingService.getIncludedFiles()
@@ -342,21 +342,21 @@ export class ControlPanelView implements vscode.WebviewViewProvider {
   }
 
   private async onShowStats() {
-    // Pull актуальное состояние из WebView
+    // Pull current state from WebView
     const state = await this.pullState();
     await this.stateService.setState(state, "control-panel");
-    
+
     const section = this.listingService.getCurrentSection();
     if (!section) {
       vscode.window.showWarningMessage("Select a section first.");
       return;
     }
-    
+
     const data = await vscode.window.withProgress(
       { location: vscode.ProgressLocation.Notification, title: "LG: Computing stats…", cancellable: false },
       () => this.listingService.getStats()
     );
-    
+
     const { showStatsWebview } = await import("./StatsWebview");
     await showStatsWebview(
       this.context,
@@ -367,31 +367,31 @@ export class ControlPanelView implements vscode.WebviewViewProvider {
   }
 
   /**
-   * Обработчик кнопки "Send to AI"
+   * Handler for "Send to AI" button
    */
   private async onSendToAI() {
-    // Pull актуальное состояние из WebView
+    // Pull current state from WebView
     const state = await this.pullState();
     await this.stateService.setState(state, "control-panel");
-    
+
     const aiService = getAiService();
-    
-    // Определяем, что отправлять: контекст или секцию
+
+    // Determine what to send: context or section
     const template = this.contextService.getCurrentTemplate();
     if (template) {
-      // Отправляем контекст
+      // Send context
       await aiService.generateAndSend(
         () => this.contextService.generateContext(),
         `Generating context '${template}'...`
       );
     } else {
-      // Отправляем секцию
+      // Send section
       const section = this.listingService.getCurrentSection();
       if (!section) {
         vscode.window.showWarningMessage("Select a section or template first.");
         return;
       }
-      
+
       await aiService.generateAndSend(
         () => this.listingService.generateListing(),
         `Generating listing for '${section}'...`
@@ -401,17 +401,17 @@ export class ControlPanelView implements vscode.WebviewViewProvider {
 
   // ——————————————— state ——————————————— //
 
-  // Очередь для защиты от конкурентных обновлений UI (сами CLI запросы внутри параллельны)
+  // Queue to protect against concurrent UI updates (CLI requests themselves are parallel)
   private listsChain: Promise<void> = Promise.resolve();
 
   private pushListsAndState(): Promise<void> {
-    // Встраиваем вызов в цепочку для защиты от конкурентных обновлений UI
+    // Embed call in chain to protect against concurrent UI updates
     this.listsChain = this.listsChain
       .then(async () => {
-        // Получаем текущее состояние для encoders
+        // Get current state for encoders
         const currentState = this.stateService.getState();
 
-        // Параллельная загрузка всех независимых данных из CLI
+        // Parallel loading of all independent data from CLI
         const [
           sections,
           contexts,
@@ -430,16 +430,16 @@ export class ControlPanelView implements vscode.WebviewViewProvider {
           this.stateService.updateBranches()
         ]);
 
-        // Актуализация состояния (зависит от загруженных данных)
+        // Update state (depends on loaded data)
         await this.stateService.validateBasicParams(sections, contexts, tokenizerLibs);
         await this.stateService.actualizeState(modeSets, tagSets);
 
-        // Получение доступных списков для CLI настроек
+        // Get available lists for CLI settings
         const cliShells = getAvailableShells();
         const claudeModels = getAvailableClaudeModels();
         const claudeIntegrationMethods = getAvailableClaudeMethods();
 
-        // Получаем финальное состояние для отправки в webview
+        // Get final state to send to webview
         const state = this.stateService.getState();
 
         this.post({
@@ -458,11 +458,11 @@ export class ControlPanelView implements vscode.WebviewViewProvider {
         });
       })
       .catch(() => {
-        // Гасим ошибку, чтобы не «сломать» цепочку последующих вызовов
+        // Suppress error to not break subsequent call chain
       });
     return this.listsChain;
   }
-  
+
   private post(msg: any) {
     this.view?.webview.postMessage(msg);
   }
@@ -470,7 +470,7 @@ export class ControlPanelView implements vscode.WebviewViewProvider {
   // ——————————————— HTML ——————————————— //
   private buildHtml(view: vscode.WebviewView): string {
     const { buildHtml, lgUiUri, mediaUri, toWebviewUri } = require("../webview/webviewKit") as typeof import("../webview/webviewKit");
-    // путь к codicons берём из node_modules
+    // Path to codicons is taken from node_modules
     const codicons = toWebviewUri(view.webview, require.resolve("@vscode/codicons/dist/codicon.css"));
     return buildHtml(view.webview, "control.html", {
       codiconsUri: codicons,

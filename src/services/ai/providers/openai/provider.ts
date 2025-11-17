@@ -37,7 +37,7 @@ export class OpenAiProvider extends BaseNetworkProvider {
       throw new Error(`OpenAI API error: ${response.status} - ${error}`);
     }
 
-    // Не читаем ответ, просто показываем успех
+    // Don't read the response, just show success
     vscode.window.showInformationMessage(
       "Content sent to OpenAI API successfully. Check your OpenAI chat interface."
     );

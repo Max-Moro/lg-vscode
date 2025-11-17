@@ -18,8 +18,8 @@ function trySpawn(cmd: string, args: string[], timeoutMs = 4000): Promise<boolea
 }
 
 export async function findPython(): Promise<string | undefined> {
-  // Приоритет: задан в настройках → py (Windows) → python3 → python
-  // (настройки учитываются в LgInstaller)
+  // Priority: configured in settings → py (Windows) → python3 → python
+  // (settings are handled in LgInstaller)
   if (process.platform === "win32") {
     if (await trySpawn("py", ["-3", "--version"])) return "py -3";
   }

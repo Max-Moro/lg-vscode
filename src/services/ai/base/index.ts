@@ -1,7 +1,7 @@
 /**
  * Base AI Provider Classes
- * 
- * Централизованный экспорт всех базовых классов для AI провайдеров.
+ *
+ * Centralized export of all base classes for AI providers.
  */
 
 export { BaseAiProvider } from "./BaseAiProvider";

@@ -1,5 +1,5 @@
 /**
- * Центральная точка регистрации всех AI провайдеров
+ * Central point for registering all AI providers
  */
 import * as vscode from "vscode";
 import * as clipboard from "./providers/clipboard";
@@ -11,7 +11,7 @@ import * as openai from "./providers/openai";
 import { AiIntegrationService } from "./AiIntegrationService";
 import type { ProviderModule } from "./types";
 
-// Список всех провайдеров
+// List of all providers
 const ALL_PROVIDERS: ProviderModule[] = [
   clipboard,
   copilot,
@@ -21,12 +21,12 @@ const ALL_PROVIDERS: ProviderModule[] = [
 ];
 
 /**
- * Инициализировать AI Integration Service
+ * Initialize AI Integration Service
  */
 export function createAiIntegrationService(context: vscode.ExtensionContext): AiIntegrationService {
   const service = new AiIntegrationService(context);
 
-  // Регистрируем все провайдеры
+  // Register all providers
   for (const provider of ALL_PROVIDERS) {
     service.registerProvider(provider);
   }

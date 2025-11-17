@@ -4,15 +4,15 @@ import * as crypto from "crypto";
 import { getWorkingDirectory, getClaudeSessionPath } from "./common";
 
 /**
- * Способ интеграции: Самостоятельное формирование метаданных и создание синтетической сессии
+ * Integration method: Manual metadata formation and synthetic session creation
  *
- * Преимущества:
- * - Быстро (нет headless запроса)
- * - Независимо от состояния Claude Code
- * - Полный контроль
+ * Advantages:
+ * - Fast (no headless request)
+ * - Independent of Claude Code state
+ * - Full control
  *
- * Недостатки:
- * - Потенциальная хрупкость при изменении формата
+ * Disadvantages:
+ * - Potential fragility when format changes
  */
 export async function createSessionManually(
   content: string,
@@ -21,11 +21,11 @@ export async function createSessionManually(
   const { logDebug } = await import("../../../../logging/log");
   const cwd = await getWorkingDirectory(scope);
 
-  // 1. Генерируем session ID
+  // 1. Generate session ID
   const sessionId = crypto.randomUUID();
   logDebug(`[Claude CLI Manual] Generated session ID: ${sessionId}`);
 
-  // 2. Получаем версию Claude Code
+  // 2. Get Claude Code version
   let version = "2.0.30"; // fallback
   try {
     const versionOutput = await new Promise<string>((resolve, reject) => {
@@ -43,7 +43,7 @@ export async function createSessionManually(
     logDebug(`[Claude CLI Manual] Failed to detect version, using fallback: ${version}`);
   }
 
-  // 3. Получаем git ветку
+  // 3. Get git branch
   let gitBranch = "";
   try {
     gitBranch = await new Promise<string>((resolve) => {
@@ -57,7 +57,7 @@ export async function createSessionManually(
     logDebug(`[Claude CLI Manual] Failed to detect git branch`);
   }
 
-  // 4. Создаём JSONL сессию
+  // 4. Create JSONL session
   const snapshotUuid = crypto.randomUUID();
   const userMessageUuid = crypto.randomUUID();
   const now = new Date().toISOString();
@@ -100,7 +100,7 @@ export async function createSessionManually(
     JSON.stringify(userMessage)
   ].join('\n') + '\n';
 
-  // 5. Записываем файл
+  // 5. Write file
   const sessionFilePath = await getClaudeSessionPath(sessionId, scope);
   const path = await import("path");
   const dirPath = path.dirname(sessionFilePath);

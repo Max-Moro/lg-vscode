@@ -1,10 +1,10 @@
 import { BaseAiProvider } from "./BaseAiProvider";
 
 /**
- * Базовый класс для Fork-based провайдеров (Cursor, Windsurf и т.д.)
- * 
- * Пока что используется для логического разделения и специального
- * общего функционала не имеет.
+ * Base class for Fork-based providers (Cursor, Windsurf, etc.)
+ *
+ * Currently used for logical separation and does not have
+ * any special shared functionality.
  */
 export abstract class BaseForkProvider extends BaseAiProvider {
 

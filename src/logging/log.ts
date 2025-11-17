@@ -22,7 +22,7 @@ export function initLogging(context: vscode.ExtensionContext) {
   const cfg = vscode.workspace.getConfiguration();
   currentLevel = (cfg.get<string>("lg.logging.level") as LogLevel) || "info";
   ensureChannel();
-  // live-update уровня при смене настроек
+  // live-update level when settings change
   context.subscriptions.push(
     vscode.workspace.onDidChangeConfiguration((e) => {
       if (e.affectsConfiguration("lg.logging.level")) {
@@ -39,7 +39,7 @@ function write(level: LogLevel, msg: string, error?: unknown) {
     const ch = ensureChannel();
     ch.appendLine(`${ts()} [${level.toUpperCase()}] ${msg}`);
   }
-  // Стектрейс печатаем всегда, независимо от уровня логирования
+  // Always print stack trace, regardless of log level
   if (error !== undefined && error !== null) {
     const ch = ensureChannel();
     if (error instanceof Error) {
@@ -49,7 +49,7 @@ function write(level: LogLevel, msg: string, error?: unknown) {
         ch.appendLine(`${error.name}: ${error.message}`);
       }
     } else {
-      // Если это не Error, печатаем как строку
+      // If not an Error, print as string
       ch.appendLine(String(error));
     }
   }
@@ -69,6 +69,6 @@ export async function withDuration<T>(label: string, fn: () => Promise<T>): Prom
     logDebug(`${label} — done in ${Date.now() - t0} ms`);
     return r;
   } finally {
-    // Ошибки не логируем здесь — ответственность вызывающего.
+    // Errors not logged here — responsibility of caller.
   }
 }

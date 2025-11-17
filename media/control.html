@@ -29,16 +29,16 @@
       
       <div class="row">
         <span class="cluster">
-          <select id="template" class="lg-select grow" data-state-key="template" title="Контекст (.ctx.md) из lg-cfg/"></select>
-          <button class="lg-btn" data-action="sendToAI" title="Сгенерировать контекст и отправить в AI">
+          <select id="template" class="lg-select grow" data-state-key="template" title="Context (.ctx.md) from lg-cfg/"></select>
+          <button class="lg-btn" data-action="sendToAI" title="Generate context and send to AI">
             <span class="codicon codicon-send"></span><span class="btn-text">Send to AI</span>
           </button>
-          <button class="lg-btn" id="btn-context" data-action="generateContext" title="Сгенерировать контекст-промт по шаблону">
+          <button class="lg-btn" id="btn-context" data-action="generateContext" title="Generate context prompt from template">
             <span class="codicon codicon-file-code"></span><span class="btn-text">Generate Context</span>
           </button>
         </span>
         <span class="cluster">
-          <button class="lg-btn lg-btn--primary" data-action="showContextStats" title="Показать суммарную статистику токенов для выбранного контекста">
+          <button class="lg-btn lg-btn--primary" data-action="showContextStats" title="Show cumulative token statistics for selected context">
             <span class="codicon codicon-table"></span><span class="btn-text">Show Context Stats</span>
           </button>
         </span>
@@ -76,7 +76,7 @@
     <div class="block">
       <h3><span class="codicon codicon-graph"></span> Inspect</h3>
       <div class="row">
-        <span class="cluster" title="Секция из lg-cfg/sections.yaml или *.sec.yaml">
+        <span class="cluster" title="Section from lg-cfg/sections.yaml or *.sec.yaml">
           <label>Section:</label>
           <select class="lg-select" id="section" data-state-key="section"></select>
         </span>
@@ -84,17 +84,17 @@
       </div>
       <div class="row">
         <span class="cluster">
-          <button class="lg-btn" data-action="showIncluded" title="Показать какие файлы проходят фильтры">
+          <button class="lg-btn" data-action="showIncluded" title="Show which files pass the filters">
             <span class="codicon codicon-list-tree"></span><span class="btn-text">Show Included</span>
           </button>
         </span>
         <span class="cluster">
-          <button class="lg-btn" data-action="generateListing" title="Сшить исходники из выбранной секции в единый листинг">
+          <button class="lg-btn" data-action="generateListing" title="Combine source files from selected section into a single listing">
            <span class="codicon codicon-file-code"></span><span class="btn-text">Generate Listing</span>
           </button>
         </span>
         <span class="cluster">
-          <button class="lg-btn" data-action="showStats" title="Таблица размеров и токенов с долями контекста">
+          <button class="lg-btn" data-action="showStats" title="Table of sizes and tokens with context shares">
             <span class="codicon codicon-table"></span><span class="btn-text">Show Stats</span>
           </button>
         </span>
@@ -104,15 +104,15 @@
     <div class="block">
       <h3><span class="codicon codicon-symbol-unit"></span> Tokenization Settings</h3>
       
-      <!-- Библиотека токенизации -->
+      <!-- Tokenization library -->
       <div class="row">
-        <span class="cluster" title="Библиотека токенизации (tiktoken, tokenizers, sentencepiece)">
+        <span class="cluster" title="Tokenization library (tiktoken, tokenizers, sentencepiece)">
           <label>Library:</label>
           <select class="lg-select" id="tokenizerLib" data-state-key="tokenizerLib"></select>
         </span>
-      
-        <!-- Энкодер (зависит от библиотеки) -->
-        <span class="cluster" title="Энкодер или модель токенизации">
+
+        <!-- Encoder (depends on library) -->
+        <span class="cluster" title="Encoder or tokenization model">
           <label for="encoder">Encoder:</label>
           <input
             type="text"
@@ -123,9 +123,9 @@
             autocomplete="off"
           />
         </span>
-      
-        <!-- Размер контекстного окна -->
-        <span class="cluster" title="Размер контекстного окна в токенах">
+
+        <!-- Context window size -->
+        <span class="cluster" title="Context window size in tokens">
           <label>Context Limit:</label>
           <input type="number" id="ctxLimit" data-state-key="ctxLimit"
             class="lg-input lg-input--number"

@@ -4,22 +4,22 @@ import type { DiagReport } from "../models/diag_report";
 import type { ControlPanelState } from "../services/ControlStateService";
 
 /**
- * Внутренняя функция для сборки аргументов CLI команд render/report.
+ * Internal function to build CLI arguments for render/report commands.
  *
- * @param command - команда CLI ("render" или "report")
- * @param target - цель (например, "ctx:name" или "sec:name")
- * @param state - состояние панели управления
- * @returns объект с args и stdinData для передачи в runCli
+ * @param command - CLI command ("render" or "report")
+ * @param target - target (e.g., "ctx:name" or "sec:name")
+ * @param state - control panel state
+ * @returns object with args and stdinData to pass to runCli
  */
 function buildCliArgs(command: string, target: string, state: Partial<ControlPanelState>): { args: string[]; stdinData?: string } {
   const args: string[] = [command, target];
   
-  // Обязательные параметры токенизации
+  // Required tokenization parameters
   args.push("--lib", state.tokenizerLib!);
   args.push("--encoder", state.encoder!);
   args.push("--ctx-limit", String(state.ctxLimit!));
-  
-  // Режимы (modes)
+
+  // Modes
   if (state.modes) {
     for (const [modeset, mode] of Object.entries(state.modes)) {
       if (mode) {
@@ -27,8 +27,8 @@ function buildCliArgs(command: string, target: string, state: Partial<ControlPan
       }
     }
   }
-  
-  // Теги (преобразуем из Record<tagSetId, tagId[]> в плоский список)
+
+  // Tags (convert from Record<tagSetId, tagId[]> to flat list)
   if (state.tags) {
     const flatTags: string[] = [];
     for (const tagIds of Object.values(state.tags)) {
@@ -38,13 +38,13 @@ function buildCliArgs(command: string, target: string, state: Partial<ControlPan
       args.push("--tags", flatTags.join(","));
     }
   }
-  
-  // Целевая ветка (для режима review)
+
+  // Target branch (for review mode)
   if (state.targetBranch && state.targetBranch.trim()) {
     args.push("--target-branch", state.targetBranch.trim());
   }
-  
-  // Текст задачи (передаём через stdin)
+
+  // Task text (pass via stdin)
   let stdinData: string | undefined;
   if (state.taskText && state.taskText.trim()) {
     args.push("--task", "-");

@@ -4,7 +4,7 @@ import * as fs from "fs/promises";
 import type { ShellType } from "../../../../models/ShellType";
 
 /**
- * Получить workspace root из CliResolver
+ * Get workspace root from CliResolver
  */
 export async function getWorkspaceRoot(): Promise<string> {
   const { effectiveWorkspaceRoot } = await import("../../../../cli/CliResolver");
@@ -12,7 +12,7 @@ export async function getWorkspaceRoot(): Promise<string> {
 }
 
 /**
- * Получить рабочую директорию с учётом scope
+ * Get working directory considering scope
  */
 export async function getWorkingDirectory(scope?: string): Promise<string> {
   const workspaceRoot = await getWorkspaceRoot();
@@ -20,7 +20,7 @@ export async function getWorkingDirectory(scope?: string): Promise<string> {
 }
 
 /**
- * Получить абсолютный путь к файлу в workspace с учётом scope
+ * Get absolute path to file in workspace considering scope
  */
 export async function getWorkspacePath(fileName: string, scope?: string): Promise<string> {
   const workspaceRoot = await getWorkspaceRoot();
@@ -30,7 +30,7 @@ export async function getWorkspacePath(fileName: string, scope?: string): Promis
 }
 
 /**
- * Получить путь к директории проекта в ~/.claude/projects/
+ * Get path to project directory in ~/.claude/projects/
  */
 export async function getClaudeProjectDir(scope?: string): Promise<string> {
   const cwd = await getWorkingDirectory(scope);
@@ -39,7 +39,7 @@ export async function getClaudeProjectDir(scope?: string): Promise<string> {
 }
 
 /**
- * Получить путь к session файлу
+ * Get path to session file
  */
 export async function getClaudeSessionPath(sessionId: string, scope?: string): Promise<string> {
   const projectDir = await getClaudeProjectDir(scope);
@@ -47,9 +47,9 @@ export async function getClaudeSessionPath(sessionId: string, scope?: string): P
 }
 
 /**
- * Кодирование пути проекта в формат Claude Code
+ * Encode project path into Claude Code format
  *
- * Примеры:
+ * Examples:
  * - F:\workspace\project → F--workspace-project
  * - /home/user/project → home-user-project
  */
@@ -66,7 +66,7 @@ export function encodeProjectPath(projectPath: string): string {
 }
 
 /**
- * Добавление записи в history.jsonl для отображения в `claude -r`
+ * Add entry to history.jsonl for display in `claude -r`
  */
 export async function addToHistoryIndex(params: {
   sessionId: string;
@@ -100,7 +100,7 @@ export async function addToHistoryIndex(params: {
 }
 
 /**
- * Обрезка текста для отображения
+ * Truncate text for display
  */
 export function truncateForDisplay(text: string, maxLength: number): string {
   if (text.length <= maxLength) {
@@ -110,7 +110,7 @@ export function truncateForDisplay(text: string, maxLength: number): string {
 }
 
 /**
- * Построить команду запуска Claude Code с cleanup lock-файла
+ * Build Claude Code launch command with lock file cleanup
  */
 export function buildClaudeCommand(
   permissionMode: string,
@@ -122,7 +122,7 @@ export function buildClaudeCommand(
 ): string {
   const modelArg = model ? ` --model ${model}` : "";
 
-  // Формируем основную команду claude
+  // Build the main claude command
   let claudeCmd = `claude --permission-mode ${permissionMode}${modelArg}`;
 
   if (sessionId) {
@@ -135,21 +135,21 @@ export function buildClaudeCommand(
     throw new Error("At least one of sessionId or activationPrompt must be provided");
   }
 
-  // Добавляем cleanup в зависимости от shell
+  // Add cleanup depending on shell
   switch (shell) {
     case "powershell":
-      // PowerShell: try-finally блок
+      // PowerShell: try-finally block
       return `try { ${claudeCmd} } finally { Remove-Item "${lockFile}" -EA SilentlyContinue }`;
 
     case "cmd":
-      // CMD: простая последовательность
+      // CMD: simple sequence
       return `${claudeCmd} & if exist "${lockFile}" del /q "${lockFile}"`;
 
     case "bash":
     case "zsh":
     case "sh":
     default:
-      // Bash/Zsh/Sh: trap для очистки при любом завершении
+      // Bash/Zsh/Sh: trap for cleanup on any termination
       return `(trap "rm -f \\"${lockFile}\\"" EXIT INT TERM HUP; ${claudeCmd})`;
   }
 }

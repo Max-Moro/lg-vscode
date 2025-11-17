@@ -1,6 +1,6 @@
 /**
- * Простые виртуальные документы: lg://listing/... и lg://context/...
- * Позволяют отображать результат генерации без записи файлов на диск.
+ * Simple virtual documents: lg://listing/... and lg://context/...
+ * Allow displaying generation results without writing files to disk.
  */
 import * as vscode from "vscode";
 import * as os from "os";
@@ -16,11 +16,11 @@ export class VirtualDocProvider implements vscode.TextDocumentContentProvider {
     return this.cache.get(uri.toString()) ?? "Empty";
   }
 
-  /** Заменяет небезопасные символы для имён файлов на '-' и вычищает повторения. */
+  /** Replaces unsafe characters for file names with '-' and cleans up duplicates. */
   private sanitizeFileName(name: string): string {
-    // Запрещённые для Windows и кросс-платформенные: / \ : " * ? < > | и управляющие
+    // Prohibited for Windows and cross-platform: / \ : " * ? < > | and control characters
     const replaced = name.replace(/[\/\\:"*?<>|\u0000-\u001F]+/g, "-");
-    // Сжать пробелы/дефисы
+    // Compress spaces/dashes
     return replaced.replace(/\s{2,}/g, " ").trim();
   }
 
@@ -31,7 +31,7 @@ export class VirtualDocProvider implements vscode.TextDocumentContentProvider {
     if (editable) {
       const tmpDir = path.join(os.tmpdir(), "vscode-lg");
       fs.mkdirSync(tmpDir, { recursive: true });
-      // ВАЖНО: не допускаем '/' в имени файла → санитизируем
+      // IMPORTANT: do not allow '/' in filename → sanitize
       const safeName = this.sanitizeFileName(name.endsWith(".md") ? name : `${name}.md`);
       const filePath = path.join(tmpDir, safeName);
       fs.writeFileSync(filePath, content, "utf8");
@@ -40,7 +40,7 @@ export class VirtualDocProvider implements vscode.TextDocumentContentProvider {
       return;
     }
 
-    // старый режим: виртуальный read-only документ
+    // Legacy mode: virtual read-only document
     const uri = vscode.Uri.parse(`lg://${kind}/${encodeURIComponent(name)}`);
     this.cache.set(uri.toString(), content);
     this.emitter.fire(uri);

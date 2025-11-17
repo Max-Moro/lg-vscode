@@ -15,7 +15,7 @@ export async function showDoctorWebview(report: DiagReport) {
     }
   );
 
-  // локальные ресурсы из media/
+  // Local resources from media/
   panel.webview.html = buildHtml(panel.webview, "doctor.html", {
     baseCssUri:  mediaUri(panel.webview, "base.css"),
     cssUri:      mediaUri(panel.webview, "doctor.css"),

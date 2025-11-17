@@ -4,14 +4,14 @@ import * as child_process from "child_process";
 import { getWorkingDirectory, getClaudeProjectDir } from "./common";
 
 /**
- * Способ интеграции: Headless запрос + замена контента в существующем файле
+ * Integration method: Headless request + content replacement in existing file
  *
- * Преимущества:
- * - Гарантированно совместимый формат (Claude сам создаёт структуру)
- * - Автоматически адаптируется к изменениям формата
+ * Advantages:
+ * - Guaranteed compatible format (Claude creates the structure itself)
+ * - Automatically adapts to format changes
  *
- * Недостатки:
- * - Дополнительный headless запрос (может быть долгим по времени)
+ * Disadvantages:
+ * - Additional headless request (can be time-consuming)
  */
 export async function createSessionFromHeadless(
   content: string,
@@ -21,7 +21,7 @@ export async function createSessionFromHeadless(
   const cwd = await getWorkingDirectory(scope);
   const projectDir = await getClaudeProjectDir(scope);
 
-  // Получаем список файлов ДО вызова
+  // Get list of files BEFORE the call
   let filesBefore: string[] = [];
   try {
     filesBefore = await fs.readdir(projectDir);
@@ -29,7 +29,7 @@ export async function createSessionFromHeadless(
     filesBefore = [];
   }
 
-  // Выполняем headless запрос с маркером
+  // Execute headless request with a marker
   const marker = "TEMP_PLACEHOLDER_FOR_REPLACEMENT";
   await new Promise<void>((resolve, reject) => {
     const proc = child_process.spawn('claude', ['-p', marker], {
@@ -39,7 +39,7 @@ export async function createSessionFromHeadless(
       timeout: 10000
     });
 
-    // Собираем stdout/stderr чтобы процесс не блокировался
+    // Consume stdout/stderr to prevent process from blocking
     proc.stdout?.on('data', () => {});
     proc.stderr?.on('data', () => {});
 
@@ -50,10 +50,10 @@ export async function createSessionFromHeadless(
     });
   });
 
-  // Задержка для записи файлов
+  // Delay to allow files to be written
   await new Promise(resolve => setTimeout(resolve, 500));
 
-  // Находим новый USER session файл (исключаем agent-*)
+  // Find the new USER session file (excluding agent-*)
   const filesAfter = await fs.readdir(projectDir);
   const newFiles = filesAfter.filter(f =>
     !filesBefore.includes(f) &&
@@ -69,7 +69,7 @@ export async function createSessionFromHeadless(
   const sessionId = sessionFile.replace('.jsonl', '');
   logDebug(`[Claude CLI Headless] Created session: ${sessionId}`);
 
-  // Заменяем маркер на реальный контент
+  // Replace marker with actual content
   const sessionFilePath = path.join(projectDir, sessionFile);
   const fileContent = await fs.readFile(sessionFilePath, 'utf8');
 

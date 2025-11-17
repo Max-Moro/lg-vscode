@@ -26,28 +26,28 @@ export async function ensureManagedCli(ctx: vscode.ExtensionContext): Promise<vo
   await vscode.workspace.fs.createDirectory(vscode.Uri.file(storage));
   const { venv, py, cliExeWin, cliCmdWin, cliUnix } = venvPaths(storage);
 
-  // если уже есть любой бинарь CLI — считаем установленным
+  // If any CLI binary exists - consider it installed
   if (fs.existsSync(cliExeWin) || fs.existsSync(cliCmdWin) || fs.existsSync(cliUnix)) {
     return;
   }
 
-  // 1) выбираем системный Python для создания venv
+  // 1) Select system Python for venv creation
   const interpBySetting = vscode.workspace.getConfiguration().get<string>("lg.python.interpreter")?.trim();
   const basePy = interpBySetting || (await findPython());
   if (!basePy) {
-    throw new Error("Не найден Python 3.8+. Установите Python или укажите путь в настройке `lg.python.interpreter`.");
+    throw new Error("Python 3.8+ not found. Install Python or specify the path in `lg.python.interpreter` setting.");
   }
 
-  // 2) создаем venv
-  vscode.window.showInformationMessage("LG: создаю изолированное окружение (venv) и устанавливаю CLI…");
+  // 2) Create venv
+  vscode.window.showInformationMessage("LG: Creating isolated environment (venv) and installing CLI…");
   execSyncOrThrow(basePy.split(" ")[0], basePy.includes(" ") ? basePy.split(" ").slice(1).concat(["-m", "venv", venv]) : ["-m", "venv", venv], { cwd: storage });
 
-  // 3) обновляем pip и ставим listing-generator
+  // 3) Update pip and install listing-generator
   execSyncOrThrow(py, ["-m", "pip", "install", "--upgrade", "pip"], { cwd: storage });
 
-  // Источник установки:
-  //   а) если в текущем workspace есть папка lg/ с pyproject.toml — ставим из неё (dev-флоу);
-  //   б) иначе — ставим с PyPI пакет listing-generator.
+  // Installation source:
+  //   a) if lg/ folder with pyproject.toml exists in workspace - install from it (dev-flow);
+  //   b) otherwise - install listing-generator from PyPI.
   const wf = vscode.workspace.workspaceFolders?.[0];
   const devLocal = wf && fs.existsSync(path.join(wf.uri.fsPath, "lg", "pyproject.toml"));
   if (devLocal) {

@@ -1,10 +1,10 @@
 /**
- * Методы интеграции с Claude Code
+ * Integration methods with Claude Code
  */
 export type ClaudeIntegrationMethod = "memory-file" | "session";
 
 /**
- * Описание метода интеграции для UI
+ * Description of integration method for UI
  */
 export interface ClaudeMethodDescriptor {
   id: ClaudeIntegrationMethod;
@@ -13,14 +13,14 @@ export interface ClaudeMethodDescriptor {
 }
 
 /**
- * Получить дефолтный метод интеграции
+ * Get default integration method
  */
 export function getDefaultClaudeMethod(): ClaudeIntegrationMethod {
   return "session";
 }
 
 /**
- * Получить список доступных методов интеграции
+ * Get list of available integration methods
  */
 export function getAvailableClaudeMethods(): ClaudeMethodDescriptor[] {
   return [

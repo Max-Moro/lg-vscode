@@ -3,44 +3,44 @@ import { BaseAiProvider } from "./BaseAiProvider";
 import type { AiInteractionMode } from "../../../models/AiInteractionMode";
 
 /**
- * Базовый класс для Network-based провайдеров
- * 
- * Используется для провайдеров, которые работают через HTTP API
- * (например, OpenAI API, Anthropic API).
- * 
- * Основные возможности:
- * - Безопасное хранение токенов через VS Code Secrets API
- * - HTTP запросы с таймаутом и обработкой abort
- * - Управление контекстом расширения для доступа к секретам
- * - Централизованная обработка ошибок сети
+ * Base class for Network-based providers
+ *
+ * Used for providers that work through HTTP APIs
+ * (e.g., OpenAI API, Anthropic API).
+ *
+ * Main capabilities:
+ * - Secure token storage via VS Code Secrets API
+ * - HTTP requests with timeout and abort handling
+ * - Extension context management for accessing secrets
+ * - Centralized network error handling
  */
 export abstract class BaseNetworkProvider extends BaseAiProvider {
-  /** URL endpoint API (например, "https://api.openai.com/v1/chat/completions") */
+  /** API endpoint URL (e.g., "https://api.openai.com/v1/chat/completions") */
   protected abstract apiEndpoint: string;
   
-  /** Ключ для хранения токена в VS Code secrets (например, "lg.openai.apiKey") */
+  /** Key for storing token in VS Code secrets (e.g., "lg.openai.apiKey") */
   protected abstract secretKey: string;
   
-  /** Контекст расширения для доступа к VS Code Secrets API */
+  /** Extension context for accessing VS Code Secrets API */
   protected context?: vscode.ExtensionContext;
 
   /**
-   * Установить context для доступа к secrets
-   * 
-   * Должен быть вызван до первого использования провайдера,
-   * иначе getApiToken выбросит ошибку.
-   * 
-   * @param context - Контекст расширения из activate()
+   * Set context for accessing secrets
+   *
+   * Must be called before first use of the provider,
+   * otherwise getApiToken will throw an error.
+   *
+   * @param context - Extension context from activate()
    */
   setContext(context: vscode.ExtensionContext): void {
     this.context = context;
   }
 
   /**
-   * Получить API токен из секретов VS Code
-   * 
-   * @returns API токен
-   * @throws Error если контекст не установлен или токен не найден
+   * Get API token from VS Code secrets
+   *
+   * @returns API token
+   * @throws Error if context is not set or token is not found
    */
   protected async getApiToken(): Promise<string> {
     if (!this.context) {
@@ -56,16 +56,16 @@ export abstract class BaseNetworkProvider extends BaseAiProvider {
   }
 
   /**
-   * Отправить HTTP запрос с таймаутом
-   * 
-   * Использует AbortController для прерывания запроса по таймауту.
-   * Автоматически очищает таймер после завершения запроса.
-   * 
-   * @param url - URL для запроса
-   * @param options - Опции fetch (метод, заголовки, тело)
-   * @param timeoutMs - Таймаут в миллисекундах (по умолчанию 30 секунд)
-   * @returns Response объект
-   * @throws AbortError при таймауте
+   * Send HTTP request with timeout
+   *
+   * Uses AbortController to interrupt the request on timeout.
+   * Automatically clears the timeout after the request completes.
+   *
+   * @param url - URL for the request
+   * @param options - Fetch options (method, headers, body)
+   * @param timeoutMs - Timeout in milliseconds (default 30 seconds)
+   * @returns Response object
+   * @throws AbortError on timeout
    */
   protected async fetchWithTimeout(
     url: string,
@@ -87,26 +87,26 @@ export abstract class BaseNetworkProvider extends BaseAiProvider {
   }
 
   /**
-   * Отправка контента через API
-   * 
-   * Получает токен из секретов и вызывает sendToApi для выполнения запроса.
+   * Send content via API
+   *
+   * Gets token from secrets and calls sendToApi to execute the request.
    */
   async send(content: string, mode: AiInteractionMode): Promise<void> {
     const token = await this.getApiToken();
 
-    // Не передаем режим AI-взаимодействия, так как Network-based провайдеры
-    // по своему физическому смыслу обладают тотлько семантикой ASK поведения.
+    // Do not pass AI interaction mode, as Network-based providers
+    // by their nature only have ASK behavior semantics.
     await this.sendToApi(content, token);
   }
 
   /**
-   * Метод для отправки контента в конкретный API.
-   * 
-   * Реализуется наследниками для специфичной логики взаимодействия с API.
-   * Должен обрабатывать формирование запроса, отправку и разбор ответа.
-   * 
-   * @param content - Контент для отправки
-   * @param token - API токен из секретов
+   * Method to send content to a specific API.
+   *
+   * Implemented by subclasses for provider-specific API interaction logic.
+   * Should handle request formation, sending, and response parsing.
+   *
+   * @param content - Content to send
+   * @param token - API token from secrets
    */
   protected abstract sendToApi(content: string, token: string): Promise<void>;
 }

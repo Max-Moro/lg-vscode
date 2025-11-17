@@ -5,14 +5,14 @@
   State.getVSCode();
   const app = document.getElementById("app");
   
-  let currentTaskText = ""; // локальное состояние task text
+  let currentTaskText = ""; // local task text state
 
   // Handshake: ask TS side for data
   State.post("ready");
   window.addEventListener("message", (ev) => {
     const msg = ev.data;
     if (msg && msg.type === "runResult") {
-      // получение task text из сообщения
+      // obtain task text from message
       if (msg.taskText !== undefined) {
         currentTaskText = msg.taskText;
         const textarea = document.getElementById("statsTaskText");
@@ -28,12 +28,12 @@
   function setupTaskTextField() {
     const textarea = document.getElementById("statsTaskText");
     if (!textarea) return;
-    
+
     // Set current value
     if (textarea instanceof HTMLTextAreaElement) {
       textarea.value = currentTaskText;
     }
-    
+
     // Handle input changes
     Events.on(textarea, "input", Events.debounce(() => {
       const newText = textarea instanceof HTMLTextAreaElement ? textarea.value : "";
@@ -64,7 +64,7 @@
     const renderedOverhead = total.renderedOverheadTokens || 0;
     const renderedOverheadPct = hasRendered && renderedTokens > 0 ? (100 * renderedOverhead / renderedTokens) : 0;
 
-    // Final / Template overhead (только для context)
+    // Final / Template overhead (only for context)
     const ctxBlock = scope === "context" ? (data.context || {}) : {};
     const hasFinal = scope === "context" && typeof ctxBlock.finalRenderedTokens === "number";
 
@@ -72,7 +72,7 @@
 
     const genLabel = scope === "context" ? "Generate Context" : "Generate Listing";
 
-    // Task field только для контекстов (для секций не имеет смысла)
+    // Task field only for contexts (doesn't make sense for sections)
     const taskFieldHtml = scope === "context" ? `
       <div class="task-context-wrapper">
         <textarea
@@ -99,29 +99,29 @@
         ${card("Source Data", `
            📦 ${hrSize(total.sizeBytes)}<br/>
            🔤 ${fmtInt(total.tokensRaw)} tokens
-        `, "Сырые данные до языковых адаптеров")}
+        `, "Raw data before language adapters")}
 
         ${!hideSaved ? card("Processed Data", `
            🔤 ${fmtInt(total.tokensProcessed)}<br/>
            💾 ${fmtInt(total.savedTokens)} <span class="pill good">${fmtPct(total.savedPct)}</span><br/>
            📊 <span class="${pillClass(total.ctxShare)}">${fmtPct(total.ctxShare)}</span>
-        `, "После языковых адаптеров: processed, saved, share") : ""}
+        `, "After language adapters: processed, saved, share") : ""}
 
         ${hasRendered ? card("Rendered Data", `
            🔤 ${fmtInt(renderedTokens)}<br/>
            📐 ${fmtInt(renderedOverhead)}<br/>
            ◔ <span class="pill neutral">${fmtPct(renderedOverheadPct)}</span>
-        `, "Рендеринг промта (fences, FILE-метки)") : ""}
+        `, "Prompt rendering (fences, FILE tags)") : ""}
 
         ${hasFinal ? card("Template Overhead", `
            🧩 ${fmtInt(ctxBlock.templateOnlyTokens)}<br/>
            ◔ ${fmtPct(ctxBlock.templateOverheadPct)}
-        `, "Оверхед шаблона") : ""}
+        `, "Template overhead") : ""}
 
         ${hasFinal ? card("Final Rendered", `
            🔤 ${fmtInt(ctxBlock.finalRenderedTokens)}<br/>
            📊 <span class="${pillClass(ctxBlock.finalCtxShare)}">${fmtPct(ctxBlock.finalCtxShare)}</span>
-        `, "Итоговый размер промта") : ""}
+        `, "Final prompt size") : ""}
       </div>
 
       <div class="section">
@@ -138,7 +138,7 @@
         align: 'left',
         sortable: true,
         sortDirDefault: 'asc',
-        title: 'Относительный путь файла'
+        title: 'Relative file path'
       },
       {
         key: 'sizeBytes',
@@ -146,7 +146,7 @@
         align: 'right',
         sortable: true,
         sortDirDefault: 'desc',
-        title: 'Размер исходного файла',
+        title: 'Source file size',
         format: (v) => hrSize(v)
       },
       {
@@ -155,7 +155,7 @@
         align: 'right',
         sortable: true,
         sortDirDefault: 'desc',
-        title: 'Tokens Raw (с учётом кратности в context)',
+        title: 'Tokens Raw (considering multiplicity in context)',
         format: (v) => fmtInt(v)
       },
       {
@@ -164,7 +164,7 @@
         align: 'right',
         sortable: true,
         sortDirDefault: 'desc',
-        title: 'Tokens Processed (с учётом кратности)',
+        title: 'Tokens Processed (considering multiplicity)',
         format: (v) => fmtInt(v)
       }
     ];
@@ -178,7 +178,7 @@
           align: 'right',
           sortable: true,
           sortDirDefault: 'desc',
-          title: 'Экономия в токенах',
+          title: 'Token savings',
           format: (v) => fmtInt(v)
         },
         {
@@ -187,7 +187,7 @@
           align: 'right',
           sortable: true,
           sortDirDefault: 'desc',
-          title: 'Экономия в процентах',
+          title: 'Savings percentage',
           format: (v) => fmtPct(v),
           aggregateFormula: (aggregated) => {
             const saved = aggregated.savedTokens;
@@ -210,7 +210,7 @@
         align: 'right',
         sortable: true,
         sortDirDefault: 'desc',
-        title: 'Доля в сумме processed',
+        title: 'Share in processed sum',
         format: (v) => fmtPct(v)
       },
       {
@@ -219,7 +219,7 @@
         align: 'right',
         sortable: true,
         sortDirDefault: 'desc',
-        title: 'Вклад файла в окно модели',
+        title: 'File contribution to model context window',
         format: (v) => fmtPct(v),
         warnIf: (v) => (v || 0) > 100
       }
@@ -284,18 +284,18 @@
   function renderMetaSummary(meta) {
     if (!meta || !Object.keys(meta).length) return "";
 
-    // Двухуровневая группировка:
-    // 1) уровень — языковой адаптер (md, py, ...),
-    // 2) уровень — остаток ключа целиком ПОСЛЕ первого "." (например: "removed.sections").
-    // Приватные (_*) и нулевые значения скрываем.
+    // Two-level grouping:
+    // 1) level — language adapter (md, py, ...),
+    // 2) level — remainder of the key after the first "." (e.g.: "removed.sections").
+    // Hide private (_*) and zero values.
     /** @type {Record<string, Array<[string, number]>>} */
     const groups = {};
     for (const [k, v] of Object.entries(meta)) {
       if (k.startsWith("_") || v === 0) continue;
       const dot = k.indexOf(".");
       if (dot <= 0 || dot === k.length - 1) {
-        // Если формат неожиданный (без префикса/остатка) — пропустим,
-        // чтобы не смешивать с адаптерами.
+        // If format is unexpected (no prefix/remainder) — skip it,
+        // to avoid mixing with adapters.
         continue;
       }
       const prefix = k.slice(0, dot);            // "md"
