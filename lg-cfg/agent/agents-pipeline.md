@@ -1,122 +1,122 @@
-# Пайплайн работы в данном проекте
+# Pipeline workflow in this project
 
-## Важные особенности субагентов
+## Important characteristics of subagents
 
-**Изоляция контекста**: Каждый вызов субагента - отдельный сеанс. Агенты не помнят предыдущие выполнения. Это экономит токены, но требует полных инструкций в каждом промпте.
+**Context Isolation**: Each subagent call is a separate session. Agents do not remember previous executions. This saves tokens but requires complete instructions in each prompt.
 
-**Отчеты - единственная обратная связь**: Агент возвращает только финальный отчет. Невозможно задать уточняющие вопросы после выполнения.
+**Reports - only feedback channel**: The agent returns only the final report. It is impossible to ask clarifying questions after execution.
 
-## Доступные агенты
+## Available agents
 
-### Агент: @code-integrator
+### Agent: @code-integrator
 
-Ты дорогая, но умная модель. Ты хорошо планируешь архитектуру и пишешь код, но довольно расточительно при твоей работе вызывать множество операций (Read, Edit, Glob, Grep) чтобы сделать итоговую интеграцию намеченных изменений в конечную кодовую базу. Гораздо выгоднее распределить обязанности между тобой и субагентом-интегратором.
+You are an expensive but intelligent model. You plan architecture well and write code well, but it is quite wasteful to call many operations (Read, Edit, Glob, Grep) during your work to make the final integration of planned changes into the final codebase. It is much more efficient to distribute responsibilities between you and the integration subagent.
 
-Тебе не нужно использовать инструменты для редактирования конечного кода. Просто напиши реализацию в виде единого Markdown-документа (единой подробной инструкции), чтобы ею могла воспользоваться более дешевая (глупая) AI-модель, но уже имеющая доступ к редактированию кодовой базы.
+You do not need to use tools for editing the final code. Simply write the implementation as a single Markdown document (a single detailed instruction) that can be used by a cheaper (less capable) AI model that already has access to editing the codebase.
 
-Поэтому в итоговой development-инструкции для субагента-интегратора (в "Subagent System Prompt") в основном должны быть технические детали реализации:
-- короткое бизнесовое ТЗ;
-- требуемые изменения в архитектуре (если они нужны);
-- основные и оптимальные точки интеграции нового функционала;
-- новые листинги кода в виде fenced-вставок;
-- описание патчей (они могут быть не формальными, а просто достаточными для понимания другой AI-моделью);
-- **при изменении публичных API** - явное указание ВСЕХ файлов, использующих эти функции/типы;
-- и так далее;
+Therefore, the final development instruction for the integration subagent (in "Subagent System Prompt") should mainly contain technical implementation details:
+- brief business requirements;
+- required architectural changes (if needed);
+- main and optimal integration points for new functionality;
+- new code listings as fenced blocks;
+- description of patches (they may be informal but sufficient for understanding by another AI model);
+- **when changing public APIs** - explicit listing of ALL files using these functions/types;
+- and so on;
 
-Инструкция должна быть написана единоразово при запуске инструмента работы с агентом @code-integrator. Ни в коем случае не дублируй данную инструкцию в диалог с пользователем.
+The instruction should be written once when launching the tool for working with the @code-integrator agent. Do not duplicate this instruction in the dialog with the user.
 
-После окончания работы субагента-интегратора необходимо:
-1. Извлечь секцию "Modified Files:" из его отчета
-2. Передать список файлов агенту @linter в формате:
+After the integration subagent finishes working, it is necessary to:
+1. Extract the "Modified Files:" section from its report
+2. Pass the file list to the @linter agent in the format:
    ```
    Modified files:
    - path/to/file1.ext
    - path/to/file2.ext
    ```
-3. Передать список файлов агенту @compiler с краткими комментариями о внесенных изменениях (на основе твоего исходного плана).
+3. Pass the file list to the @compiler agent with brief comments about the changes made (based on your original plan).
 
-### Агент: @linter
+### Agent: @linter
 
-Данный агент занимается вызовом линтера и исправление возникших проблем. Ему необходимо передать список измененных/созданных файлов. 
+This agent is responsible for calling the linter and fixing problems that arise. It is necessary to pass it a list of modified/created files. 
 
-### Агент: @compiler
+### Agent: @compiler
 
-Данный агент занимается компиляцией кода и исправление возникших проблем. Ему необходимо передать список измененных/созданных файлов с краткими комментариями о том, что было изменено. Это нужно, чтобы агент компиляции осознанно производил исправления, а не просто случайно удалял полезный (только что добавленный) функционал.
+This agent is responsible for code compilation and fixing any problems that arise. It is necessary to pass it a list of modified/created files with brief comments about what was changed. This is needed so that the compilation agent makes fixes thoughtfully, rather than simply randomly deleting useful (newly added) functionality.
 
-Комментарии формируются оркестратором на основе исходного плана изменений (например: "added processDocument method", "updated to use new API").
+Comments are formulated by the orchestrator based on the original change plan (for example: "added processDocument method", "updated to use new API").
 
-### Прочие агенты
+### Other agents
 
-В данном проекте пока что используются только 3 агента:
+Currently, this project uses only 3 agents:
 - @code-integrator
 - @linter
 - @compiler
 
-В проекте нет специального агента тестирования, потому что на данном этапе разработки все тесты делаются вручную пользователем (визуальное тестирование).
+There is no dedicated test agent in the project because at this stage of development all tests are performed manually by the user (visual testing).
 
-## Виды итераций
+## Types of iterations
 
-В зависимости от сложности задачи, работу над ней можно вести следующими способами.
+Depending on the complexity of the task, work on it can be conducted in the following ways.
 
-### Основной итерационный цикл
+### Main iterative cycle
 
-#### Когда применять
+#### When to apply
 
-- крупные рефакторинги и переработка архитектуры
-- изменения в 3-х и более файлах
-- необходимость полного переписывания некоторого существующего модуля
-- обычно используется в начале диалога при работе над новой задачей или функцией
+- large refactorings and architecture rework
+- changes in 3 or more files
+- need for complete rewriting of some existing module
+- usually used at the beginning of a dialog when working on a new task or feature
 
-#### Порядок работы
+#### Order of work
 
-1. Проверить достаточность данных в контекстном окне, полученных от инструмента **Listing Generator**. Если данных не достаточно для выполнения задачи, то остановить работу и сообщить пользователю.
-2. Произвести первичное планирование работы над новой функцией или новым функциональным блоком.
-3. Составить development-инструкцию и отправить ее в агента @code-integrator.
-4. Произвести проверку измененной кодовой базы линтером через вызов агента @linter.
-5. Произвести компиляцию кодовой базы через вызов агента @compiler.
-6. Получить все отчеты от субагентов и разрешить их проблемы, если они у них возникли.
-7. Составить для пользователя итоговое краткое саммари по результату работы над итерацией и отправить его диалог.
-8. Завершить работу и ждать от пользователя обратную связь и/или результаты тестирования.
+1. Check the sufficiency of data in the context window obtained from the **Listing Generator** tool. If there is insufficient data to complete the task, stop work and notify the user.
+2. Perform initial planning of work on a new feature or new functional block.
+3. Create a development instruction and send it to the @code-integrator agent.
+4. Perform linting of the modified codebase by calling the @linter agent.
+5. Perform compilation of the codebase by calling the @compiler agent.
+6. Get all reports from subagents and resolve their problems if they arise.
+7. Prepare for the user a final brief summary of the iteration results and send it in the dialog.
+8. Complete work and wait for user feedback and/or testing results.
 
-### Краткий итерационный цикл
+### Short iterative cycle
 
-#### Когда применять
+#### When to apply
 
-- точечные исправления в 2-х и менее файлах
-- локальное исправление проблем и ошибок
-- обычно используется, когда пользователь продолжает работу в диалоге и дает обратную связь в результате тестирования
-- данный тип итерации необходимо, чтобы вести ускоренную разработку
+- targeted fixes in 2 or fewer files
+- local fixing of problems and errors
+- usually used when the user continues working in the dialog and provides feedback as a result of testing
+- this type of iteration is necessary to conduct accelerated development
 
-#### Порядок работы
+#### Order of work
 
-1. Для ускорения необходимые минимальные исправления внести самостоятельно, без использования агента @code-integrator.
-2. **ОБЯЗАТЕЛЬНО** запустить агента @linter для измененных файлов.
-3. **ОБЯЗАТЕЛЬНО** запустить агента @compiler для проверки сборки.
-4. Получить все отчеты от субагентов и разрешить их проблемы, если они у них возникли.
-5. Быстро ответить пользователю, что исправление готово для тестирования (визуальной проверки). Комплексное саммари в этом случае уже писать не требуется.
+1. To accelerate, make the necessary minimal fixes yourself, without using the @code-integrator agent.
+2. **MUST** run the @linter agent for modified files.
+3. **MUST** run the @compiler agent to check the build.
+4. Get all reports from subagents and resolve their problems if they arise.
+5. Quickly respond to the user that the fix is ready for testing (visual verification). A comprehensive summary is not required in this case.
 
-**Важно:** Даже в кратком цикле нельзя пропускать проверку линтером и компилятором. 
+**Important:** Even in a short cycle, linting and compilation checks cannot be skipped. 
 
-### Общие правила работы
+### General working rules
 
-Нужно всегда принимать решение в зависимости от сложности задачи, по какому типу итерации с ней работать (основная или краткая).
+Always make a decision based on task complexity regarding which type of iteration to use (main or short).
 
-В любом случае никогда не стоит создавать по своей инициативе итоговые Markdown-документы в файловой системе: саммари, чеклисты, отчеты по проделанной работе и так далее. Вся отчетность в конце итераций только в диалог. Если в результате работы над функциональным блоком очевидным образом устаревает уже существующая документация в репозитории, то не следует ее самостоятельно патчить, просто этот нюанс нужно обозначить пользователю.
+In any case, do not create summary Markdown documents in the file system on your own initiative: summaries, checklists, reports on work done, etc. All reporting at the end of iterations goes only in the dialog. If as a result of working on a functional block the existing documentation in the repository becomes obviously outdated, do not patch it yourself; simply point out this nuance to the user.
 
-Markdown-документацию необходимо разрабатывать, только если пользователь об этом специально отдельно попросит.
+Markdown documentation should be developed only if the user specifically and separately asks for it.
 
-#### Обработка эскалаций от субагентов
+#### Handling escalations from subagents
 
-Если субагент (@linter или @compiler) вернул статус "⚠️ Требуется внимание":
+If a subagent (@linter or @compiler) returns the status "⚠️ Attention Required":
 
-1. Прочитать секцию "Remaining errors" в отчете субагента
-2. Оценить сложность проблемы:
-   - **Простая** (1-2 файла, очевидный фикс) → Исправить самостоятельно через Edit и повторно запустить субагента
-   - **Сложная** (требует рефакторинга, архитектурных изменений) → Остановиться и сообщить пользователю
-3. Если проблема остается после 2-х итераций исправлений → остановиться и сообщить пользователю
+1. Read the "Remaining errors" section in the subagent's report
+2. Assess problem complexity:
+   - **Simple** (1-2 files, obvious fix) → Fix it yourself via Edit and re-run the subagent
+   - **Complex** (requires refactoring, architectural changes) → Stop and notify the user
+3. If the problem persists after 2 iterations of fixes → stop and notify the user
 
-#### Использование TodoWrite
+#### Using TodoWrite
 
-TodoWrite используется **только оркестратором** для планирования работы над задачами.
+TodoWrite is used **only by the orchestrator** for planning work on tasks.
 
-Субагенты **НЕ используют** TodoWrite — они работают по четким инструкциям и сразу переходят к выполнению.
+Subagents **DO NOT use** TodoWrite — they work according to clear instructions and proceed directly to execution.

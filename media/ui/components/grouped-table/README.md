@@ -1,14 +1,14 @@
 # Grouped Table Component
 
-Компонент таблицы с расширенными возможностями: фильтрация, сортировка и иерархическая группировка.
+Table component with advanced features: filtering, sorting, and hierarchical grouping.
 
 ## Features
 
-- **Filtering**: Быстрая фильтрация по содержимому колонок
-- **Sorting**: Сортировка по любой колонке с поддержкой направления (asc/desc)
-- **Hierarchical Grouping**: Группировка строк по уровням вложенности директорий
-- **Path Normalization**: Автоматическая нормализация путей (файлы рядом с папками помещаются в виртуальную директорию `self`)
-- **Aggregation**: Автоматическое суммирование числовых значений при группировке
+- **Filtering**: Fast filtering by column content
+- **Sorting**: Sort by any column with direction support (asc/desc)
+- **Hierarchical Grouping**: Group rows by directory nesting levels
+- **Path Normalization**: Automatic path normalization (files alongside directories are placed in virtual `self` directory)
+- **Aggregation**: Automatic summation of numeric values when grouping
 
 ## Usage
 
@@ -60,7 +60,7 @@ table.destroy();
 
 ### Formula-based Aggregation
 
-Для вычисления агрегированных значений на основе других колонок используйте `aggregateFormula`:
+To calculate aggregated values based on other columns, use `aggregateFormula`:
 
 ```javascript
 {
@@ -69,7 +69,7 @@ table.destroy();
   align: 'right',
   format: (v) => v.toFixed(1) + '%',
   aggregateFormula: (aggregated) => {
-    // Вычисляем процент экономии на основе агрегированных savedTokens и tokensRaw
+    // Calculate savings percentage based on aggregated savedTokens and tokensRaw
     const saved = aggregated.savedTokens;
     const raw = aggregated.tokensRaw;
 
@@ -81,34 +81,34 @@ table.destroy();
 }
 ```
 
-**Важно**: Формула выполняется после агрегации всех остальных колонок, поэтому она имеет доступ к суммам/средним значениям других колонок в группе.
+**Important**: The formula is executed after aggregation of all other columns, so it has access to sums/averages of other columns in the group.
 
 ## Column Options
 
-- `key` (string, required): Ключ данных в объекте строки
-- `label` (string, required): Заголовок колонки
-- `align` (string): Выравнивание ('left' | 'right')
-- `sortable` (boolean): Можно ли сортировать по этой колонке
-- `sortDirDefault` (string): Направление сортировки по умолчанию ('asc' | 'desc')
-- `format` (function): Функция форматирования значения `(value, row) => string`
-- `aggregate` (string): Метод агрегации при группировке ('sum' | 'avg')
-- `aggregateFormula` (function): Функция для вычисления агрегированного значения на основе других колонок `(aggregated) => value`. Имеет приоритет над `aggregate`. Формула получает объект с уже агрегированными значениями других колонок.
-- `warnIf` (function): Условие для подсветки предупреждением `(value, row) => boolean`
-- `title` (string): Tooltip для заголовка колонки
+- `key` (string, required): Data key in the row object
+- `label` (string, required): Column header
+- `align` (string): Alignment ('left' | 'right')
+- `sortable` (boolean): Whether this column is sortable
+- `sortDirDefault` (string): Default sort direction ('asc' | 'desc')
+- `format` (function): Value formatting function `(value, row) => string`
+- `aggregate` (string): Aggregation method when grouping ('sum' | 'avg')
+- `aggregateFormula` (function): Function to calculate aggregated value based on other columns `(aggregated) => value`. Takes priority over `aggregate`. Formula receives an object with already aggregated values of other columns.
+- `warnIf` (function): Condition for warning highlight `(value, row) => boolean`
+- `title` (string): Tooltip for column header
 
 ## Grouping Control
 
-Контрол группировки позволяет изменять уровень вложенности:
+Grouping control allows changing the nesting level:
 
-- **← / →**: Уменьшить/увеличить уровень группировки
-- **∞**: Отключить группировку (показывать все файлы)
-- **1-N**: Группировать до N-го уровня вложенности
+- **← / →**: Decrease/increase grouping level
+- **∞**: Disable grouping (show all files)
+- **1-N**: Group up to Nth nesting level
 
-Максимальный уровень определяется автоматически на основе структуры путей в данных.
+Maximum level is determined automatically based on path structure in data.
 
 ## Path Normalization
 
-При группировке компонент автоматически нормализует пути так, чтобы файлы не смешивались с директориями на одном уровне:
+When grouping, the component automatically normalizes paths so files don't mix with directories at the same level:
 
 ```
 Before normalization:
@@ -129,16 +129,16 @@ After normalization:
 
 ### Methods
 
-- `setData(data)`: Обновить данные таблицы
-- `destroy()`: Очистить таблицу и удалить обработчики событий
+- `setData(data)`: Update table data
+- `destroy()`: Clear table and remove event handlers
 
 ### State
 
-Внутреннее состояние компонента:
+Component internal state:
 
-- `sortKey`: Текущая колонка для сортировки
-- `sortDir`: Направление сортировки ('asc' | 'desc')
-- `filterQuery`: Текущий фильтр
-- `groupLevel`: Текущий уровень группировки (null = без группировки)
-- `maxDepth`: Максимальная глубина путей в данных
+- `sortKey`: Current column for sorting
+- `sortDir`: Sort direction ('asc' | 'desc')
+- `filterQuery`: Current filter
+- `groupLevel`: Current grouping level (null = no grouping)
+- `maxDepth`: Maximum depth of paths in data
 

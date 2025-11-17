@@ -1,18 +1,18 @@
 # Autosuggest Component
 
-Комбобокс с автодополнением и поддержкой произвольного пользовательского ввода.
+Combobox with autocomplete and support for arbitrary user input.
 
 ## Features
 
-- ✅ Автофильтрация списка при вводе
-- ✅ Клавиатурная навигация (Arrow Up/Down, Enter, Escape)
-- ✅ Поддержка произвольного ввода (не только из списка)
-- ✅ Индикация закэшированных элементов
-- ✅ Lazy loading (асинхронная загрузка items)
-- ✅ Кастомная функция фильтрации
-- ✅ VS Code темизация
-- ✅ Dropdown позиционируется через `position: fixed` и не влияет на layout родителей
-- ✅ Dropdown автоматически перепозиционируется при скролле/resize
+- ✅ Auto-filtering of list on input
+- ✅ Keyboard navigation (Arrow Up/Down, Enter, Escape)
+- ✅ Support for arbitrary input (not just from list)
+- ✅ Cached items indication
+- ✅ Lazy loading (asynchronous items loading)
+- ✅ Custom filtering function
+- ✅ VS Code theming
+- ✅ Dropdown positioned via `position: fixed` and doesn't affect parent layout
+- ✅ Dropdown automatically repositions on scroll/resize
 
 ## Usage
 
@@ -59,22 +59,22 @@ fetch('/api/encoders')
 
 | Option | Type | Default | Description |
 |--------|------|---------|-------------|
-| `items` | `Array<string \| object>` | `[]` | Список элементов для автодополнения |
-| `placeholder` | `string` | `''` | Placeholder для input |
-| `getValue` | `function` | `item => item` | Функция извлечения значения из элемента |
-| `isItemCached` | `function` | `item => item.cached` | Проверка, закэширован ли элемент |
-| `onSelect` | `function` | `null` | Callback при выборе элемента из списка |
-| `onChange` | `function` | `null` | Callback при изменении значения input |
-| `filterFn` | `function` | `null` | Кастомная функция фильтрации |
-| `minChars` | `number` | `0` | Минимальное количество символов для показа dropdown |
+| `items` | `Array<string \| object>` | `[]` | List of elements for autocomplete |
+| `placeholder` | `string` | `''` | Placeholder for input |
+| `getValue` | `function` | `item => item` | Function to extract value from item |
+| `isItemCached` | `function` | `item => item.cached` | Check if item is cached |
+| `onSelect` | `function` | `null` | Callback when selecting item from list |
+| `onChange` | `function` | `null` | Callback when input value changes |
+| `filterFn` | `function` | `null` | Custom filtering function |
+| `minChars` | `number` | `0` | Minimum number of characters to show dropdown |
 
 ## Methods
 
-- `setItems(items)` — обновить список элементов
-- `setLoading(loading)` — показать/скрыть индикатор загрузки
-- `open()` — открыть dropdown
-- `close()` — закрыть dropdown
-- `destroy()` — удалить компонент
+- `setItems(items)` — update list of items
+- `setLoading(loading)` — show/hide loading indicator
+- `open()` — open dropdown
+- `close()` — close dropdown
+- `destroy()` — remove component
 
 ## HTML Structure
 
@@ -101,7 +101,7 @@ fetch('/api/encoders')
 
 ## Keyboard Navigation
 
-- `Arrow Down` — следующий элемент
-- `Arrow Up` — предыдущий элемент
-- `Enter` — выбрать текущий элемент
-- `Escape` — закрыть dropdown
+- `Arrow Down` — next item
+- `Arrow Up` — previous item
+- `Enter` — select current item
+- `Escape` — close dropdown

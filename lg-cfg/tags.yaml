@@ -3,32 +3,32 @@ tag-sets:
     title: "Listing Generator extension for VS Code"
     tags:
       core:
-        title: "Ядро"
+        title: "Core"
       ui-core:
-        title: "Ядро UI"
+        title: "UI Core"
       ui-components:
-        title: "Компонентная база UI"
+        title: "UI Component Base"
       cli:
         title: "CLI executable"
       control:
-        title: "Контрольная панель"
+        title: "Control Panel"
       catalog:
         title: "Catalog Services"
       stats:
-        title: "Отчет статистики"
+        title: "Statistics Report"
       diag:
-        title: "Самодиагностика"
+        title: "Self-Diagnostics"
       send-to-ai:
-        title: "Отправка в AI"
+        title: "Send to AI"
       starter:
-        title: "Стартовая конфигурация"
+        title: "Starter Configuration"
       included-tree:
-        title: "Древовидный предпросмотр секций"
+        title: "Tree View Section Preview"
       generate:
-        title: "Генерация (для просмотра)"
+        title: "Generation (for viewing)"
 
   ai-providers:
-    title: "AI-провайдеры"
+    title: "AI Providers"
     tags:
       clipboard:
         title: "Clipboard"

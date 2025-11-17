@@ -1,6 +1,6 @@
-# Инструкция для AI-агента при работе над данным проектом
+# Instructions for AI Agent Working on This Project
 
-> Данный раздел содержит общие инструкции для AI-агента при работе над данным проектом. Он является аналогом традиционных memory files `AGENTS.md` или `CLAUDE.md` и должен восприниматься аналогичным образом.
+> This section contains general instructions for the AI agent working on this project. It is analogous to traditional memory files such as `AGENTS.md` or `CLAUDE.md` and should be perceived in the same way.
 
 ${md@self:agent/listing-generator}
 

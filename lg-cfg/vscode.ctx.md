@@ -7,9 +7,9 @@ ${md:README}
 
 ---
 {% if tag:review %}
-# Измененный исходный код VS Code Extension в текущей ветке
+# Modified VS Code Extension source code in current branch
 {% else %}
-# Исходный код VS Code Extension
+# VS Code Extension source code
 {% endif %}
 
 ${src}
@@ -21,7 +21,7 @@ ${md:media/ui/README, if:TAGSET:vscode-extension:ui-components}
 {% if task AND scope:local %}
 ---
 
-# Описание текущей задачи
+# Current task description
 
 ${task}{% endif %}
 {% if scope:local AND tag:agent %}
