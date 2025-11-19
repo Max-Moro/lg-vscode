@@ -3,6 +3,7 @@
   "displayName": "Listing Generator (LG)",
   "description": "VS Code integration for the Listing Generator CLI: generate code listings, contexts, paths and stats.",
   "publisher": "your-org",
+  "license": "Apache-2.0",
   "version": "0.1.0",
   "engines": {
     "vscode": "^1.85.0"

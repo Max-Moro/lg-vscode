@@ -77,3 +77,10 @@ Main parameters (Settings → Extensions → Listing Generator):
 - `lg.cli.path` — explicit path to CLI (if installed manually)
 - `lg.openAsEditable` — open results as editable files (instead of read-only virtual documents)
 <!-- lg:comment:end -->
+
+---
+
+## License
+
+VS Code Extension for Listing Generator is licensed under the Apache License, Version 2.0.  
+See the `LICENSE` file for the full license text.
