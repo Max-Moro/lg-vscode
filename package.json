@@ -2,9 +2,22 @@
   "name": "vscode-lg",
   "displayName": "Listing Generator (LG)",
   "description": "VS Code integration for the Listing Generator CLI: generate code listings, contexts, paths and stats.",
-  "publisher": "your-org",
-  "license": "Apache-2.0",
+  "publisher": "max-moro",
   "version": "0.1.0",
+  "author": {
+    "name": "Maxim Morozov",
+    "email": "mmocentre@gmail.com",
+    "url": "https://github.com/Max-Moro"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/Max-Moro/lg-vscode.git"
+  },
+  "bugs": {
+    "url": "https://github.com/Max-Moro/lg-vscode/issues"
+  },
+  "homepage": "https://github.com/Max-Moro/lg-vscode",
+  "license": "Apache-2.0",
   "engines": {
     "vscode": "^1.85.0"
   },
