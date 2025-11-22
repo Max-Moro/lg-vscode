@@ -41,7 +41,7 @@ Automatic detection of available providers on first run.
 - **Doctor** — environment diagnostics, `lg-cfg/` migrations, cache status
 
 ### Automation
-- **Managed venv** — automatic CLI installation to isolated environment
+- **Auto-install via pipx** — automatic CLI installation with version pinning (zero config)
 - **Watcher on lg-cfg/** — live update of sections/contexts lists when configuration is edited
 - **Config migrations** — built-in support for `lg-cfg/` format migrations (CLI compatibility)
 <!-- lg:comment:start -->
@@ -51,7 +51,7 @@ Automatic detection of available providers on first run.
 
 1. **Install the extension** from VS Code Marketplace (or from `.vsix` file)
 2. **Open a project with `lg-cfg/`** — the extension will automatically activate
-3. **First run**: Extension will offer to install CLI (via managed venv or system Python)
+3. **First run**: Extension will automatically install CLI via pipx (requires pipx on your system)
 4. **Open the "LG — Control Panel"** in the Activity Bar sidebar
 5. **Select a context/section**, configure modes and tags, click "Send to AI"
 
@@ -72,9 +72,8 @@ If you don't have `lg-cfg/` yet — use the **"LG: Create Starter Config"** comm
 
 Main parameters (Settings → Extensions → Listing Generator):
 - `lg.ai.provider` — provider for sending to AI (clipboard, copilot, cursor, claude.cli, openai.api)
-- `lg.install.strategy` — CLI installation strategy (managedVenv, system, pipx)
-- `lg.python.interpreter` — path to Python interpreter (for managed venv)
-- `lg.cli.path` — explicit path to CLI (if installed manually)
+- `lg.developerMode` — enable Developer Mode to test unreleased CLI versions (default: false)
+- `lg.python.interpreter` — path to Python interpreter in CLI dev venv (Developer Mode only)
 - `lg.openAsEditable` — open results as editable files (instead of read-only virtual documents)
 <!-- lg:comment:end -->
 

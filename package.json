@@ -1,5 +1,5 @@
 {
-  "name": "vscode-lg",
+  "name": "listing-generator",
   "displayName": "Listing Generator (LG)",
   "description": "VS Code integration for the Listing Generator CLI: generate code listings, contexts, paths and stats.",
   "publisher": "max-moro",
@@ -191,25 +191,15 @@
           "default": "",
           "description": "Default context name from lg-cfg (without .ctx.md)."
         },
+        "lg.developerMode": {
+          "type": "boolean",
+          "default": false,
+          "description": "Enable Developer Mode to test unreleased CLI versions with a local Python interpreter."
+        },
         "lg.python.interpreter": {
           "type": "string",
           "default": "",
-          "description": "Path to Python interpreter to run the CLI (leave empty for auto-detect)."
-        },
-        "lg.cli.path": {
-          "type": "string",
-          "default": "",
-          "description": "Explicit path to 'listing-generator' binary (leave empty to manage automatically)."
-        },
-        "lg.install.strategy": {
-          "type": "string",
-          "enum": [
-            "managedVenv",
-            "pipx",
-            "system"
-          ],
-          "default": "managedVenv",
-          "description": "How to install/resolve the CLI."
+          "description": "[Developer Mode Only] Path to Python interpreter in CLI development venv (e.g., /path/to/lg-cli/.venv/bin/python)."
         },
         "lg.openAsEditable": {
           "type": "boolean",
