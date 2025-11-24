@@ -7,9 +7,11 @@
  */
 import * as vscode from "vscode";
 import * as fs from "fs";
+import * as path from "path";
 import { spawn } from "../runner/LgProcess";
 import { PipxInstaller } from "../runner/PipxInstaller";
 import { logDebug, logError, logInfo, withDuration } from "../logging/log";
+import { CliException, CliUnavailableException } from "./CliException";
 
 export type RunSpec = { cmd: string; args: string[] };
 
@@ -24,10 +26,10 @@ export function effectiveWorkspaceRoot(): string | undefined {
   if (!folders || folders.length === 0) return undefined;
 
   const cfgRoot = folders.find((f) => {
-    const base = require("path").basename(f.uri.fsPath).toLowerCase();
+    const base = path.basename(f.uri.fsPath).toLowerCase();
     return base === "lg-cfg";
   });
-  if (cfgRoot) return require("path").dirname(cfgRoot.uri.fsPath);
+  if (cfgRoot) return path.dirname(cfgRoot.uri.fsPath);
 
   return folders[0]?.uri.fsPath;
 }
@@ -46,10 +48,8 @@ async function resolveCliRunSpec(): Promise<RunSpec> {
   const isDeveloperMode = cfg.get<boolean>("lg.developerMode") ?? false;
 
   if (isDeveloperMode) {
-    logInfo("[CliResolver] Developer Mode enabled");
     return resolveDeveloperMode(cfg);
   } else {
-    logInfo("[CliResolver] User Mode (pipx auto-install)");
     return resolveUserMode();
   }
 }
@@ -61,20 +61,24 @@ async function resolveCliRunSpec(): Promise<RunSpec> {
  *
  * @param cfg VS Code configuration
  * @returns RunSpec for Python module execution
- * @throws Error if Python interpreter not configured or not found
+ * @throws CliUnavailableException if Python interpreter not configured or not found
  */
 function resolveDeveloperMode(cfg: vscode.WorkspaceConfiguration): RunSpec {
   const pythonPath = cfg.get<string>("lg.python.interpreter")?.trim();
 
   if (!pythonPath) {
-    throw new Error(
+    throw new CliUnavailableException(
       "Developer Mode requires Python interpreter.\n" +
-      "Configure 'lg.python.interpreter' in Settings pointing to your CLI dev venv."
+      "Configure 'lg.python.interpreter' in Settings pointing to your CLI dev venv.",
+      false // Always loud
     );
   }
 
   if (!fs.existsSync(pythonPath)) {
-    throw new Error(`Python interpreter not found: ${pythonPath}`);
+    throw new CliUnavailableException(
+      `Python interpreter not found: ${pythonPath}`,
+      false // Always loud
+    );
   }
 
   logDebug(`[CliResolver] Using Python: ${pythonPath}`);
@@ -91,17 +95,11 @@ function resolveDeveloperMode(cfg: vscode.WorkspaceConfiguration): RunSpec {
  * Uses pipx to auto-install/upgrade CLI with version pinning.
  *
  * @returns RunSpec for listing-generator command
- * @throws Error if pipx is not available or installation fails
+ * @throws CliUnavailableException if pipx is not available or installation fails
  */
 async function resolveUserMode(): Promise<RunSpec> {
-  const installer = new PipxInstaller();
-
-  // Check if pipx is available
-  if (!(await installer.isPipxAvailable())) {
-    throw new Error(
-      "pipx not found. Install pipx (https://pipx.pypa.io/stable/) or enable Developer Mode in Settings."
-    );
-  }
+  // Get singleton instance (application-level service)
+  const installer = PipxInstaller.getInstance();
 
   // Ensure CLI is installed with correct version
   const cliPath = await installer.ensureCli();
@@ -153,7 +151,7 @@ async function runCliInternal(
       }
 
       return result;
-    } catch (e: any) {
+    } catch (e) {
       logError(`[CLI] ${cliArgs.join(" ")} — failed`, e);
       throw e;
     }
@@ -179,34 +177,56 @@ export async function runCliResult(
   return { stdout: result.stdout, stderr: result.stderr ?? "" };
 }
 
-/** Quick check for CLI availability, with auto-install offer. */
+/**
+ * Quick check for CLI availability, with auto-install offer.
+ *
+ * Analyzes error types and shows appropriate UI only for first (loud) errors.
+ * Silent errors (cached fatal failures) are logged but don't trigger popups.
+ *
+ * @param ctx Extension context
+ * @returns CLI command path or undefined if unavailable
+ */
 export async function locateCliOrOfferInstall(ctx: vscode.ExtensionContext): Promise<string | undefined> {
   setExtensionContext(ctx);
 
   try {
     const spec = await resolveCliRunSpec();
     return spec.cmd;
-  } catch (e: any) {
-    // In User Mode, offer to install pipx or switch to Developer Mode
-    const cfg = vscode.workspace.getConfiguration();
-    const isDeveloperMode = cfg.get<boolean>("lg.developerMode") ?? false;
+  } catch (e) {
+    // Silent errors - don't show UI
+    if (e instanceof CliException && e.silent) {
+      logDebug(`[locateCliOrOfferInstall] Silent failure: ${e.message}`);
+      return undefined;
+    }
 
-    if (!isDeveloperMode) {
-      const choice = await vscode.window.showInformationMessage(
-        "Listing Generator CLI requires pipx.\n\nInstall pipx and retry, or enable Developer Mode in Settings.",
-        "Open Settings",
-        "Later"
-      );
+    // Loud errors - analyze and show appropriate UI
+    if (e instanceof CliUnavailableException) {
+      const cfg = vscode.workspace.getConfiguration();
+      const isDeveloperMode = cfg.get<boolean>("lg.developerMode") ?? false;
 
-      if (choice === "Open Settings") {
-        vscode.commands.executeCommand("workbench.action.openSettings", "lg.developerMode");
+      if (isDeveloperMode) {
+        // Developer Mode: show error and open settings
+        vscode.window.showErrorMessage(
+          e.message + "\n\nOpen Settings to configure Python interpreter?"
+        );
+        vscode.commands.executeCommand("workbench.action.openSettings", "lg.python.interpreter");
+      } else {
+        // User Mode: offer to install pipx or switch to Developer Mode
+        const choice = await vscode.window.showInformationMessage(
+          e.message + "\n\nEnable Developer Mode in Settings?",
+          "Open Settings",
+          "Later"
+        );
+
+        if (choice === "Open Settings") {
+          vscode.commands.executeCommand("workbench.action.openSettings", "lg.developerMode");
+        }
       }
     } else {
-      // Developer Mode - show error and open settings
+      // Unknown error category - generic message
       vscode.window.showErrorMessage(
-        "Developer Mode requires Python interpreter configuration.\n\nConfigure 'lg.python.interpreter' in Settings."
+        `Failed to initialize CLI: ${e instanceof Error ? e.message : String(e)}`
       );
-      vscode.commands.executeCommand("workbench.action.openSettings", "lg.python.interpreter");
     }
 
     return undefined;

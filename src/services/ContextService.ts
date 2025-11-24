@@ -30,16 +30,20 @@ export class ContextService {
   
   /**
    * Get statistics for current context
-   * @throws {Error} if template is not selected
+   * @throws {Error} if template is not selected or CLI unavailable
    */
   async getStats(): Promise<RunResult> {
     const state = this.stateService.getState();
     if (!state.template) {
       throw new Error("No template selected");
     }
-    
+
     const target = `ctx:${state.template}`;
-    return cliReport(target, state);
+    const result = await cliReport(target, state);
+    if (!result) {
+      throw new Error("CLI unavailable");
+    }
+    return result;
   }
   
   /**

@@ -2,6 +2,8 @@ import { runCli } from "./CliResolver";
 import type { RunResult } from "../models/report";
 import type { DiagReport } from "../models/diag_report";
 import type { ControlPanelState } from "../services/ControlStateService";
+import { CliException } from "./CliException";
+import { logDebug } from "../logging/log";
 
 /**
  * Internal function to build CLI arguments for render/report commands.
@@ -13,10 +15,13 @@ import type { ControlPanelState } from "../services/ControlStateService";
  */
 function buildCliArgs(command: string, target: string, state: Partial<ControlPanelState>): { args: string[]; stdinData?: string } {
   const args: string[] = [command, target];
-  
+
   // Required tokenization parameters
+  // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
   args.push("--lib", state.tokenizerLib!);
+  // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
   args.push("--encoder", state.encoder!);
+  // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
   args.push("--ctx-limit", String(state.ctxLimit!));
 
   // Modes
@@ -67,14 +72,29 @@ export async function cliReport(target: string, state: Partial<ControlPanelState
 }
 
 export async function cliList(what: "sections" | "contexts" | "mode-sets" | "tag-sets") {
-  const out = await runCli(["list", what], { timeoutMs: 20_000 });
-  const data = JSON.parse(out);
-  
-  if (what === "mode-sets" || what === "tag-sets") {
-    return data;
+  try {
+    const out = await runCli(["list", what], { timeoutMs: 20_000 });
+    const data = JSON.parse(out);
+
+    if (what === "mode-sets" || what === "tag-sets") {
+      return data;
+    }
+
+    return data?.[what] ?? data ?? [];
+  } catch (e) {
+    if (e instanceof CliException && e.silent) {
+      logDebug(`[cliList] Silent failure: ${e.message}`);
+      // Return appropriate empty structure
+      if (what === "mode-sets") {
+        return { "mode-sets": [] };
+      } else if (what === "tag-sets") {
+        return { "tag-sets": [] };
+      } else {
+        return [];
+      }
+    }
+    throw e;
   }
-  
-  return data?.[what] ?? data ?? [];
 }
 
 export async function cliDiag(rebuild?: boolean): Promise<DiagReport> {

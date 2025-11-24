@@ -28,7 +28,7 @@ export class ListingService {
   
   /**
    * Get statistics for current section
-   * @throws {Error} if section is not selected
+   * @throws {Error} if section is not selected or CLI unavailable
    */
   async getStats(): Promise<import("../models/report").RunResult> {
     const state = this.stateService.getState();
@@ -36,12 +36,16 @@ export class ListingService {
       throw new Error("No section selected");
     }
     const target = `sec:${state.section}`;
-    return cliReport(target, state);
+    const result = await cliReport(target, state);
+    if (!result) {
+      throw new Error("CLI unavailable");
+    }
+    return result;
   }
-  
+
   /**
    * Get list of files included in the current section
-   * @throws {Error} if section is not selected
+   * @throws {Error} if section is not selected or CLI unavailable
    */
   async getIncludedFiles(): Promise<{ path: string; sizeBytes: number }[]> {
     const state = this.stateService.getState();
@@ -50,8 +54,11 @@ export class ListingService {
     }
     const target = `sec:${state.section}`;
     const data = await cliReport(target, state);
+    if (!data) {
+      throw new Error("CLI unavailable");
+    }
     const files = Array.isArray(data.files) ? data.files : [];
-    return files.map((f: any) => ({ path: f.path, sizeBytes: f.sizeBytes ?? 0 }));
+    return files.map((f: { path: string; sizeBytes?: number }) => ({ path: f.path, sizeBytes: f.sizeBytes ?? 0 }));
   }
   
   /**

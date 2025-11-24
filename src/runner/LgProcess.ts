@@ -5,6 +5,7 @@
  * with support for timeout, stdin, and different result return modes.
  */
 import * as cp from "child_process";
+import { CliExecutionException } from "../cli/CliException";
 
 export interface SpawnOptions extends cp.SpawnOptions {
   timeoutMs?: number;
@@ -24,6 +25,8 @@ export interface SpawnResult {
  * @param args - command arguments
  * @param options - execution options
  * @returns Promise<SpawnResult> with stdout and optional stderr
+ * @throws CliExecutionException if process exits with non-zero code
+ * @throws Error for other execution errors (spawn failure, stdin write failure, timeout)
  *
  * @example
  * // Get only stdout (stderr not captured)
@@ -87,8 +90,12 @@ export function spawn(
         }
         resolve(result);
       } else {
-        // On error, ALWAYS include stderr in message (regardless of captureStderr)
-        reject(new Error(err || `Exited with code ${code}`));
+        // CLI process exited with non-zero code - throw structured exception
+        // Message is auto-formatted from exitCode and stderr (Python stacktrace)
+        reject(new CliExecutionException(
+          code ?? -1,
+          err
+        ));
       }
     });
   });
