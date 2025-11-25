@@ -179,7 +179,7 @@ jobs:
           echo "Built extension: $FILENAME"
 
       - name: Upload Build Artifacts
-        uses: actions/upload-artifact@v6
+        uses: actions/upload-artifact@v5
         with:
           name: extension-package
           path: '*.vsix'
