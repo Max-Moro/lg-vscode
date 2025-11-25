@@ -1,0 +1,287 @@
+# GitHub Actions Workflow: Release
+#
+# Manual workflow to publish a new release:
+# 1. Validate version vs branch (e.g., 0.9.1 can only be released from v0.9.x)
+# 2. Validate CLI compatibility (CLI_VERSION must match extension version)
+# 3. Extract [Unreleased] section from CHANGELOG.md
+# 4. Build extension (.vsix)
+# 5. Publish extension to VS Code Marketplace
+# 6. Create GitHub Release with changelog notes
+# 7. Create PR to update CHANGELOG.md (move [Unreleased] → [X.Y.Z])
+#
+# Trigger: Manual (workflow_dispatch)
+
+name: Release
+
+on:
+  workflow_dispatch:
+    inputs:
+      prerelease:
+        description: 'Pre-release (mark as pre-release on GitHub)'
+        required: false
+        type: boolean
+        default: false
+
+jobs:
+  # Job 1: Validate version and extract changelog
+  validate:
+    name: Validate Release
+    runs-on: ubuntu-latest
+    outputs:
+      version: ${{ steps.properties.outputs.version }}
+      cli_version: ${{ steps.properties.outputs.cli_version }}
+      changelog: ${{ steps.changelog.outputs.content }}
+    steps:
+      - name: Fetch Sources
+        uses: actions/checkout@v5
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v5
+        with:
+          node-version: 20
+          cache: 'npm'
+
+      - name: Extract Version Properties
+        id: properties
+        shell: bash
+        run: |
+          # Extract extension version from package.json
+          VERSION=$(node -p "require('./package.json').version")
+          echo "version=$VERSION" >> $GITHUB_OUTPUT
+          echo "Extracted extension version: $VERSION"
+
+          # Extract CLI version from constants.ts
+          CLI_VERSION=$(grep 'export const CLI_VERSION' src/constants.ts | sed -E 's/.*"([^"]+)".*/\1/')
+          echo "cli_version=$CLI_VERSION" >> $GITHUB_OUTPUT
+          echo "Extracted CLI version: $CLI_VERSION"
+
+      - name: Validate Version vs Branch
+        shell: bash
+        run: |
+          VERSION="${{ steps.properties.outputs.version }}"
+          BRANCH="${{ github.ref_name }}"
+
+          echo "Validating version $VERSION against branch $BRANCH"
+
+          # Extract MAJOR.MINOR from version (e.g., "0.9.0" -> "0.9")
+          VERSION_PREFIX=$(echo "$VERSION" | cut -d. -f1,2)
+
+          # Check if branch is maintenance/next branch
+          # Matches: v0.9.x, next-v0.9.x, 0.9.x, next-0.9.x
+          if [[ "$BRANCH" =~ ^(next-)?v?([0-9]+\.[0-9]+)\.x$ ]]; then
+            BRANCH_VERSION="${BASH_REMATCH[2]}"
+
+            if [ "$VERSION_PREFIX" != "$BRANCH_VERSION" ]; then
+              echo "❌ ERROR: Version mismatch!"
+              echo ""
+              echo "  Version in package.json: $VERSION (${VERSION_PREFIX}.x series)"
+              echo "  Current branch: $BRANCH (${BRANCH_VERSION}.x series)"
+              echo ""
+              echo "Cannot release version $VERSION from branch $BRANCH"
+              echo ""
+              echo "Possible solutions:"
+              echo "  1. Update version in package.json to ${BRANCH_VERSION}.Z"
+              echo "  2. Switch to correct branch for version $VERSION"
+              exit 1
+            fi
+
+            echo "✅ Version $VERSION matches branch $BRANCH (${BRANCH_VERSION}.x series)"
+          else
+            echo "✅ No version constraint for branch $BRANCH (any version allowed)"
+          fi
+
+      - name: Validate CLI Compatibility
+        shell: bash
+        run: |
+          EXT_VERSION="${{ steps.properties.outputs.version }}"
+          CLI_VERSION="${{ steps.properties.outputs.cli_version }}"
+
+          echo "Validating CLI compatibility"
+          echo "  Extension version: $EXT_VERSION"
+          echo "  CLI version: $CLI_VERSION"
+
+          # Extract MAJOR.MINOR from both versions
+          EXT_PREFIX=$(echo "$EXT_VERSION" | cut -d. -f1,2)
+          CLI_PREFIX=$(echo "$CLI_VERSION" | cut -d. -f1,2)
+
+          if [ "$EXT_PREFIX" != "$CLI_PREFIX" ]; then
+            echo "❌ ERROR: CLI compatibility mismatch!"
+            echo ""
+            echo "  Extension version: $EXT_VERSION (${EXT_PREFIX}.x series)"
+            echo "  CLI_VERSION constant: $CLI_VERSION (${CLI_PREFIX}.x series)"
+            echo ""
+            echo "Extension must be compatible with CLI ^$CLI_VERSION"
+            echo ""
+            echo "Please update CLI_VERSION in src/constants.ts"
+            exit 1
+          fi
+
+          echo "✅ Extension $EXT_VERSION is compatible with CLI ^$CLI_VERSION"
+
+      - name: Extract Changelog
+        id: changelog
+        shell: bash
+        run: |
+          # Extract [Unreleased] section from CHANGELOG.md
+          RELEASE_NOTE="./release_note.txt"
+
+          # Use awk to extract [Unreleased] section
+          awk '/## \[Unreleased\]/{flag=1; next} /## \[/{flag=0} flag' CHANGELOG.md > "$RELEASE_NOTE"
+
+          # Check if file exists and is not empty
+          if [ ! -f "$RELEASE_NOTE" ] || [ ! -s "$RELEASE_NOTE" ]; then
+            echo "❌ ERROR: [Unreleased] section is empty or not found in CHANGELOG.md"
+            exit 1
+          fi
+
+          # Read changelog content and write to output
+          CHANGELOG_CONTENT=$(cat "$RELEASE_NOTE")
+
+          # Write to GITHUB_OUTPUT (handle multiline)
+          {
+            echo "content<<EOF"
+            echo "$CHANGELOG_CONTENT"
+            echo "EOF"
+          } >> $GITHUB_OUTPUT
+
+          echo "Extracted changelog content:"
+          echo "$CHANGELOG_CONTENT"
+
+  # Job 2: Build extension
+  build:
+    name: Build Extension
+    needs: validate
+    runs-on: ubuntu-latest
+    steps:
+      - name: Fetch Sources
+        uses: actions/checkout@v5
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v5
+        with:
+          node-version: 20
+          cache: 'npm'
+
+      - name: Install Dependencies
+        run: npm ci
+
+      - name: Build and Package Extension
+        run: |
+          npm run vscode:prepublish
+          npm run package
+
+      - name: Prepare Extension Artifact
+        id: artifact
+        shell: bash
+        run: |
+          FILENAME=$(ls *.vsix)
+          echo "filename=$FILENAME" >> $GITHUB_OUTPUT
+          echo "Built extension: $FILENAME"
+
+      - name: Upload Build Artifacts
+        uses: actions/upload-artifact@v5
+        with:
+          name: extension-package
+          path: '*.vsix'
+
+  # Job 3: Publish to VS Code Marketplace and create GitHub Release
+  publish:
+    name: Publish Release
+    needs: [validate, build]
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - name: Fetch Sources
+        uses: actions/checkout@v5
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v5
+        with:
+          node-version: 20
+          cache: 'npm'
+
+      - name: Install Dependencies
+        run: npm ci
+
+      - name: Download Build Artifacts
+        uses: actions/download-artifact@v5
+        with:
+          name: extension-package
+          path: dist
+
+      - name: Publish to VS Code Marketplace
+        env:
+          VSCE_PAT: ${{ secrets.VSCE_PAT }}
+        run: |
+          # Install vsce globally
+          npm install -g @vscode/vsce
+
+          # Publish extension
+          vsce publish -p $VSCE_PAT --packagePath dist/*.vsix
+
+      - name: Create GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: v${{ needs.validate.outputs.version }}
+          name: v${{ needs.validate.outputs.version }}
+          body: |
+            ## Changelog
+
+            ${{ needs.validate.outputs.changelog }}
+
+            ---
+
+            **Compatible with Listing Generator CLI**: ^${{ needs.validate.outputs.cli_version }}
+
+            **Full Changelog**: https://github.com/${{ github.repository }}/blob/main/CHANGELOG.md
+          files: dist/*.vsix
+          prerelease: ${{ github.event.inputs.prerelease }}
+          draft: false
+
+  # Job 4: Update CHANGELOG.md (create PR)
+  changelog:
+    name: Update Changelog
+    needs: [validate, publish]
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      pull-requests: write
+    steps:
+      - name: Fetch Sources
+        uses: actions/checkout@v5
+        with:
+          ref: ${{ github.ref }}
+
+      - name: Update CHANGELOG.md
+        shell: bash
+        run: |
+          VERSION="${{ needs.validate.outputs.version }}"
+          TODAY=$(date +%Y-%m-%d)
+
+          # Replace [Unreleased] with [X.Y.Z] - YYYY-MM-DD
+          # Create new empty [Unreleased] section
+          sed -i "s/## \[Unreleased\]/## [Unreleased]\n\n## [$VERSION] - $TODAY/" CHANGELOG.md
+
+          echo "Updated CHANGELOG.md: [Unreleased] → [$VERSION] - $TODAY"
+
+      - name: Create Pull Request
+        uses: peter-evans/create-pull-request@v7
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+          branch: changelog-update-v${{ needs.validate.outputs.version }}
+          title: 'chore: update changelog for v${{ needs.validate.outputs.version }}'
+          body: |
+            ## Changelog Update
+
+            Current `[Unreleased]` section has been released as `v${{ needs.validate.outputs.version }}`.
+
+            This PR updates `CHANGELOG.md`:
+            - Moves `[Unreleased]` content to `[${{ needs.validate.outputs.version }}] - $(date +%Y-%m-%d)`
+            - Creates new empty `[Unreleased]` section for future changes
+
+            **Auto-generated by release workflow**
+          commit-message: 'chore: update changelog for v${{ needs.validate.outputs.version }}'
+          committer: github-actions[bot] <github-actions[bot]@users.noreply.github.com>
+          author: github-actions[bot] <github-actions[bot]@users.noreply.github.com>
+          labels: changelog

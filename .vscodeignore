@@ -1,0 +1,56 @@
+# VS Code Extension Package Ignore
+#
+# Files and directories to exclude from .vsix package.
+# Only include compiled code, assets, and documentation.
+
+# Source files (TypeScript)
+src/**
+*.ts
+*.map
+
+# Tests
+test/**
+**/*.test.ts
+**/*.spec.ts
+
+# Build configuration
+tsconfig.json
+eslint.config.js
+.eslintrc*
+.prettierrc*
+
+# Node modules (bundled dependencies are included via dist/)
+node_modules/**
+
+# Development directories
+.vscode/**
+.vscode-test/**
+.idea/**
+.lg-cache/**
+
+# Git
+.git/**
+.github/**
+.gitignore
+.gitattributes
+
+# LG configuration (used for development of extension itself)
+lg-cfg/**
+
+# CI/CD
+.github/**
+
+# Editor config
+.editorconfig
+
+# Package lock (not needed in distribution)
+package-lock.json
+npm-debug.log*
+yarn-error.log*
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Misc
+*.vsix

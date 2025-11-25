@@ -1,0 +1,102 @@
+# GitHub Actions Workflow: Verify
+#
+# Triggered on push and pull_request to main, next-v*, v* branches.
+# Performs quality checks on the extension:
+# - Lint code with ESLint
+# - TypeScript compilation check
+# - Build extension (compile + UI)
+# - Package extension (.vsix)
+#
+# Releases are performed via separate manual workflow (release.yml).
+
+name: Verify
+
+on:
+  push:
+    branches:
+      - main
+      - 'next-v*'
+      - 'v*'
+  pull_request:
+    branches:
+      - main
+      - 'next-v*'
+      - 'v*'
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  # Lint code with ESLint
+  lint:
+    name: Lint
+    runs-on: ubuntu-latest
+    steps:
+      - name: Fetch Sources
+        uses: actions/checkout@v5
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v5
+        with:
+          node-version: 20
+          cache: 'npm'
+
+      - name: Install Dependencies
+        run: npm ci
+
+      - name: Run ESLint
+        run: npm run lint
+
+  # Build extension and verify TypeScript compilation
+  build:
+    name: Build
+    runs-on: ubuntu-latest
+    steps:
+      - name: Fetch Sources
+        uses: actions/checkout@v5
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v5
+        with:
+          node-version: 20
+          cache: 'npm'
+
+      - name: Install Dependencies
+        run: npm ci
+
+      - name: TypeScript Compilation Check
+        run: npx tsc --noEmit
+
+      - name: Build Extension
+        run: npm run build
+
+      - name: Build UI Components
+        run: npm run build:ui
+
+  # Package extension into .vsix
+  package:
+    name: Package
+    needs: [lint, build]
+    runs-on: ubuntu-latest
+    steps:
+      - name: Fetch Sources
+        uses: actions/checkout@v5
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v5
+        with:
+          node-version: 20
+          cache: 'npm'
+
+      - name: Install Dependencies
+        run: npm ci
+
+      - name: Package Extension
+        run: npm run vscode:prepublish && npm run package
+
+      - name: Upload VSIX Artifact
+        uses: actions/upload-artifact@v5
+        with:
+          name: vsix-package
+          path: '*.vsix'
