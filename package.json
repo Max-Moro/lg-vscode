@@ -27,7 +27,20 @@
     "vscode": "^1.85.0"
   },
   "categories": [
-    "Other"
+    "AI",
+    "Chat"
+  ],
+  "keywords": [
+    "ai",
+    "chatgpt",
+    "claude",
+    "copilot",
+    "gemini",
+    "context",
+    "prompt",
+    "code analysis",
+    "documentation",
+    "listing"
   ],
   "main": "./dist/extension.js",
   "activationEvents": [
