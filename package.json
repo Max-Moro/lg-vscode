@@ -18,6 +18,11 @@
   },
   "homepage": "https://github.com/Max-Moro/lg-vscode",
   "license": "Apache-2.0",
+  "icon": "media/icon.png",
+  "galleryBanner": {
+    "color": "#1E1E1E",
+    "theme": "dark"
+  },
   "engines": {
     "vscode": "^1.85.0"
   },
