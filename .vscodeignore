@@ -27,6 +27,7 @@ node_modules/**
 .vscode-test/**
 .idea/**
 .lg-cache/**
+.claude/**
 
 # Git
 .git/**
@@ -37,8 +38,13 @@ node_modules/**
 # LG configuration (used for development of extension itself)
 lg-cfg/**
 
-# CI/CD
-.github/**
+# Build scripts (not runtime)
+dist/build-ui.js
+dist/build-ui.js.map
+
+# UI component docs (not needed in runtime)
+media/ui/.gitignore
+media/ui/**/README.md
 
 # Editor config
 .editorconfig
