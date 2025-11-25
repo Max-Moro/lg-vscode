@@ -19,8 +19,9 @@ eslint.config.js
 .eslintrc*
 .prettierrc*
 
-# Node modules (bundled dependencies are included via dist/)
+# Node modules (exclude all except runtime dependencies)
 node_modules/**
+!node_modules/@vscode/codicons/**
 
 # Development directories
 .vscode/**
