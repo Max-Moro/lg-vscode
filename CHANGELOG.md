@@ -6,6 +6,8 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ## [Unreleased]
 
+## [0.9.1] - 2025-11-25
+
 ### Added
 - Control Panel with section/context selection
 - Adaptive settings UI (modes, tags)
