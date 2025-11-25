@@ -33,11 +33,14 @@ export async function writeMemoryFile(
     await fs.mkdir(dirPath, { recursive: true });
     await fs.writeFile(claudeLocalPath, content, "utf8");
     return claudeLocalPath;
-  } catch (error: any) {
+  } catch (error) {
     try {
       await fs.unlink(claudeLocalPath);
-    } catch {}
-    throw new Error(`Failed to write memory file: ${error.message}`);
+    } catch {
+      // Ignore cleanup errors
+    }
+    const errorMessage = error instanceof Error ? error.message : String(error);
+    throw new Error(`Failed to write memory file: ${errorMessage}`);
   }
 }
 

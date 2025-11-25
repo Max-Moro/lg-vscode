@@ -91,7 +91,7 @@ export abstract class BaseNetworkProvider extends BaseAiProvider {
    *
    * Gets token from secrets and calls sendToApi to execute the request.
    */
-  async send(content: string, mode: AiInteractionMode): Promise<void> {
+  async send(content: string, _mode: AiInteractionMode): Promise<void> {
     const token = await this.getApiToken();
 
     // Do not pass AI interaction mode, as Network-based providers

@@ -69,8 +69,9 @@ export async function showStatsWebview(
           payload: current,
           taskText: current.scope === "context" ? stateService.getState().taskText : undefined
         });
-      } catch (e: any) {
-        vscode.window.showErrorMessage(`LG: ${e?.message || e}`);
+      } catch (e) {
+        const errorMessage = e instanceof Error ? e.message : String(e);
+        vscode.window.showErrorMessage(`LG: ${errorMessage}`);
       }
     } else if (msg?.type === "updateTaskText") {
       if (current.scope === "context") {
@@ -89,13 +90,14 @@ export async function showStatsWebview(
         const title = current.scope === "context" ? `Context — ${name}.md` : `Listing — ${name}.md`;
         panel.dispose();
         if (vp) {
-          await vp.open(kind as any, title, text);
+          await vp.open(kind as "context" | "listing", title, text);
         } else {
           const doc = await vscode.workspace.openTextDocument({ language: "markdown", content: text });
           await vscode.window.showTextDocument(doc, { preview: false });
         }
-      } catch (e: any) {
-        vscode.window.showErrorMessage(`LG: ${e?.message || e}`);
+      } catch (e) {
+        const errorMessage = e instanceof Error ? e.message : String(e);
+        vscode.window.showErrorMessage(`LG: ${errorMessage}`);
       }
     } else if (msg?.type === "copy") {
       try {
@@ -103,8 +105,9 @@ export async function showStatsWebview(
         if (!text) return;
         await vscode.env.clipboard.writeText(text);
         vscode.window.showInformationMessage("Copied to clipboard.");
-      } catch (e: any) {
-        vscode.window.showErrorMessage(`Copy failed: ${e?.message || e}`);
+      } catch (e) {
+        const errorMessage = e instanceof Error ? e.message : String(e);
+        vscode.window.showErrorMessage(`Copy failed: ${errorMessage}`);
       }
     } else if (msg?.type === "sendToAI") {
       const aiService = getAiService();

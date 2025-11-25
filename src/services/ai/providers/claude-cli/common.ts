@@ -8,7 +8,11 @@ import type { ShellType } from "../../../../models/ShellType";
  */
 export async function getWorkspaceRoot(): Promise<string> {
   const { effectiveWorkspaceRoot } = await import("../../../../cli/CliResolver");
-  return effectiveWorkspaceRoot()!;
+  const root = effectiveWorkspaceRoot();
+  if (!root) {
+    throw new Error("No workspace root available");
+  }
+  return root;
 }
 
 /**
@@ -55,7 +59,7 @@ export async function getClaudeSessionPath(sessionId: string, scope?: string): P
  */
 export function encodeProjectPath(projectPath: string): string {
   const normalized = path.normalize(projectPath);
-  let encoded = normalized.replace(/[\\\/]/g, '-');
+  let encoded = normalized.replace(/[/\\]/g, '-');
 
   if (encoded.startsWith('-')) {
     encoded = encoded.substring(1);
@@ -88,8 +92,9 @@ export async function addToHistoryIndex(params: {
 
   try {
     await fs.appendFile(historyPath, line, 'utf8');
-  } catch (error: any) {
-    if (error.code === 'ENOENT') {
+  } catch (error) {
+    const fsError = error as NodeJS.ErrnoException;
+    if (fsError.code === 'ENOENT') {
       const dirPath = path.dirname(historyPath);
       await fs.mkdir(dirPath, { recursive: true });
       await fs.writeFile(historyPath, line, 'utf8');

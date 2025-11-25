@@ -120,9 +120,10 @@ export class ClaudeCliProvider extends BaseCliProvider {
       // Primary method: manual session creation
       logDebug(`[Claude CLI] Trying primary: manual session creation`);
       sessionId = await createSessionManually(content, ctx.scope);
-    } catch (error: any) {
+    } catch (error) {
       // Fallback method: headless + replacement
-      logWarn(`[Claude CLI] Primary method failed: ${error.message}`);
+      const errorMessage = error instanceof Error ? error.message : String(error);
+      logWarn(`[Claude CLI] Primary method failed: ${errorMessage}`);
       logDebug(`[Claude CLI] Trying fallback: headless session creation`);
       sessionId = await createSessionFromHeadless(content, ctx.scope);
     }
@@ -141,14 +142,15 @@ export class ClaudeCliProvider extends BaseCliProvider {
     try {
       await fs.writeFile(lockFilePath, "", "utf8");
       logDebug(`[Claude CLI] Lock file created: ${SESSION_LOCK_FILE}`);
-    } catch (error: any) {
-      logWarn(`[Claude CLI] Failed to create lock file: ${error.message}`);
+    } catch (error) {
+      const errorMessage = error instanceof Error ? error.message : String(error);
+      logWarn(`[Claude CLI] Failed to create lock file: ${errorMessage}`);
     }
 
     // Run Claude Code with auto-cleanup of lock file
     const claudeCommand = buildClaudeCommand(
       permissionMode,
-      ctx.shell!,
+      ctx.shell,
       SESSION_LOCK_FILE,
       ctx.claudeModel,
       sessionId,

@@ -1,4 +1,5 @@
 import * as vscode from "vscode";
+import * as path from "path";
 import { BaseAiProvider } from "./BaseAiProvider";
 import type { AiInteractionMode } from "../../../models/AiInteractionMode";
 import type { ShellType } from "../../../models/ShellType";
@@ -58,7 +59,7 @@ export abstract class BaseCliProvider extends BaseAiProvider {
     
     return {
       scope: state.cliScope || "",
-      shell: state.cliShell!,
+      shell: state.cliShell as ShellType,
       mode,
       claudeModel: state.claudeModel
     };
@@ -126,7 +127,10 @@ export abstract class BaseCliProvider extends BaseAiProvider {
 
     // Get effective workspace root from CliResolver
     const { effectiveWorkspaceRoot } = await import("../../../cli/CliResolver");
-    const workspaceRoot = effectiveWorkspaceRoot()!;
+    const workspaceRoot = effectiveWorkspaceRoot();
+    if (!workspaceRoot) {
+      throw new Error("No workspace root available");
+    }
 
     // Create a new terminal in the effectiveWorkspaceRoot directory
     const terminal = vscode.window.createTerminal({
@@ -166,7 +170,6 @@ export abstract class BaseCliProvider extends BaseAiProvider {
     // Change directory for new terminal (if scope is set)
     if (result.isNew && baseCtx.scope && baseCtx.scope.trim()) {
       // Validate scope — check that it is a relative path.
-      const path = require("path");
       if (path.isAbsolute(baseCtx.scope)) {
           throw new Error("Scope must be a relative path");
       }

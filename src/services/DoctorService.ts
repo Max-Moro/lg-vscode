@@ -15,7 +15,7 @@ export async function runDoctorBundle(): Promise<{ data: DiagReport; bundlePath?
   let data: DiagReport;
   try {
     data = JSON.parse(stdout || "{}") as DiagReport;
-  } catch (e) {
+  } catch {
     // If JSON is broken, wrap error with helpful stderr
     throw new Error(`LG Doctor: unexpected CLI output (not JSON). STDERR:\n${stderr || "(empty)"}`);
   }
@@ -49,7 +49,7 @@ export async function runDoctor() {
     // Dynamic import to avoid circular dependencies
     const { showDoctorWebview } = await import("../views/DoctorWebview");
     await showDoctorWebview(data);
-  } catch (e: any) {
-    vscode.window.showErrorMessage(`LG Doctor failed: ${e?.message || e}`);
+  } catch (e) {
+    vscode.window.showErrorMessage(`LG Doctor failed: ${e instanceof Error ? e.message : String(e)}`);
   }
 }

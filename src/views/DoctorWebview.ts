@@ -65,8 +65,9 @@ export async function showDoctorWebview(report: DiagReport) {
           }
           break;
       }
-    } catch (e: any) {
-      vscode.window.showErrorMessage(`LG Doctor: ${e?.message || e}`);
+    } catch (e) {
+      const errorMessage = e instanceof Error ? e.message : String(e);
+      vscode.window.showErrorMessage(`LG Doctor: ${errorMessage}`);
     }
   });
 }

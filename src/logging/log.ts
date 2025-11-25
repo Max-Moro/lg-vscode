@@ -15,7 +15,7 @@ function ts() {
 
 function ensureChannel() {
   if (!channel) channel = vscode.window.createOutputChannel("Listing Generator");
-  return channel!;
+  return channel;
 }
 
 export function initLogging(context: vscode.ExtensionContext) {

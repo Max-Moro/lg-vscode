@@ -9,6 +9,10 @@ import { effectiveWorkspaceRoot } from "../cli/CliResolver";
 type ViewMode = "flat" | "tree";
 const STATE_KEY = "lg.included.viewMode";
 
+interface TreeItemWithChildren extends vscode.TreeItem {
+  __children?: vscode.TreeItem[];
+}
+
 export class IncludedTree implements vscode.TreeDataProvider<vscode.TreeItem> {
   private items: vscode.TreeItem[] = [];
   private emitter = new vscode.EventEmitter<void>();
@@ -35,8 +39,9 @@ export class IncludedTree implements vscode.TreeDataProvider<vscode.TreeItem> {
 
   getChildren(element?: vscode.TreeItem): vscode.ProviderResult<vscode.TreeItem[]> {
     // If VS Code requests children for a specific folder, return them.
-    if (element && (element as any).__children) {
-      return (element as any).__children as vscode.TreeItem[];
+    const itemWithChildren = element as TreeItemWithChildren;
+    if (element && itemWithChildren.__children) {
+      return itemWithChildren.__children;
     }
     // Otherwise, return the root list.
     return this.items;
@@ -70,12 +75,14 @@ class PathItem extends vscode.TreeItem {
   }
 }
 
-class FolderItem extends vscode.TreeItem {
+class FolderItem extends vscode.TreeItem implements TreeItemWithChildren {
+  __children: vscode.TreeItem[];
+
   constructor(name: string, children: vscode.TreeItem[]) {
     super(name, vscode.TreeItemCollapsibleState.Collapsed);
     this.iconPath = new vscode.ThemeIcon("folder");
-    // Return nested elements via override `children` (we store a reference below)
-    (this as any).__children = children;
+    // Return nested elements via __children property
+    this.__children = children;
   }
 }
 
@@ -96,7 +103,9 @@ function buildTreeItems(relPaths: string[]): vscode.TreeItem[] {
     for (let i = 0; i < parts.length - 1; i++) {
       const seg = parts[i];
       if (!node.folders.has(seg)) node.folders.set(seg, { name: seg, files: [], folders: new Map() });
-      node = node.folders.get(seg)!;
+      const nextNode = node.folders.get(seg);
+      if (!nextNode) continue;
+      node = nextNode;
     }
     node.files.push(rel);
   }

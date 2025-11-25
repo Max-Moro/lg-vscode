@@ -6,7 +6,7 @@ export class ClipboardProvider extends BaseAiProvider {
   readonly id = "clipboard";
   readonly name = "Clipboard";
 
-  async send(content: string, mode: AiInteractionMode): Promise<void> {
+  async send(content: string, _mode: AiInteractionMode): Promise<void> {
     await vscode.env.clipboard.writeText(content);
     vscode.window.showInformationMessage("Content copied to clipboard");
   }

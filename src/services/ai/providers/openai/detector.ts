@@ -1,4 +1,3 @@
-import * as vscode from "vscode";
 import type { ProviderDetector } from "../../types";
 
 export const detector: ProviderDetector = {

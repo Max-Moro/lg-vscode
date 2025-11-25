@@ -19,7 +19,8 @@ export class VirtualDocProvider implements vscode.TextDocumentContentProvider {
   /** Replaces unsafe characters for file names with '-' and cleans up duplicates. */
   private sanitizeFileName(name: string): string {
     // Prohibited for Windows and cross-platform: / \ : " * ? < > | and control characters
-    const replaced = name.replace(/[\/\\:"*?<>|\u0000-\u001F]+/g, "-");
+    // eslint-disable-next-line no-control-regex
+    const replaced = name.replace(/[\\/:"*?<>|\u0000-\u001F]+/g, "-");
     // Compress spaces/dashes
     return replaced.replace(/\s{2,}/g, " ").trim();
   }

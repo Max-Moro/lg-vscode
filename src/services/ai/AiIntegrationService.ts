@@ -2,7 +2,6 @@ import * as vscode from "vscode";
 import type { ProviderModule } from "./types";
 import { logInfo, logDebug, logError } from "../../logging/log";
 import { ControlStateService } from "../ControlStateService";
-import type { AiInteractionMode } from "../../models/AiInteractionMode";
 
 /**
  * Central service for managing AI providers
@@ -83,7 +82,7 @@ export class AiIntegrationService {
 
     try {
       // Set context for providers that require it
-      const provider = module.provider as any;
+      const provider = module.provider as { setContext?: (context: vscode.ExtensionContext) => void };
       if (provider.setContext) {
         provider.setContext(this.context);
       }
@@ -141,26 +140,29 @@ export class AiIntegrationService {
       // 3. Send to AI provider
       const providerName = this.getProviderName(providerId);
 
-      await vscode.window.withProgress(
-        {
-          location: vscode.ProgressLocation.Notification,
-          title: `Sending to ${providerName}...`,
-          cancellable: false
-        },
-        () => this.sendToProvider(providerId, generatedContent!)
-      );
+      if (generatedContent) {
+        await vscode.window.withProgress(
+          {
+            location: vscode.ProgressLocation.Notification,
+            title: `Sending to ${providerName}...`,
+            cancellable: false
+          },
+          () => this.sendToProvider(providerId, generatedContent as string)
+        );
+      }
 
       return true;
-    } catch (error: any) {
+    } catch (error) {
       // 4. Error handling with recovery options
       const providerName = this.getProviderName(providerId);
 
-      const options = generatedContent 
+      const errorMessage = error instanceof Error ? error.message : String(error);
+      const options = generatedContent
         ? ["Open Settings", "Copy to Clipboard", "Cancel"]
         : ["Open Settings", "Cancel"];
-      
+
       const choice = await vscode.window.showErrorMessage(
-        `Failed to send to ${providerName}: ${error.message}`,
+        `Failed to send to ${providerName}: ${errorMessage}`,
         ...options
       );
 

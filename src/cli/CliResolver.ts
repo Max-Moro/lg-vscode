@@ -10,7 +10,7 @@ import * as fs from "fs";
 import * as path from "path";
 import { spawn } from "../runner/LgProcess";
 import { PipxInstaller } from "../runner/PipxInstaller";
-import { logDebug, logError, logInfo, withDuration } from "../logging/log";
+import { logDebug, logError, withDuration } from "../logging/log";
 import { CliException, CliUnavailableException } from "./CliException";
 
 export type RunSpec = { cmd: string; args: string[] };

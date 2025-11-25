@@ -76,8 +76,9 @@ export async function runInitWizard(): Promise<void> {
 
     await openSectionsYaml(root);
     vscode.window.showInformationMessage("LG: Starter config created.");
-  } catch (e: any) {
-    vscode.window.showErrorMessage(`LG: ${e?.message || e}`);
+  } catch (e) {
+    const errorMessage = e instanceof Error ? e.message : String(e);
+    vscode.window.showErrorMessage(`LG: ${errorMessage}`);
   }
 }
 

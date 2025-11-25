@@ -61,7 +61,7 @@ export class ControlStateService {
    * 3. Each subscriber can filter events by the _source field
    *    to avoid cyclic updates
    */
-  private readonly _onDidChangeState = new vscode.EventEmitter<Partial<ControlPanelState>>();
+  private readonly _onDidChangeState = new vscode.EventEmitter<Partial<ControlPanelState> & { _source?: string }>();
   public readonly onDidChangeState = this._onDidChangeState.event;
   
   private constructor(
@@ -118,7 +118,7 @@ export class ControlStateService {
     
     // Notify subscribers about state change
     // Pass source for filtering in subscribers
-    this._onDidChangeState.fire({ ...partial, _source: source } as any);
+    this._onDidChangeState.fire({ ...partial, _source: source });
   }
   
   /**

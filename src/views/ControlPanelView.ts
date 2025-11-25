@@ -1,4 +1,5 @@
 import * as vscode from "vscode";
+import * as path from "path";
 import { VirtualDocProvider } from "./VirtualDocProvider";
 import { IncludedTree } from "./IncludedTree";
 import { ListingService } from "../services/ListingService";
@@ -14,6 +15,7 @@ import { ControlStateService, type ControlPanelState } from "../services/Control
 import { getAvailableShells } from "../models/ShellType";
 import { getAvailableClaudeModels } from "../models/ClaudeModel";
 import { getAvailableClaudeMethods } from "../models/ClaudeIntegrationMethod";
+import { effectiveWorkspaceRoot } from "../cli/CliResolver";
 
 export class ControlPanelView implements vscode.WebviewViewProvider {
   private view?: vscode.WebviewView;
@@ -39,7 +41,7 @@ export class ControlPanelView implements vscode.WebviewViewProvider {
     
     // Subscribe to state changes from other sources
     context.subscriptions.push(
-      this.stateService.onDidChangeState((partial: any) => {
+      this.stateService.onDidChangeState((partial: Partial<ControlPanelState> & { _source?: string }) => {
         // Ignore updates initiated by Control Panel itself
         if (partial._source === "control-panel") {
           return;
@@ -79,8 +81,9 @@ export class ControlPanelView implements vscode.WebviewViewProvider {
           vscode.commands.executeCommand("workbench.action.openSettings", `@ext:${EXT_ID}`);
           break;
       }
-    } catch (e: any) {
-      vscode.window.showErrorMessage(`LG: ${e?.message || e}`);
+    } catch (e) {
+      const errorMessage = e instanceof Error ? e.message : String(e);
+      vscode.window.showErrorMessage(`LG: ${errorMessage}`);
     }
   }
 
@@ -141,7 +144,7 @@ export class ControlPanelView implements vscode.WebviewViewProvider {
 
   private async onTokenizerLibChange(lib: string) {
     // When library changes, reload the encoders list
-    const encoders = await listEncodersJson(lib).catch(() => [] as any[]);
+    const encoders = await listEncodersJson(lib).catch(() => []);
 
     // Update tokenization library (encoder remains as is, even if custom value)
     await this.stateService.setState({ tokenizerLib: lib }, "control-panel");
@@ -161,7 +164,7 @@ export class ControlPanelView implements vscode.WebviewViewProvider {
           case "init":
             await this.bootstrapOnce();
             break;
-          case "stateResponse":
+          case "stateResponse": {
             // Handle response to state request (pull model)
             const pending = this.pendingStateRequests.get(msg.requestId);
             if (pending) {
@@ -169,15 +172,17 @@ export class ControlPanelView implements vscode.WebviewViewProvider {
               pending.resolve(msg.state as Partial<ControlPanelState>);
             }
             break;
+          }
           case "tokenizerLibChanged":
             await this.onTokenizerLibChange(msg.lib);
             break;
-          case "getProviderSetting":
+          case "getProviderSetting": {
             // Request current AI provider setting to control CLI block visibility
             const config = vscode.workspace.getConfiguration();
             const providerId = config.get<string>("lg.ai.provider") || "clipboard";
             this.post({ type: "providerSettingResponse", providerId });
             break;
+          }
           case "generateListing":
             await this.onGenerateListing();
             break;
@@ -200,8 +205,9 @@ export class ControlPanelView implements vscode.WebviewViewProvider {
             // Tags panel is handled purely on the client side
             break;
         }
-      } catch (e: any) {
-        vscode.window.showErrorMessage(`LG: ${e?.message || e}`);
+      } catch (e) {
+        const errorMessage = e instanceof Error ? e.message : String(e);
+        vscode.window.showErrorMessage(`LG: ${errorMessage}`);
       }
     });
 
@@ -213,10 +219,9 @@ export class ControlPanelView implements vscode.WebviewViewProvider {
 
 
     // -------------------- watcher for lg-cfg -------------------- //
-    const { effectiveWorkspaceRoot } = require("../cli/CliResolver");
     const root = effectiveWorkspaceRoot();
     if (root) {
-      const lgCfgUri = vscode.Uri.file(require("path").join(root, "lg-cfg"));
+      const lgCfgUri = vscode.Uri.file(path.join(root, "lg-cfg"));
       const pattern = new vscode.RelativePattern(lgCfgUri, "**/*");
       const watcher = vscode.workspace.createFileSystemWatcher(pattern);
 
@@ -424,7 +429,7 @@ export class ControlPanelView implements vscode.WebviewViewProvider {
           listSectionsJson().catch(() => [] as string[]),
           listContextsJson().catch(() => [] as string[]),
           listTokenizerLibsJson().catch(() => [] as string[]),
-          listEncodersJson(currentState.tokenizerLib!).catch(() => [] as any[]),
+          listEncodersJson(currentState.tokenizerLib ?? "tiktoken").catch(() => []),
           listModeSetsJson().catch(() => ({ "mode-sets": [] } as ModeSetsList)),
           listTagSetsJson().catch(() => ({ "tag-sets": [] } as TagSetsList)),
           this.stateService.updateBranches()
@@ -463,14 +468,16 @@ export class ControlPanelView implements vscode.WebviewViewProvider {
     return this.listsChain;
   }
 
-  private post(msg: any) {
+  private post(msg: Record<string, unknown>) {
     this.view?.webview.postMessage(msg);
   }
 
   // ——————————————— HTML ——————————————— //
   private buildHtml(view: vscode.WebviewView): string {
+    // Dynamic loading of webview utilities to avoid circular dependencies
+    // eslint-disable-next-line @typescript-eslint/no-require-imports
     const { buildHtml, lgUiUri, mediaUri, toWebviewUri } = require("../webview/webviewKit") as typeof import("../webview/webviewKit");
-    // Path to codicons is taken from node_modules
+    // Path to codicons is taken from node_modules (require.resolve is needed to get runtime path)
     const codicons = toWebviewUri(view.webview, require.resolve("@vscode/codicons/dist/codicon.css"));
     return buildHtml(view.webview, "control.html", {
       codiconsUri: codicons,

@@ -9,7 +9,7 @@ export class CursorProvider extends BaseForkProvider {
   readonly id = "cursor.composer";
   readonly name = "Cursor Composer";
 
-  async send(content: string, mode: AiInteractionMode): Promise<void> {
+  async send(content: string, _mode: AiInteractionMode): Promise<void> {
     // Currently, there is no known way to programmatically insert content into Cursor Composer dialog,
     // so we simply copy the content to the clipboard for manual insertion.
     await vscode.env.clipboard.writeText(content);

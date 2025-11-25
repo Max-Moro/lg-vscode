@@ -39,7 +39,7 @@ export async function createSessionManually(
       version = match[1];
     }
     logDebug(`[Claude CLI Manual] Detected version: ${version}`);
-  } catch (e) {
+  } catch {
     logDebug(`[Claude CLI Manual] Failed to detect version, using fallback: ${version}`);
   }
 
@@ -53,7 +53,7 @@ export async function createSessionManually(
       });
     });
     logDebug(`[Claude CLI Manual] Detected git branch: ${gitBranch || "(none)"}`);
-  } catch (e) {
+  } catch {
     logDebug(`[Claude CLI Manual] Failed to detect git branch`);
   }
 

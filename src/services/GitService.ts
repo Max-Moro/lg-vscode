@@ -204,7 +204,7 @@ export class GitService {
       if (await this.isAvailable()) {
         branches = await this.getBranchNames();
       }
-    } catch (error) {
+    } catch {
       // Fail silently if git is not available
       branches = [];
     }

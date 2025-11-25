@@ -25,7 +25,7 @@ export async function createSessionFromHeadless(
   let filesBefore: string[] = [];
   try {
     filesBefore = await fs.readdir(projectDir);
-  } catch (e) {
+  } catch {
     filesBefore = [];
   }
 
