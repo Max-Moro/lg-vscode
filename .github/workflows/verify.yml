@@ -96,7 +96,7 @@ jobs:
         run: npm run vscode:prepublish && npm run package
 
       - name: Upload VSIX Artifact
-        uses: actions/upload-artifact@v5
+        uses: actions/upload-artifact@v6
         with:
           name: vsix-package
           path: '*.vsix'
