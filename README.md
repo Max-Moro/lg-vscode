@@ -6,7 +6,7 @@
 
 ## What is this
 
-**VS Code Extension for [Listing Generator](https://github.com/Max-Moro/lg-cli/README.md)** — a graphical interface for the powerful CLI tool for creating AI contexts.
+**VS Code Extension for [Listing Generator](https://github.com/Max-Moro/lg-cli)** — a graphical interface for the powerful CLI tool for creating AI contexts.
 
 The extension automates routine tasks:
 - **No need to remember commands** — all actions through panels and buttons
