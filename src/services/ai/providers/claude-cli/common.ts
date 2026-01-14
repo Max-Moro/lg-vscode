@@ -51,21 +51,23 @@ export async function getClaudeSessionPath(sessionId: string, scope?: string): P
 }
 
 /**
- * Encode project path into Claude Code format
+ * Encode project path into Claude Code format.
+ *
+ * Claude Code replaces path separators, colons, dots, and underscores with dashes.
+ * The leading dash from Unix absolute paths is preserved.
  *
  * Examples:
  * - F:\workspace\project → F--workspace-project
- * - /home/user/project → home-user-project
+ * - /home/user/project → -home-user-project
+ * - F:\workspace\2026.01.02__Local_Project → F--workspace-2026-01-02--Local-Project
  */
 export function encodeProjectPath(projectPath: string): string {
   const normalized = path.normalize(projectPath);
-  let encoded = normalized.replace(/[/\\]/g, '-');
 
-  if (encoded.startsWith('-')) {
-    encoded = encoded.substring(1);
-  }
+  // Replace path separators, colons, dots, and underscores with dashes
+  // Note: leading dash from Unix paths is intentionally preserved
+  const encoded = normalized.replace(/[/\\:._]/g, '-');
 
-  encoded = encoded.replace(/:/g, '-');
   return encoded;
 }
 
