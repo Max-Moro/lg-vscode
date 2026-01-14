@@ -6,6 +6,15 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ## [Unreleased]
 
+## [0.10.0] - 2025-01-15
+
+### Fixed
+- CLI installation on Linux/macOS (pipx argument quoting)
+- Claude Code integration via session files (path encoding)
+
+### Changed
+- Compatible with CLI ^0.10.0 — see [CLI changelog](https://github.com/Max-Moro/lg-cli/blob/main/CHANGELOG.md)
+
 ## [0.9.3] - 2025-11-25
 
 ### Added

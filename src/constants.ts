@@ -7,7 +7,7 @@ export const EXT_ID = "max-moro.listing-generator";
  * Format: Semantic versioning (e.g., "0.9.0")
  * Compatibility: ^0.9.0 means >=0.9.0 <0.10.0
  */
-export const CLI_VERSION = "0.9.0";
+export const CLI_VERSION = "0.10.0";
 
 /**
  * PyPI package name for Listing Generator CLI

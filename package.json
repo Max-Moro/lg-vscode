@@ -3,7 +3,7 @@
   "displayName": "Listing Generator (LG)",
   "description": "VS Code integration for the Listing Generator CLI: generate code listings, contexts, paths and stats.",
   "publisher": "max-moro",
-  "version": "0.9.3",
+  "version": "0.10.0",
   "author": {
     "name": "Maxim Morozov",
     "email": "mmocentre@gmail.com",
