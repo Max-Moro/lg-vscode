@@ -380,7 +380,12 @@ export class PipxInstaller {
    */
   async install(): Promise<void> {
     const versionConstraint = getVersionConstraint();
-    const packageSpec = `"${PYPI_PACKAGE}${versionConstraint}"`;
+    // On Windows with shell: true, quotes are needed to escape < and > from cmd.exe
+    // On Linux/macOS without shell, quotes are NOT needed (args passed directly to process)
+    const needsQuotes = process.platform === "win32";
+    const packageSpec = needsQuotes
+      ? `"${PYPI_PACKAGE}${versionConstraint}"`
+      : `${PYPI_PACKAGE}${versionConstraint}`;
 
     logInfo(`[PipxInstaller] Installing ${packageSpec}`);
 
