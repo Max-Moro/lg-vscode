@@ -6,7 +6,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ## [Unreleased]
 
-## [0.10.0] - 2025-01-15
+## [0.10.0] - 2026-01-15
 
 ### Fixed
 - CLI installation on Linux/macOS (pipx argument quoting)
