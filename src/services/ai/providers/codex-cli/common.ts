@@ -156,6 +156,11 @@ export async function addToHistoryIndex(params: {
 }
 
 /**
+ * Activation prompt to start agent immediately after session resume
+ */
+const ACTIVATION_PROMPT = "Let's continue";
+
+/**
  * Build Codex CLI launch command with lock file cleanup
  */
 export function buildCodexCommand(
@@ -169,7 +174,8 @@ export function buildCodexCommand(
     ? ` --config "model_reasoning_effort=\\"${reasoningEffort}\\""`
     : "";
 
-  const codexCmd = `codex resume "${sessionId}"${configArg}`;
+  // Add activation prompt to start agent immediately
+  const codexCmd = `codex resume "${sessionId}"${configArg} "${ACTIVATION_PROMPT}"`;
 
   // Add cleanup depending on shell
   switch (shell) {
