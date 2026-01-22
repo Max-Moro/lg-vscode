@@ -92,9 +92,8 @@ function buildSessionMeta(
       cwd,
       originator: "lg_vscode_extension",
       cli_version: cliVersion,
-      instructions: "",
-      source: "cli",
-      model_provider: "openai"
+      source: "cli"
+      // instructions and model_provider use Codex CLI defaults
     }
   };
 }
@@ -174,11 +173,8 @@ function buildTurnContext(timestamp: string, params: CodexSessionParams) {
       cwd: params.cwd,
       approval_policy: params.approvalPolicy,
       sandbox_policy: { type: params.sandboxMode },
-      model: "gpt-5.2-codex",
-      effort: params.reasoningEffort,
-      summary: "auto",
-      user_instructions: "",
-      truncation_policy: { mode: "tokens", limit: 10000 }
+      effort: params.reasoningEffort
+      // Other fields (model, summary, truncation_policy) use Codex CLI defaults
     }
   };
 }
