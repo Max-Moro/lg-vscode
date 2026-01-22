@@ -15,6 +15,7 @@ import { ControlStateService, type ControlPanelState } from "../services/Control
 import { getAvailableShells } from "../models/ShellType";
 import { getAvailableClaudeModels } from "../models/ClaudeModel";
 import { getAvailableClaudeMethods } from "../models/ClaudeIntegrationMethod";
+import { getAvailableCodexReasoningEfforts } from "../models/CodexReasoningEffort";
 import { effectiveWorkspaceRoot } from "../cli/CliResolver";
 
 export class ControlPanelView implements vscode.WebviewViewProvider {
@@ -443,6 +444,7 @@ export class ControlPanelView implements vscode.WebviewViewProvider {
         const cliShells = getAvailableShells();
         const claudeModels = getAvailableClaudeModels();
         const claudeIntegrationMethods = getAvailableClaudeMethods();
+        const codexReasoningEfforts = getAvailableCodexReasoningEfforts();
 
         // Get final state to send to webview
         const state = this.stateService.getState();
@@ -459,6 +461,7 @@ export class ControlPanelView implements vscode.WebviewViewProvider {
           cliShells,
           claudeModels,
           claudeIntegrationMethods,
+          codexReasoningEfforts,
           state
         });
       })

@@ -214,6 +214,10 @@
         populateClaudeIntegrationMethods(msg.claudeIntegrationMethods);
       }
 
+      if (msg.codexReasoningEfforts) {
+        populateCodexReasoningEfforts(msg.codexReasoningEfforts);
+      }
+
       applyState(msg.state);
       
       // Update CLI block visibility based on current provider
@@ -588,6 +592,18 @@
       keepValue: true
     });
   }
+
+  function populateCodexReasoningEfforts(efforts) {
+    const select = DOM.qs("#codexReasoningEffort");
+    if (!select) return;
+
+    LGUI.fillSelect(select, efforts, {
+      getValue: it => (typeof it === "string" ? it : (it?.id ?? "")),
+      getLabel: it => (typeof it === "string" ? it : (it?.label ?? it?.id ?? "")),
+      getDescription: it => (typeof it === "string" ? "" : (it?.description ?? "")),
+      keepValue: true
+    });
+  }
   
   /**
    * Update CLI settings block visibility based on current AI provider
@@ -606,10 +622,11 @@
   function handleProviderSettingResponse(providerId) {
     const cliBlock = DOM.qs("#cli-settings-block");
     const claudeSettings = DOM.qs("#claude-settings-container");
+    const codexSettings = DOM.qs("#codex-settings-container");
     if (!cliBlock) return;
 
     // List of CLI-based provider IDs
-    const cliProviders = ["claude.cli"];
+    const cliProviders = ["claude.cli", "codex.cli"];
 
     const shouldShow = cliProviders.includes(providerId);
     cliBlock.style.display = shouldShow ? "flex" : "none";
@@ -617,6 +634,11 @@
     // Show Claude-specific settings only for Claude CLI provider
     if (claudeSettings) {
       claudeSettings.style.display = (providerId === "claude.cli") ? "flex" : "none";
+    }
+
+    // Show Codex-specific settings only for Codex CLI provider
+    if (codexSettings) {
+      codexSettings.style.display = (providerId === "codex.cli") ? "flex" : "none";
     }
   }
 

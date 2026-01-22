@@ -167,6 +167,14 @@
           <select class="lg-select" id="claudeIntegrationMethod" data-state-key="claudeIntegrationMethod"></select>
         </span>
       </div>
+
+      <!-- Codex-specific settings (shown only for Codex CLI provider) -->
+      <div id="codex-settings-container" class="row" style="display: none;">
+        <span class="cluster" title="Reasoning depth level (affects response time and quality)">
+          <label>Reasoning:</label>
+          <select class="lg-select" id="codexReasoningEffort" data-state-key="codexReasoningEffort"></select>
+        </span>
+      </div>
     </div>
 
     <script nonce="{{nonce}}" src="{{lgUiJsUri}}"></script>

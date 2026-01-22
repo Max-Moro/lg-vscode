@@ -221,6 +221,7 @@
             "github.copilot",
             "cursor.composer",
             "claude.cli",
+            "codex.cli",
             "openai.api"
           ],
           "enumDescriptions": [
@@ -228,6 +229,7 @@
             "GitHub Copilot Chat (requires extension)",
             "Cursor Composer (requires Cursor IDE)",
             "Claude CLI (requires claude command in PATH)",
+            "OpenAI Codex CLI (requires codex command in PATH)",
             "OpenAI API"
           ],
           "default": "clipboard",

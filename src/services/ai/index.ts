@@ -6,6 +6,7 @@ import * as clipboard from "./providers/clipboard";
 import * as copilot from "./providers/copilot";
 import * as cursor from "./providers/cursor";
 import * as claudeCli from "./providers/claude-cli";
+import * as codexCli from "./providers/codex-cli";
 import * as openai from "./providers/openai";
 
 import { AiIntegrationService } from "./AiIntegrationService";
@@ -17,6 +18,7 @@ const ALL_PROVIDERS: ProviderModule[] = [
   copilot,
   cursor,
   claudeCli,
+  codexCli,
   openai,
 ];
 

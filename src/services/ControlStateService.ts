@@ -15,6 +15,7 @@ import { AiInteractionMode, parseAiInteractionMode } from "../models/AiInteracti
 import { type ShellType, getDefaultShell } from "../models/ShellType";
 import { type ClaudeModel, getDefaultClaudeModel } from "../models/ClaudeModel";
 import { type ClaudeIntegrationMethod, getDefaultClaudeMethod } from "../models/ClaudeIntegrationMethod";
+import { type CodexReasoningEffort, getDefaultCodexReasoningEffort } from "../models/CodexReasoningEffort";
 
 /**
  * Control panel state model
@@ -35,6 +36,7 @@ export interface ControlPanelState {
   cliShell: ShellType;                // Terminal shell type
   claudeModel: ClaudeModel;           // Claude model (haiku, sonnet, opus)
   claudeIntegrationMethod: ClaudeIntegrationMethod; // Claude integration method (memory-file, session)
+  codexReasoningEffort: CodexReasoningEffort;  // Codex reasoning effort level
 }
 
 const STATE_KEY = "lg.control.state";
@@ -92,7 +94,7 @@ export class ControlStateService {
    */
   public getState(): Partial<ControlPanelState> {
     const raw = this.context.workspaceState.get<Partial<ControlPanelState>>(STATE_KEY) || {};
-    
+
     // Apply defaults for critical fields
     return {
       ...raw,
@@ -102,6 +104,7 @@ export class ControlStateService {
       cliShell: raw.cliShell || getDefaultShell(),
       claudeModel: raw.claudeModel || getDefaultClaudeModel(),
       claudeIntegrationMethod: raw.claudeIntegrationMethod || getDefaultClaudeMethod(),
+      codexReasoningEffort: raw.codexReasoningEffort || getDefaultCodexReasoningEffort(),
     };
   }
   
