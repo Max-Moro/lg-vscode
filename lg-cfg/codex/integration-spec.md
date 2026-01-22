@@ -146,6 +146,21 @@ export const CODEX_SESSION_LOCK_FILE = ".codex-session.lock";
 
 ## Session Creation
 
+### Project Binding Mechanism
+
+**Key difference from Claude Code:**
+- Claude Code: sessions stored in `~/.claude/projects/{encoded_path}/` — path encoded in directory name
+- Codex: all sessions in `~/.codex/sessions/YYYY/MM/DD/` — project binding via `cwd` field in session_meta
+
+**How Codex filters sessions:**
+- `codex resume` — shows only sessions where `cwd` matches current directory
+- `codex resume --last` — most recent from current directory
+- `codex resume --all` — all sessions regardless of directory
+- `codex resume SESSION_ID` — opens specific session (no cwd check)
+
+**Critical for integration:**
+The `cwd` field in `session_meta` is the key for project association. Must be set correctly!
+
 ### Session File Structure
 
 **Path pattern**: `~/.codex/sessions/YYYY/MM/DD/rollout-{ISO_timestamp}-{session_id}.jsonl`

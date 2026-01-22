@@ -299,8 +299,23 @@ For manual session creation:
 6. Write `turn_context` record
 7. Launch with `codex resume {session_id}`
 
+### Project Binding Mechanism
+
+**Key difference from Claude Code:**
+- Claude Code: sessions stored in `~/.claude/projects/{encoded_path}/`
+- Codex: all sessions in `~/.codex/sessions/YYYY/MM/DD/`
+
+**How Codex filters by project:**
+- Sessions bound to projects via `cwd` field in `session_meta`
+- `codex resume` filters sessions by current working directory
+- `codex resume --last` — most recent from current directory only
+- `codex resume --all` — all sessions regardless of directory
+- `codex resume SESSION_ID` — opens specific session directly (no cwd filter)
+
+**Critical:** The `cwd` field in `session_meta` determines project association.
+
 ### Lock File Strategy
 
-Unlike Claude Code, Codex doesn't seem to use lock files. Consider:
-- Using presence of active terminal as busy indicator
-- Creating custom lock file mechanism similar to Claude integration
+Codex doesn't use lock files. For LG integration:
+- Create custom lock file `.codex-session.lock` in workspace
+- Clean up on session exit via shell trap/finally
