@@ -86,6 +86,10 @@ src:
               - "/models/ClaudeIntegrationMethod.ts"
               - "/models/ClaudeModel.ts"
               - "/models/ShellType.ts"
+          - condition: "TAGSET:vscode-extension:send-to-ai AND TAGSET:ai-providers:codex-cli"
+            allow:
+              - "/models/CodexReasoningEffort.ts"
+              - "/models/ShellType.ts"
         children:
           services:
             mode: block
@@ -101,7 +105,7 @@ src:
                     when:
                       - condition: "TAGSET:ai-providers:github-copilot"
                         allow: ["/BaseExtensionProvider.ts"]
-                      - condition: "TAGSET:ai-providers:claude-code-cli"
+                      - condition: "TAGSET:ai-providers:claude-code-cli OR TAGSET:ai-providers:codex-cli"
                         allow: ["/BaseCliProvider.ts"]
                       - condition: "TAGSET:ai-providers:cursor"
                         allow: ["/BaseForkProvider.ts"]
@@ -116,3 +120,5 @@ src:
                         allow: ["/cursor/"]
                       - condition: "TAGSET:ai-providers:claude-code-cli"
                         allow: ["/claude-cli/"]
+                      - condition: "TAGSET:ai-providers:claude-code-cli"
+                        allow: ["/codex-cli/"]

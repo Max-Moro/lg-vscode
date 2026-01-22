@@ -38,3 +38,5 @@ tag-sets:
         title: "Cursor"
       claude-code-cli:
         title: "Claude Code (CLI)"
+      codex-cli:
+        title: "OpenAI Codex (CLI)"
