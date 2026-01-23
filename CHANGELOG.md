@@ -6,6 +6,9 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ## [Unreleased]
 
+### Added
+- OpenAI Codex CLI integration with session-based execution and reasoning effort configuration
+
 ## [0.10.0] - 2026-01-15
 
 ### Fixed
