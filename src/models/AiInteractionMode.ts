@@ -6,6 +6,10 @@
  * - agent: Mode with tools and agent capabilities
  *
  * Used for unifying behavior of AI providers.
+ *
+ * @deprecated This enum will be removed in the next version.
+ * AI providers should use `runs` string from mode configuration instead.
+ * See: ModeSet.modes[].runs in mode_sets_list.ts
  */
 export enum AiInteractionMode {
   ASK = "ask",

@@ -4,7 +4,7 @@
  */
 
 /**
- * Response schema for 'lg list mode-sets' command
+ * Response schema for 'list mode-sets' command
  */
 export interface ModeSetsList {
   "mode-sets": ModeSet[];
@@ -19,6 +19,10 @@ export interface ModeSet {
    */
   title: string;
   modes: Mode[];
+  /**
+   * True if this mode-set is an integration type (has runs)
+   */
+  integration?: boolean;
 }
 export interface Mode {
   /**
@@ -38,9 +42,9 @@ export interface Mode {
    */
   tags?: string[];
   /**
-   * Additional options specific to this mode
+   * Provider-specific run commands mapping provider_id to command string
    */
-  options?: {
-    [k: string]: unknown;
+  runs?: {
+    [k: string]: string;
   };
 }
