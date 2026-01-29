@@ -10,14 +10,21 @@ import {
   addToHistoryIndex
 } from "./common";
 
+/**
+ * Session creation params.
+ * Note: sandboxMode and approvalPolicy use defaults - actual values
+ * are controlled via CLI args (runs) which are passed as opaque string.
+ */
 export interface CodexSessionParams {
   content: string;
   cwd: string;
   shell: ShellType;
   reasoningEffort: CodexReasoningEffort;
-  approvalPolicy: "on-request";
-  sandboxMode: "read-only" | "workspace-write";
 }
+
+// Default values for session file (actual behavior controlled by CLI args)
+const DEFAULT_APPROVAL_POLICY = "on-request";
+const DEFAULT_SANDBOX_MODE = "workspace-write";
 
 /**
  * Create a new Codex session with the given content
@@ -51,10 +58,10 @@ export async function createCodexSession(params: CodexSessionParams): Promise<st
   // 6. Get CLI version
   const cliVersion = await getCodexVersion();
 
-  // 7. Build JSONL records
+  // 7. Build JSONL records (using defaults - actual behavior controlled by CLI args)
   const records = [
     buildSessionMeta(sessionId, isoTimestamp, params.cwd, cliVersion),
-    buildDeveloperMessage(isoTimestamp, params.approvalPolicy, params.sandboxMode),
+    buildDeveloperMessage(isoTimestamp, DEFAULT_APPROVAL_POLICY, DEFAULT_SANDBOX_MODE),
     buildEnvironmentContext(isoTimestamp, params.cwd, params.shell),
     buildUserMessage(isoTimestamp, params.content),
     buildUserMessageEvent(isoTimestamp, params.content),
@@ -171,10 +178,11 @@ function buildTurnContext(timestamp: string, params: CodexSessionParams) {
     type: "turn_context",
     payload: {
       cwd: params.cwd,
-      approval_policy: params.approvalPolicy,
-      sandbox_policy: { type: params.sandboxMode },
+      approval_policy: DEFAULT_APPROVAL_POLICY,
+      sandbox_policy: { type: DEFAULT_SANDBOX_MODE },
       effort: params.reasoningEffort
       // Other fields (model, summary, truncation_policy) use Codex CLI defaults
+      // Note: actual sandbox/approval behavior controlled by CLI args (runs)
     }
   };
 }

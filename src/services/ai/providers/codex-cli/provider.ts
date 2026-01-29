@@ -1,6 +1,6 @@
 import * as vscode from "vscode";
 import { BaseCliProvider, CliExecutionContext } from "../../base";
-import { AiInteractionMode } from "../../../../models/AiInteractionMode";
+import type { ProviderModeInfo } from "../../types";
 import type { CodexReasoningEffort } from "../../../../models/CodexReasoningEffort";
 import { getDefaultCodexReasoningEffort } from "../../../../models/CodexReasoningEffort";
 import { createCodexSession } from "./session";
@@ -74,23 +74,16 @@ export class CodexCliProvider extends BaseCliProvider {
     // Get reasoning effort from state
     const reasoningEffort = await this.getReasoningEffort();
 
-    // Determine sandbox mode from AI interaction mode
-    const sandboxMode = ctx.mode === AiInteractionMode.ASK
-      ? "read-only"
-      : "workspace-write";
-
     const cwd = await getWorkingDirectory(ctx.scope);
 
     logDebug(`[Codex CLI] Creating session with reasoning effort: ${reasoningEffort}`);
 
-    // Create session
+    // Create session (uses defaults - actual behavior controlled by CLI args)
     const sessionId = await createCodexSession({
       content,
       cwd,
       shell: ctx.shell,
-      reasoningEffort,
-      approvalPolicy: "on-request",
-      sandboxMode
+      reasoningEffort
     });
 
     logDebug(`[Codex CLI] Session created: ${sessionId}`);
@@ -105,12 +98,12 @@ export class CodexCliProvider extends BaseCliProvider {
       logWarn(`[Codex CLI] Failed to create lock file: ${errorMessage}`);
     }
 
-    // Build and execute command
+    // Build and execute command - ctx.runs is passed as-is (opaque string)
     const codexCommand = buildCodexCommand(
+      ctx.runs,
       sessionId,
       ctx.shell,
-      CODEX_SESSION_LOCK_FILE,
-      reasoningEffort
+      CODEX_SESSION_LOCK_FILE
     );
 
     logDebug(`[Codex CLI] Sending command: ${codexCommand}`);
@@ -119,6 +112,13 @@ export class CodexCliProvider extends BaseCliProvider {
     vscode.window.showInformationMessage(
       `Codex CLI session started. Check the terminal.`
     );
+  }
+
+  getSupportedModes(): ProviderModeInfo[] {
+    return [
+      { modeId: "ask", runs: "--sandbox read-only --ask-for-approval on-request" },
+      { modeId: "agent", runs: "--sandbox workspace-write --ask-for-approval on-request" }
+    ];
   }
 }
 

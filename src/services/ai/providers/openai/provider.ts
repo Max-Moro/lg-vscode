@@ -1,46 +1,70 @@
 import * as vscode from "vscode";
-import { BaseNetworkProvider } from "../../base";
+import type { ProviderModeInfo } from "../../types";
+import { BaseAiProvider } from "../../base";
 
-export class OpenAiProvider extends BaseNetworkProvider {
+/**
+ * OpenAI API Provider
+ *
+ * Sends content directly to OpenAI API.
+ * API key is stored securely in VS Code secrets.
+ */
+export class OpenAiProvider extends BaseAiProvider {
   readonly id = "openai.api";
   readonly name = "OpenAI API";
-  protected apiEndpoint = "https://api.openai.com/v1/chat/completions";
-  protected secretKey = "lg.openai.apiKey";
 
-  protected async sendToApi(content: string, token: string): Promise<void> {
-    const requestBody = {
-      model: "gpt-4o",
-      messages: [
-        {
-          role: "user",
-          content: content
-        }
-      ],
-      stream: false
-    };
+  private context?: vscode.ExtensionContext;
 
-    const response = await this.fetchWithTimeout(
-      this.apiEndpoint,
-      {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          "Authorization": `Bearer ${token}`
-        },
-        body: JSON.stringify(requestBody)
+  setContext(context: vscode.ExtensionContext): void {
+    this.context = context;
+  }
+
+  async send(content: string, _runs: string): Promise<void> {
+    if (!this.context) {
+      throw new Error("Extension context not set");
+    }
+
+    const token = await this.context.secrets.get("lg.openai.apiKey");
+    if (!token) {
+      throw new Error("OpenAI API key not configured. Use 'LG: Configure OpenAI API Key' command.");
+    }
+
+    await this.sendToApi(content, token);
+  }
+
+  private async sendToApi(content: string, token: string): Promise<void> {
+    const response = await fetch("https://api.openai.com/v1/chat/completions", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        "Authorization": `Bearer ${token}`
       },
-      30000
-    );
+      body: JSON.stringify({
+        model: "gpt-4o",
+        messages: [{ role: "user", content }]
+      })
+    });
 
     if (!response.ok) {
       const error = await response.text();
-      throw new Error(`OpenAI API error: ${response.status} - ${error}`);
+      throw new Error(`OpenAI API error: ${error}`);
     }
 
-    // Don't read the response, just show success
-    vscode.window.showInformationMessage(
-      "Content sent to OpenAI API successfully. Check your OpenAI chat interface."
-    );
+    const data = await response.json() as { choices: Array<{ message: { content: string } }> };
+    const reply = data.choices[0]?.message?.content || "No response";
+
+    // Show response in a new document
+    const doc = await vscode.workspace.openTextDocument({
+      content: reply,
+      language: "markdown"
+    });
+    await vscode.window.showTextDocument(doc);
+  }
+
+  getSupportedModes(): ProviderModeInfo[] {
+    // OpenAI API is ask-only by nature
+    return [
+      { modeId: "ask", runs: "" }
+    ];
   }
 }
 

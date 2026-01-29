@@ -1,8 +1,6 @@
 import * as vscode from "vscode";
-import type { ProviderModule } from "./types";
+import type { ProviderModule, ProviderModeInfo } from "./types";
 import { logInfo, logDebug, logError } from "../../logging/log";
-import { ControlStateService } from "../ControlStateService";
-import { AiInteractionMode } from "../../models/AiInteractionMode";
 
 /**
  * Central service for managing AI providers
@@ -64,31 +62,42 @@ export class AiIntegrationService {
   }
 
   /**
-   * Send content to the specified provider with automatic mode detection.
+   * Get all supported modes from all providers.
+   * Used for generating ai-interaction.sec.yaml
+   *
+   * @returns Map of modeId to Map of providerId to runs string
+   */
+  getAllSupportedModes(): Map<string, Map<string, string>> {
+    const allModes = new Map<string, Map<string, string>>();
+
+    for (const [providerId, module] of this.providers) {
+      const supportedModes = module.provider.getSupportedModes();
+      for (const { modeId, runs } of supportedModes) {
+        if (!allModes.has(modeId)) {
+          allModes.set(modeId, new Map());
+        }
+        allModes.get(modeId)!.set(providerId, runs);
+      }
+    }
+
+    return allModes;
+  }
+
+  /**
+   * Send content to the specified provider.
    *
    * @param providerId - Provider ID
    * @param content - Content to send
+   * @param runs - Provider-specific runs configuration string
    */
-  async sendToProvider(providerId: string, content: string): Promise<void> {
+  async sendToProvider(providerId: string, content: string, runs: string): Promise<void> {
     const module = this.providers.get(providerId);
 
     if (!module) {
       throw new Error(`Provider '${providerId}' not found`);
     }
 
-    // TODO: Stage 4 - replace with runs from integration mode-set
-    // For now, use deprecated AiInteractionMode with fallback to AGENT
-    const stateService = ControlStateService.getInstance(this.context);
-    const state = stateService.getState();
-    const ctx = state.template || "";
-    const provider = state.providerId || providerId;
-
-    // Get mode from ai-interaction mode-set (legacy behavior)
-    const modes = stateService.getCurrentModes(ctx, provider);
-    const aiInteractionMode = modes["ai-interaction"];
-    const mode = aiInteractionMode === "ask" ? AiInteractionMode.ASK : AiInteractionMode.AGENT;
-
-    logInfo(`Sending content to provider: ${providerId} (mode: ${mode})`);
+    logInfo(`Sending content to provider: ${providerId} (runs: ${runs || '(empty)'})`);
 
     try {
       // Set context for providers that require it
@@ -97,7 +106,7 @@ export class AiIntegrationService {
         provider.setContext(this.context);
       }
 
-      await module.provider.send(content, mode);
+      await module.provider.send(content, runs);
       logInfo(`Successfully sent content to ${providerId}`);
     } catch (e) {
       logError(`Failed to send content to ${providerId}`, e);
@@ -110,17 +119,17 @@ export class AiIntegrationService {
    * with full error handling and UI interaction
    *
    * @param generateContent - Function to generate content (asynchronous)
+   * @param providerId - Provider ID to send to
+   * @param runs - Provider-specific runs string
    * @param generateTitle - Title for the generation progress bar (optional)
    * @returns true if sending is successful, false if cancelled
    */
   async generateAndSend(
     generateContent: () => Promise<string>,
+    providerId: string,
+    runs: string,
     generateTitle?: string
   ): Promise<boolean> {
-    // 1. Check for a configured provider
-    const config = vscode.workspace.getConfiguration();
-    const providerId = config.get<string>("lg.ai.provider");
-
     if (!providerId) {
       const choice = await vscode.window.showErrorMessage(
         "No AI provider configured.",
@@ -137,7 +146,7 @@ export class AiIntegrationService {
     let generatedContent: string | undefined;
 
     try {
-      // 2. Generate content with progress bar
+      // Generate content with progress bar
       generatedContent = await vscode.window.withProgress(
         {
           location: vscode.ProgressLocation.Notification,
@@ -147,7 +156,7 @@ export class AiIntegrationService {
         generateContent
       );
 
-      // 3. Send to AI provider
+      // Send to AI provider
       const providerName = this.getProviderName(providerId);
 
       if (generatedContent) {
@@ -157,13 +166,13 @@ export class AiIntegrationService {
             title: `Sending to ${providerName}...`,
             cancellable: false
           },
-          () => this.sendToProvider(providerId, generatedContent as string)
+          () => this.sendToProvider(providerId, generatedContent as string, runs)
         );
       }
 
       return true;
     } catch (error) {
-      // 4. Error handling with recovery options
+      // Error handling with recovery options
       const providerName = this.getProviderName(providerId);
 
       const errorMessage = error instanceof Error ? error.message : String(error);
@@ -180,7 +189,7 @@ export class AiIntegrationService {
         vscode.commands.executeCommand("workbench.action.openSettings", "lg.ai.provider");
       } else if (choice === "Copy to Clipboard" && generatedContent) {
         // Fallback to clipboard in case of error
-        await this.sendToProvider("clipboard", generatedContent);
+        await this.sendToProvider("clipboard", generatedContent, "");
       }
 
       return false;

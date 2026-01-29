@@ -1,6 +1,6 @@
 import * as vscode from "vscode";
 import { BaseCliProvider, CliExecutionContext } from "../../base";
-import { AiInteractionMode } from "../../../../models/AiInteractionMode";
+import type { ProviderModeInfo } from "../../types";
 import { ClaudeIntegrationMethod } from "../../../../models/ClaudeIntegrationMethod";
 
 // Session-based methods
@@ -89,12 +89,12 @@ export class ClaudeCliProvider extends BaseCliProvider {
     ctx: CliExecutionContext
   ): Promise<void> {
     const method = await this.getIntegrationMethod();
-    const permissionMode = this.mapModeToPermission(ctx.mode);
 
+    // runs is passed as-is to CLI (opaque string)
     if (method === "memory-file") {
-      await executeMemoryFileMethod(content, terminal, ctx, permissionMode);
+      await executeMemoryFileMethod(content, terminal, ctx);
     } else {
-      await this.executeSessionMethod(content, terminal, ctx, permissionMode);
+      await this.executeSessionMethod(content, terminal, ctx);
     }
   }
 
@@ -104,8 +104,7 @@ export class ClaudeCliProvider extends BaseCliProvider {
   private async executeSessionMethod(
     content: string,
     terminal: vscode.Terminal,
-    ctx: CliExecutionContext,
-    permissionMode: string
+    ctx: CliExecutionContext
   ): Promise<void> {
     const { logDebug, logWarn } = await import("../../../../logging/log");
     const fs = await import("fs/promises");
@@ -148,8 +147,9 @@ export class ClaudeCliProvider extends BaseCliProvider {
     }
 
     // Run Claude Code with auto-cleanup of lock file
+    // ctx.runs is passed as-is (opaque string from mode configuration)
     const claudeCommand = buildClaudeCommand(
-      permissionMode,
+      ctx.runs,
       ctx.shell,
       SESSION_LOCK_FILE,
       ctx.claudeModel,
@@ -165,15 +165,12 @@ export class ClaudeCliProvider extends BaseCliProvider {
     );
   }
 
-  private mapModeToPermission(mode: AiInteractionMode): string {
-    switch (mode) {
-      case AiInteractionMode.ASK:
-        return "plan";
-      case AiInteractionMode.AGENT:
-        return "acceptEdits";
-      default:
-        return "acceptEdits";
-    }
+  getSupportedModes(): ProviderModeInfo[] {
+    return [
+      { modeId: "ask", runs: "--permission-mode default" },
+      { modeId: "agent", runs: "--permission-mode acceptEdits" },
+      { modeId: "plan", runs: "--permission-mode plan" }
+    ];
   }
 }
 

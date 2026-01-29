@@ -3,6 +3,17 @@
  */
 
 /**
+ * Information about provider-supported mode.
+ * Used for generating ai-interaction.sec.yaml
+ */
+export interface ProviderModeInfo {
+  /** Mode identifier (ask, agent, plan) */
+  modeId: string;
+  /** Value for runs field in YAML */
+  runs: string;
+}
+
+/**
  * Information about the provider detector
  */
 export interface ProviderDetector {
@@ -15,8 +26,6 @@ export interface ProviderDetector {
    */
   detect(): Promise<boolean>;
 }
-
-import type { AiInteractionMode } from "../../models/AiInteractionMode";
 
 /**
  * AI provider interface
@@ -31,10 +40,18 @@ export interface AiProvider {
   /**
    * Send content to AI
    * @param content - Content to send
-   * @param mode - AI interaction mode (ask/agent)
+   * @param runs - Provider-specific run configuration string (opaque, interpreted by provider)
    * @throws Error on sending error
    */
-  send(content: string, mode: AiInteractionMode): Promise<void>;
+  send(content: string, runs: string): Promise<void>;
+
+  /**
+   * Returns list of modes supported by this provider.
+   * Used for generating ai-interaction.sec.yaml
+   *
+   * @returns Array of supported modes with their runs values
+   */
+  getSupportedModes(): ProviderModeInfo[];
 }
 
 /**

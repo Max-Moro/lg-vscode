@@ -1,19 +1,20 @@
 import * as vscode from "vscode";
 import * as path from "path";
 import { BaseAiProvider } from "./BaseAiProvider";
-import type { AiInteractionMode } from "../../../models/AiInteractionMode";
+import type { ProviderModeInfo } from "../types";
 import type { ShellType } from "../../../models/ShellType";
 
 /**
- * CLI execution context with scope and shell configuration
+ * CLI execution context with scope and shell configuration.
+ * Note: mode is no longer stored here - runs string is passed directly.
  */
 export interface CliExecutionContext {
   /** Workspace scope (subdirectory) for CLI execution */
   scope: string;
   /** Terminal shell type */
   shell: ShellType;
-  /** AI interaction mode */
-  mode: AiInteractionMode;
+  /** Provider-specific runs string (opaque, interpreted by provider) */
+  runs: string;
   /** Claude model (haiku, sonnet, opus) - optional, only for Claude CLI provider */
   claudeModel?: string;
 }
@@ -41,26 +42,26 @@ export abstract class BaseCliProvider extends BaseAiProvider {
   setContext(context: vscode.ExtensionContext): void {
     this.context = context;
   }
-  
+
   /**
    * Get basic CLI execution context from ControlStateService
-   * @param mode - AI interaction mode
+   * @param runs - Provider-specific runs string
    * @returns Basic CLI execution context with scope, shell, and claudeModel settings
    */
-  protected async getCliBaseContext(mode: AiInteractionMode): Promise<CliExecutionContext> {
+  protected async getCliBaseContext(runs: string): Promise<CliExecutionContext> {
     if (!this.context) {
       throw new Error("Extension context not set for CLI provider");
     }
-    
+
     // Import ControlStateService
     const { ControlStateService } = await import("../../ControlStateService");
     const stateService = ControlStateService.getInstance(this.context);
     const state = stateService.getState();
-    
+
     return {
       scope: state.cliScope || "",
       shell: state.cliShell as ShellType,
-      mode,
+      runs,
       claudeModel: state.claudeModel
     };
   }
@@ -95,7 +96,7 @@ export abstract class BaseCliProvider extends BaseAiProvider {
   ): Promise<{ terminal: vscode.Terminal; isNew: boolean } | undefined> {
     // Check for an existing terminal
     const existing = vscode.window.terminals.find(t => t.name === this.name);
-    
+
     if (existing) {
       // Check if the terminal was properly closed
       if (existing.exitStatus !== undefined) {
@@ -104,7 +105,7 @@ export abstract class BaseCliProvider extends BaseAiProvider {
       } else {
         // Terminal is active — check if it is busy with a process
         const { busy, message } = await this.checkTerminalBusy(existing, ctx);
-        
+
         if (busy) {
           // Show warning to the user with option to show terminal
           vscode.window.showWarningMessage(
@@ -115,11 +116,11 @@ export abstract class BaseCliProvider extends BaseAiProvider {
               existing.show(true);
             }
           });
-          
+
           // Return undefined — terminal is busy, operation cancelled
           return undefined;
         }
-        
+
         // Terminal is free — reuse it
         return { terminal: existing, isNew: false };
       }
@@ -155,18 +156,18 @@ export abstract class BaseCliProvider extends BaseAiProvider {
    * applies directory change if needed, and
    * calls executeInTerminal to execute the command.
    */
-  async send(content: string, mode: AiInteractionMode): Promise<void> {
+  async send(content: string, runs: string): Promise<void> {
     // Get basic CLI execution context
-    const baseCtx = await this.getCliBaseContext(mode);
-       
+    const baseCtx = await this.getCliBaseContext(runs);
+
     // Create terminal and get isNew flag
     const result = await this.ensureTerminal(baseCtx);
-    
+
     // If terminal is busy, silently abort (user is already warned)
     if (!result) {
       return;
     }
-    
+
     // Change directory for new terminal (if scope is set)
     if (result.isNew && baseCtx.scope && baseCtx.scope.trim()) {
       // Validate scope — check that it is a relative path.
@@ -175,11 +176,11 @@ export abstract class BaseCliProvider extends BaseAiProvider {
       }
 
       result.terminal.sendText(`cd "${baseCtx.scope}"`, true);
-      
+
       // Small delay for cd to complete
       await new Promise(resolve => setTimeout(resolve, 100));
     }
-    
+
     // Execute provider-specific command
     await this.executeInTerminal(content, result.terminal, baseCtx);
   }
@@ -192,11 +193,13 @@ export abstract class BaseCliProvider extends BaseAiProvider {
    *
    * @param content - Content to send
    * @param terminal - Prepared terminal (already in the correct directory)
-   * @param ctx - Basic CLI execution context with scope, shell, and mode settings
+   * @param ctx - Basic CLI execution context with scope, shell, and runs settings
    */
   protected abstract executeInTerminal(
     content: string,
     terminal: vscode.Terminal,
     ctx: CliExecutionContext
   ): Promise<void>;
+
+  abstract getSupportedModes(): ProviderModeInfo[];
 }

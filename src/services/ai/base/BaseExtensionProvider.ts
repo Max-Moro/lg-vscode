@@ -1,6 +1,6 @@
 import * as vscode from "vscode";
 import { BaseAiProvider } from "./BaseAiProvider";
-import type { AiInteractionMode } from "../../../models/AiInteractionMode";
+import type { ProviderModeInfo } from "../types";
 
 /**
  * Base class for Extension-based providers
@@ -34,9 +34,9 @@ export abstract class BaseExtensionProvider extends BaseAiProvider {
    * Send content through the extension
    * First checks and activates the extension, then calls sendToExtension
    */
-  async send(content: string, mode: AiInteractionMode): Promise<void> {
+  async send(content: string, runs: string): Promise<void> {
     await this.ensureExtensionActive();
-    await this.sendToExtension(content, mode);
+    await this.sendToExtension(content, runs);
   }
 
   /**
@@ -44,7 +44,9 @@ export abstract class BaseExtensionProvider extends BaseAiProvider {
    * Implemented by subclasses for provider-specific interaction logic.
    *
    * @param content - Content to send
-   * @param mode - AI interaction mode
+   * @param runs - Provider-specific run configuration (interpreted by provider)
    */
-  protected abstract sendToExtension(content: string, mode: AiInteractionMode): Promise<void>;
+  protected abstract sendToExtension(content: string, runs: string): Promise<void>;
+
+  abstract getSupportedModes(): ProviderModeInfo[];
 }

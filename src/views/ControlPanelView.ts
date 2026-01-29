@@ -381,15 +381,32 @@ export class ControlPanelView implements vscode.WebviewViewProvider {
     await this.stateService.setState(state, "control-panel");
 
     const aiService = getAiService();
+    const currentState = this.stateService.getState();
+    const providerId = currentState.providerId || "";
+
+    if (!providerId) {
+      vscode.window.showWarningMessage("No AI provider selected.");
+      return;
+    }
 
     // Determine what to send: context or section
     const template = this.contextService.getCurrentTemplate();
     if (template) {
       // Send context
-      await aiService.generateAndSend(
-        () => this.contextService.generateContext(),
-        `Generating context '${template}'...`
-      );
+      try {
+        const modeSets = await listModeSetsJson(template, providerId);
+        const runs = this.stateService.getIntegrationModeRuns(template, providerId, modeSets) || "";
+
+        await aiService.generateAndSend(
+          () => this.contextService.generateContext(),
+          providerId,
+          runs,
+          `Generating context '${template}'...`
+        );
+      } catch (e) {
+        const errorMessage = e instanceof Error ? e.message : String(e);
+        vscode.window.showErrorMessage(`Failed to get mode configuration: ${errorMessage}`);
+      }
     } else {
       // Send section
       const section = this.listingService.getCurrentSection();
@@ -398,10 +415,21 @@ export class ControlPanelView implements vscode.WebviewViewProvider {
         return;
       }
 
-      await aiService.generateAndSend(
-        () => this.listingService.generateListing(),
-        `Generating listing for '${section}'...`
-      );
+      try {
+        // For section-based listing, use "section" as context
+        const modeSets = await listModeSetsJson("section", providerId);
+        const runs = this.stateService.getIntegrationModeRuns("section", providerId, modeSets) || "";
+
+        await aiService.generateAndSend(
+          () => this.listingService.generateListing(),
+          providerId,
+          runs,
+          `Generating listing for '${section}'...`
+        );
+      } catch (e) {
+        const errorMessage = e instanceof Error ? e.message : String(e);
+        vscode.window.showErrorMessage(`Failed to get mode configuration: ${errorMessage}`);
+      }
     }
   }
 

@@ -1,4 +1,5 @@
 import { BaseAiProvider } from "./BaseAiProvider";
+import type { ProviderModeInfo } from "../types";
 
 /**
  * Base class for Fork-based providers (Cursor, Windsurf, etc.)
@@ -7,5 +8,5 @@ import { BaseAiProvider } from "./BaseAiProvider";
  * any special shared functionality.
  */
 export abstract class BaseForkProvider extends BaseAiProvider {
-
+  abstract getSupportedModes(): ProviderModeInfo[];
 }

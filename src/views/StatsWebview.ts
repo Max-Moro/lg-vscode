@@ -7,6 +7,7 @@ import type {RunResult} from "../models/report";
 import {buildHtml, getExtensionUri, lgUiUri, mediaUri} from "../webview/webviewKit";
 import {getAiService} from "../extension";
 import {ControlStateService} from "../services/ControlStateService";
+import {listModeSetsJson} from "../services/CatalogService";
 
 export async function showStatsWebview(
   context: vscode.ExtensionContext,
@@ -20,6 +21,13 @@ export async function showStatsWebview(
     : data.target.startsWith("sec:")
     ? data.target.slice(4)
     : data.target;
+
+  // Extract context name from target for getting mode runs
+  const contextName = data.target.startsWith("ctx:")
+    ? data.target.slice(4)
+    : data.target.startsWith("sec:")
+    ? "section"
+    : "section";
 
   const panel = vscode.window.createWebviewPanel(
     "lg.stats",
@@ -110,12 +118,30 @@ export async function showStatsWebview(
         vscode.window.showErrorMessage(`Copy failed: ${errorMessage}`);
       }
     } else if (msg?.type === "sendToAI") {
-      const aiService = getAiService();
-      await aiService.generateAndSend(
-        () => generate(),
-        "LG: Generating content..."
-      );
-      panel.dispose();
+      try {
+        const aiService = getAiService();
+        const currentState = stateService.getState();
+        const providerId = currentState.providerId || "";
+
+        if (!providerId) {
+          vscode.window.showWarningMessage("No AI provider selected.");
+          return;
+        }
+
+        const modeSets = await listModeSetsJson(contextName, providerId);
+        const runs = stateService.getIntegrationModeRuns(contextName, providerId, modeSets) || "";
+
+        await aiService.generateAndSend(
+          () => generate(),
+          providerId,
+          runs,
+          "LG: Generating content..."
+        );
+        panel.dispose();
+      } catch (e) {
+        const errorMessage = e instanceof Error ? e.message : String(e);
+        vscode.window.showErrorMessage(`Failed to send to AI: ${errorMessage}`);
+      }
     }
   });
 }

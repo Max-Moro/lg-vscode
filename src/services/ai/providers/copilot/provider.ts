@@ -1,6 +1,6 @@
 import * as vscode from "vscode";
 import { BaseExtensionProvider } from "../../base";
-import type { AiInteractionMode } from "../../../../models/AiInteractionMode";
+import type { ProviderModeInfo } from "../../types";
 
 export class CopilotProvider extends BaseExtensionProvider {
   readonly id = "github.copilot";
@@ -28,20 +28,26 @@ export class CopilotProvider extends BaseExtensionProvider {
     );
   }
 
-  protected async sendToExtension(content: string, mode: AiInteractionMode): Promise<void> {
+  protected async sendToExtension(content: string, runs: string): Promise<void> {
     // Ensure that implicit context is disabled
     await this.ensureImplicitContextDisabled();
 
     // Create a new chat
     await vscode.commands.executeCommand('workbench.action.chat.newChat');
 
-    // Select a command depending on the mode
-    const command = mode === "ask"
-      ? 'workbench.action.chat.openask'
-      : 'workbench.action.chat.openagent';
+    // Use runs as VS Code command ID (or default to agent mode)
+    const command = runs || 'workbench.action.chat.openagent';
 
-    // Send the content in the corresponding mode
+    // Send the content using the specified command
     await vscode.commands.executeCommand(command, { query: content });
+  }
+
+  getSupportedModes(): ProviderModeInfo[] {
+    return [
+      { modeId: "ask", runs: "workbench.action.chat.openask" },
+      { modeId: "agent", runs: "workbench.action.chat.openagent" },
+      { modeId: "plan", runs: "workbench.action.chat.openplan" }
+    ];
   }
 }
 

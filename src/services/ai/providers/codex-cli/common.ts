@@ -161,21 +161,24 @@ export async function addToHistoryIndex(params: {
 const ACTIVATION_PROMPT = "Let's continue";
 
 /**
- * Build Codex CLI launch command with lock file cleanup
+ * Build Codex CLI launch command with lock file cleanup.
+ *
+ * @param runs - CLI arguments passed as-is (opaque string from mode configuration)
+ * @param sessionId - Session ID for resume
+ * @param shell - Shell type for cleanup command syntax
+ * @param lockFile - Lock file to remove on exit
  */
 export function buildCodexCommand(
+  runs: string,
   sessionId: string,
   shell: ShellType,
-  lockFile: string,
-  reasoningEffort?: string
+  lockFile: string
 ): string {
-  // Build reasoning effort config override if not default
-  const configArg = reasoningEffort && reasoningEffort !== "medium"
-    ? ` --config "model_reasoning_effort=\\"${reasoningEffort}\\""`
-    : "";
+  // runs is passed as-is (opaque string from mode configuration)
+  const runsArg = runs ? ` ${runs}` : "";
 
   // Add activation prompt to start agent immediately
-  const codexCmd = `codex resume "${sessionId}"${configArg} "${ACTIVATION_PROMPT}"`;
+  const codexCmd = `codex${runsArg} resume "${sessionId}" "${ACTIVATION_PROMPT}"`;
 
   // Add cleanup depending on shell
   switch (shell) {

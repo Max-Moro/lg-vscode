@@ -117,10 +117,17 @@ export function truncateForDisplay(text: string, maxLength: number): string {
 }
 
 /**
- * Build Claude Code launch command with lock file cleanup
+ * Build Claude Code launch command with lock file cleanup.
+ *
+ * @param runs - CLI arguments passed as-is (opaque string from mode configuration)
+ * @param shell - Shell type for cleanup command syntax
+ * @param lockFile - Lock file to remove on exit
+ * @param model - Optional model override
+ * @param sessionId - Session ID for resume (-r flag)
+ * @param activationPrompt - Prompt to send after launch
  */
 export function buildClaudeCommand(
-  permissionMode: string,
+  runs: string,
   shell: ShellType,
   lockFile: string,
   model?: string,
@@ -129,8 +136,9 @@ export function buildClaudeCommand(
 ): string {
   const modelArg = model ? ` --model ${model}` : "";
 
-  // Build the main claude command
-  let claudeCmd = `claude --permission-mode ${permissionMode}${modelArg}`;
+  // Build the main claude command - runs is passed as-is (opaque string)
+  const runsArg = runs ? ` ${runs}` : "";
+  let claudeCmd = `claude${runsArg}${modelArg}`;
 
   if (sessionId) {
     claudeCmd += ` -r "${sessionId}"`;

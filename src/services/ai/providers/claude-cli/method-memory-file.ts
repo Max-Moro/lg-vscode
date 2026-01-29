@@ -46,12 +46,12 @@ export async function writeMemoryFile(
 
 /**
  * Execute Memory File method: write CLAUDE.local.md and launch Claude Code
+ * ctx.runs is passed as-is to CLI (opaque string from mode configuration)
  */
 export async function executeMemoryFileMethod(
   content: string,
   terminal: vscode.Terminal,
-  ctx: CliExecutionContext,
-  permissionMode: string
+  ctx: CliExecutionContext
 ): Promise<void> {
   const { logDebug } = await import("../../../../logging/log");
 
@@ -60,9 +60,9 @@ export async function executeMemoryFileMethod(
   // Write content to CLAUDE.local.md
   await writeMemoryFile(content, ctx.scope);
 
-  // Build command with cleanup
+  // Build command with cleanup - runs is passed as-is (opaque string)
   const claudeCommand = buildClaudeCommand(
-    permissionMode,
+    ctx.runs,
     ctx.shell,
     CLAUDE_LOCAL_FILE,
     ctx.claudeModel,

@@ -11,7 +11,6 @@ import * as vscode from "vscode";
 import type { ModeSetsList } from "../models/mode_sets_list";
 import type { TagSetsList } from "../models/tag_sets_list";
 import { GitService } from "./GitService";
-import { AiInteractionMode, parseAiInteractionMode } from "../models/AiInteractionMode";
 import { type ShellType, getDefaultShell } from "../models/ShellType";
 import { type ClaudeModel, getDefaultClaudeModel } from "../models/ClaudeModel";
 import { type ClaudeIntegrationMethod, getDefaultClaudeMethod } from "../models/ClaudeIntegrationMethod";

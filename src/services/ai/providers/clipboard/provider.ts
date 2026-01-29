@@ -1,14 +1,19 @@
 import * as vscode from "vscode";
 import { BaseAiProvider } from "../../base";
-import type { AiInteractionMode } from "../../../../models/AiInteractionMode";
+import type { ProviderModeInfo } from "../../types";
 
 export class ClipboardProvider extends BaseAiProvider {
   readonly id = "clipboard";
   readonly name = "Clipboard";
 
-  async send(content: string, _mode: AiInteractionMode): Promise<void> {
+  async send(content: string, _runs: string): Promise<void> {
     await vscode.env.clipboard.writeText(content);
     vscode.window.showInformationMessage("Content copied to clipboard");
+  }
+
+  getSupportedModes(): ProviderModeInfo[] {
+    // Clipboard is universal - compatible with all modes, doesn't generate runs
+    return [];
   }
 }
 
