@@ -26,10 +26,19 @@ export interface ControlPanelState {
   tokenizerLib: string;
   encoder: string;
   ctxLimit: number;
-  modes: Record<string, string>;      // modeSetId -> modeId
-  tags: Record<string, string[]>;     // tagSetId -> [tagId, ...]
   taskText: string;
   targetBranch: string;
+
+  // NEW: Provider selection (moved from Settings)
+  providerId: string;
+
+  // NEW: Context-dependent modes storage
+  // Structure: modesByContextProvider[contextName][providerId][modeSetId] = modeId
+  modesByContextProvider: Record<string, Record<string, Record<string, string>>>;
+
+  // NEW: Context-dependent tags storage
+  // Structure: tagsByContext[contextName][tagSetId] = [tagId, ...]
+  tagsByContext: Record<string, Record<string, string[]>>;
 
   // CLI-based AI provider settings
   cliScope: string;                   // Workspace scope (subdirectory) for CLI execution
@@ -105,6 +114,9 @@ export class ControlStateService {
       claudeModel: raw.claudeModel || getDefaultClaudeModel(),
       claudeIntegrationMethod: raw.claudeIntegrationMethod || getDefaultClaudeMethod(),
       codexReasoningEffort: raw.codexReasoningEffort || getDefaultCodexReasoningEffort(),
+      providerId: raw.providerId || "",
+      modesByContextProvider: raw.modesByContextProvider || {},
+      tagsByContext: raw.tagsByContext || {},
     };
   }
   
@@ -138,34 +150,36 @@ export class ControlStateService {
    * Actualize state based on available lists from CLI.
    * Removes outdated modes and tags that no longer exist in manifests.
    *
-   * @param modeSets - list of mode sets from 'lg list mode-sets'
-   * @param tagSets - list of tag sets from 'lg list tag-sets'
+   * @param ctx Current context name
+   * @param provider Current provider ID
+   * @param modeSets List of mode sets from CLI
+   * @param tagSets List of tag sets from CLI
    * @returns true if state was changed
    */
   public async actualizeState(
+    ctx: string,
+    provider: string,
     modeSets: ModeSetsList,
     tagSets: TagSetsList
   ): Promise<boolean> {
-    const state = this.getState();
     let changed = false;
-    
-    // Actualize modes
-    const modesResult = this.actualizeModes(state.modes || {}, modeSets);
+
+    // Actualize modes for current (ctx, provider)
+    const currentModes = this.getCurrentModes(ctx, provider);
+    const modesResult = this.actualizeModes(currentModes, modeSets);
     if (modesResult.changed) {
-      const updated = { ...state, modes: modesResult.validatedModes };
-      await this.context.workspaceState.update(STATE_KEY, updated);
+      await this.setCurrentModes(ctx, provider, modesResult.validatedModes);
       changed = true;
     }
-    
-    // Actualize tags
-    const tagsResult = this.actualizeTags(state.tags || {}, tagSets);
+
+    // Actualize tags for current context
+    const currentTags = this.getCurrentTags(ctx);
+    const tagsResult = this.actualizeTags(currentTags, tagSets);
     if (tagsResult.changed) {
-      const currentState = this.getState(); // Re-read current state
-      const updated = { ...currentState, tags: tagsResult.validatedTags };
-      await this.context.workspaceState.update(STATE_KEY, updated);
+      await this.setCurrentTags(ctx, tagsResult.validatedTags);
       changed = true;
     }
-    
+
     return changed;
   }
   
@@ -287,25 +301,104 @@ export class ControlStateService {
     return changed;
   }
   
-  // ==================== Checking active modes ==================== //
-  
+  // ==================== Context-dependent modes and tags ==================== //
+
   /**
-   * Get current AI interaction mode.
-   *
-   * @returns Typed AI interaction mode
+   * Gets modes for specific context and provider.
+   * Returns empty object if no modes saved for this combination.
    */
-  public getAiInteractionMode(): AiInteractionMode {
+  public getCurrentModes(ctx: string, provider: string): Record<string, string> {
     const state = this.getState();
-    const aiInteractionMode = state.modes?.["ai-interaction"];
-    return parseAiInteractionMode(aiInteractionMode);
+    return state.modesByContextProvider?.[ctx]?.[provider] ?? {};
   }
-  
+
   /**
-   * Check if "review" mode (code review) is active
+   * Sets modes for specific context and provider.
    */
-  public isReviewModeActive(): boolean {
+  public async setCurrentModes(
+    ctx: string,
+    provider: string,
+    modes: Record<string, string>,
+    source?: string
+  ): Promise<void> {
     const state = this.getState();
-    return Object.values(state.modes || {}).some(mode => mode === "review");
+    const modesByContextProvider = state.modesByContextProvider ?? {};
+
+    if (!modesByContextProvider[ctx]) {
+      modesByContextProvider[ctx] = {};
+    }
+    modesByContextProvider[ctx][provider] = modes;
+
+    await this.setState({ modesByContextProvider }, source);
+  }
+
+  /**
+   * Gets tags for specific context.
+   * Returns empty object if no tags saved for this context.
+   */
+  public getCurrentTags(ctx: string): Record<string, string[]> {
+    const state = this.getState();
+    return state.tagsByContext?.[ctx] ?? {};
+  }
+
+  /**
+   * Sets tags for specific context.
+   */
+  public async setCurrentTags(
+    ctx: string,
+    tags: Record<string, string[]>,
+    source?: string
+  ): Promise<void> {
+    const state = this.getState();
+    const tagsByContext = state.tagsByContext ?? {};
+    tagsByContext[ctx] = tags;
+
+    await this.setState({ tagsByContext }, source);
+  }
+
+  /**
+   * Gets the 'runs' string from the integration mode-set for current selection.
+   *
+   * @param ctx Current context name
+   * @param provider Current provider ID
+   * @param modeSets Mode sets from CLI
+   * @returns runs string or null if not found
+   */
+  public getIntegrationModeRuns(
+    ctx: string,
+    provider: string,
+    modeSets: ModeSetsList
+  ): string | null {
+    // Find integration mode-set
+    const integrationSet = modeSets["mode-sets"]?.find(ms => ms.integration === true);
+    if (!integrationSet) {
+      return null;
+    }
+
+    // Get selected mode for this mode-set
+    const currentModes = this.getCurrentModes(ctx, provider);
+    const selectedModeId = currentModes[integrationSet.id];
+
+    if (!selectedModeId) {
+      // No mode selected, try first mode
+      const firstMode = integrationSet.modes[0];
+      if (!firstMode?.runs?.[provider]) {
+        return null;
+      }
+      return firstMode.runs[provider];
+    }
+
+    // Find the mode and get runs for provider
+    const mode = integrationSet.modes.find(m => m.id === selectedModeId);
+    return mode?.runs?.[provider] ?? null;
+  }
+
+  /**
+   * Check if "review" mode (code review) is active for current context and provider.
+   */
+  public isReviewModeActive(ctx: string, provider: string): boolean {
+    const modes = this.getCurrentModes(ctx, provider);
+    return Object.values(modes).some(mode => mode === "review");
   }
   
   /**

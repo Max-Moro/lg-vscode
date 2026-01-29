@@ -438,7 +438,10 @@ export class ControlPanelView implements vscode.WebviewViewProvider {
 
         // Update state (depends on loaded data)
         await this.stateService.validateBasicParams(sections, contexts, tokenizerLibs);
-        await this.stateService.actualizeState(modeSets, tagSets);
+        const state = this.stateService.getState();
+        const ctx = state.template || "";
+        const provider = state.providerId || "";
+        await this.stateService.actualizeState(ctx, provider, modeSets, tagSets);
 
         // Get available lists for CLI settings
         const cliShells = getAvailableShells();
@@ -447,7 +450,7 @@ export class ControlPanelView implements vscode.WebviewViewProvider {
         const codexReasoningEfforts = getAvailableCodexReasoningEfforts();
 
         // Get final state to send to webview
-        const state = this.stateService.getState();
+        const finalState = this.stateService.getState();
 
         this.post({
           type: "data",
@@ -462,7 +465,7 @@ export class ControlPanelView implements vscode.WebviewViewProvider {
           claudeModels,
           claudeIntegrationMethods,
           codexReasoningEfforts,
-          state
+          state: finalState
         });
       })
       .catch(() => {

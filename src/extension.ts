@@ -24,40 +24,6 @@ export function activate(context: vscode.ExtensionContext) {
   // Initialize AI Integration
   aiService = createAiIntegrationService(context);
 
-  // Initial provider detection
-  aiService.detectBestProvider().then(async (bestProviderId) => {
-    const config = vscode.workspace.getConfiguration();
-    const inspection = config.inspect<string>("lg.ai.provider");
-
-    // Check if the setting is explicitly set (in workspace or global)
-    const isExplicitlySet = inspection?.workspaceValue !== undefined || inspection?.globalValue !== undefined;
-
-    // If the setting is not set explicitly, offer the best option
-    if (!isExplicitlySet) {
-      // Skip the offer if the best option is clipboard (no better option found)
-      if (bestProviderId === "clipboard") {
-        return;
-      }
-
-      const providerName = aiService.getProviderName(bestProviderId);
-      const choice = await vscode.window.showInformationMessage(
-        `LG: Detected AI provider: ${providerName}. Set as default?`,
-        "Yes",
-        "Choose Another",
-        "Later"
-      );
-
-      if (choice === "Yes") {
-        await config.update("lg.ai.provider", bestProviderId, vscode.ConfigurationTarget.Global);
-        logInfo(`AI provider set to: ${bestProviderId}`);
-      } else if (choice === "Choose Another") {
-        vscode.commands.executeCommand("workbench.action.openSettings", "lg.ai.provider");
-      }
-    }
-  }).catch((e) => {
-    logError("Failed to detect AI providers", e);
-  });
-
   // 1) Virtual document provider (lg://listing, lg://context)
   virtualProvider = new VirtualDocProvider();
   context.subscriptions.push(

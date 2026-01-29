@@ -1,5 +1,5 @@
 import * as vscode from "vscode";
-import { cliRender, cliReport } from "../cli/CliClient";
+import { cliRender, cliReport, type CliGenerationParams } from "../cli/CliClient";
 import { ControlStateService } from "./ControlStateService";
 
 /**
@@ -23,7 +23,21 @@ export class ListingService {
       throw new Error("No section selected");
     }
     const target = `sec:${state.section}`;
-    return cliRender(target, state);
+    // For sections, use current template's context for modes/tags
+    const ctx = state.template || "";
+    const provider = state.providerId || "";
+
+    const params: CliGenerationParams = {
+      tokenizerLib: state.tokenizerLib || "tiktoken",
+      encoder: state.encoder || "cl100k_base",
+      ctxLimit: state.ctxLimit || 128000,
+      modes: this.stateService.getCurrentModes(ctx, provider),
+      tags: this.stateService.getCurrentTags(ctx),
+      taskText: state.taskText,
+      targetBranch: state.targetBranch,
+    };
+
+    return cliRender(target, params);
   }
   
   /**
@@ -36,7 +50,20 @@ export class ListingService {
       throw new Error("No section selected");
     }
     const target = `sec:${state.section}`;
-    const result = await cliReport(target, state);
+    const ctx = state.template || "";
+    const provider = state.providerId || "";
+
+    const params: CliGenerationParams = {
+      tokenizerLib: state.tokenizerLib || "tiktoken",
+      encoder: state.encoder || "cl100k_base",
+      ctxLimit: state.ctxLimit || 128000,
+      modes: this.stateService.getCurrentModes(ctx, provider),
+      tags: this.stateService.getCurrentTags(ctx),
+      taskText: state.taskText,
+      targetBranch: state.targetBranch,
+    };
+
+    const result = await cliReport(target, params);
     if (!result) {
       throw new Error("CLI unavailable");
     }
@@ -53,7 +80,20 @@ export class ListingService {
       throw new Error("No section selected");
     }
     const target = `sec:${state.section}`;
-    const data = await cliReport(target, state);
+    const ctx = state.template || "";
+    const provider = state.providerId || "";
+
+    const params: CliGenerationParams = {
+      tokenizerLib: state.tokenizerLib || "tiktoken",
+      encoder: state.encoder || "cl100k_base",
+      ctxLimit: state.ctxLimit || 128000,
+      modes: this.stateService.getCurrentModes(ctx, provider),
+      tags: this.stateService.getCurrentTags(ctx),
+      taskText: state.taskText,
+      targetBranch: state.targetBranch,
+    };
+
+    const data = await cliReport(target, params);
     if (!data) {
       throw new Error("CLI unavailable");
     }

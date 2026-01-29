@@ -2,6 +2,7 @@ import * as vscode from "vscode";
 import type { ProviderModule } from "./types";
 import { logInfo, logDebug, logError } from "../../logging/log";
 import { ControlStateService } from "../ControlStateService";
+import { AiInteractionMode } from "../../models/AiInteractionMode";
 
 /**
  * Central service for managing AI providers
@@ -75,8 +76,17 @@ export class AiIntegrationService {
       throw new Error(`Provider '${providerId}' not found`);
     }
 
-    // Automatically detect mode from panel state
-    const mode = ControlStateService.getInstance(this.context).getAiInteractionMode();
+    // TODO: Stage 4 - replace with runs from integration mode-set
+    // For now, use deprecated AiInteractionMode with fallback to AGENT
+    const stateService = ControlStateService.getInstance(this.context);
+    const state = stateService.getState();
+    const ctx = state.template || "";
+    const provider = state.providerId || providerId;
+
+    // Get mode from ai-interaction mode-set (legacy behavior)
+    const modes = stateService.getCurrentModes(ctx, provider);
+    const aiInteractionMode = modes["ai-interaction"];
+    const mode = aiInteractionMode === "ask" ? AiInteractionMode.ASK : AiInteractionMode.AGENT;
 
     logInfo(`Sending content to provider: ${providerId} (mode: ${mode})`);
 

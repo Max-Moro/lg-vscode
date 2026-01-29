@@ -1,5 +1,5 @@
 import * as vscode from "vscode";
-import { cliRender, cliReport } from "../cli/CliClient";
+import { cliRender, cliReport, type CliGenerationParams } from "../cli/CliClient";
 import type { RunResult } from "../models/report";
 import { ControlStateService } from "./ControlStateService";
 
@@ -23,9 +23,22 @@ export class ContextService {
     if (!state.template) {
       throw new Error("No template selected");
     }
-    
+
     const target = `ctx:${state.template}`;
-    return cliRender(target, state);
+    const ctx = state.template || "";
+    const provider = state.providerId || "";
+
+    const params: CliGenerationParams = {
+      tokenizerLib: state.tokenizerLib || "tiktoken",
+      encoder: state.encoder || "cl100k_base",
+      ctxLimit: state.ctxLimit || 128000,
+      modes: this.stateService.getCurrentModes(ctx, provider),
+      tags: this.stateService.getCurrentTags(ctx),
+      taskText: state.taskText,
+      targetBranch: state.targetBranch,
+    };
+
+    return cliRender(target, params);
   }
   
   /**
@@ -39,7 +52,20 @@ export class ContextService {
     }
 
     const target = `ctx:${state.template}`;
-    const result = await cliReport(target, state);
+    const ctx = state.template || "";
+    const provider = state.providerId || "";
+
+    const params: CliGenerationParams = {
+      tokenizerLib: state.tokenizerLib || "tiktoken",
+      encoder: state.encoder || "cl100k_base",
+      ctxLimit: state.ctxLimit || 128000,
+      modes: this.stateService.getCurrentModes(ctx, provider),
+      tags: this.stateService.getCurrentTags(ctx),
+      taskText: state.taskText,
+      targetBranch: state.targetBranch,
+    };
+
+    const result = await cliReport(target, params);
     if (!result) {
       throw new Error("CLI unavailable");
     }

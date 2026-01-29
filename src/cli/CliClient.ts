@@ -1,71 +1,77 @@
 import { runCli } from "./CliResolver";
 import type { RunResult } from "../models/report";
 import type { DiagReport } from "../models/diag_report";
-import type { ControlPanelState } from "../services/ControlStateService";
 import { CliException } from "./CliException";
 import { logDebug } from "../logging/log";
+
+/**
+ * Parameters for CLI generation commands.
+ * Extracted from state to support context-dependent storage.
+ */
+export interface CliGenerationParams {
+  tokenizerLib: string;
+  encoder: string;
+  ctxLimit: number;
+  modes: Record<string, string>;        // modeSetId -> modeId
+  tags: Record<string, string[]>;       // tagSetId -> [tagId, ...]
+  taskText?: string;
+  targetBranch?: string;
+}
 
 /**
  * Internal function to build CLI arguments for render/report commands.
  *
  * @param command - CLI command ("render" or "report")
  * @param target - target (e.g., "ctx:name" or "sec:name")
- * @param state - control panel state
+ * @param params - CLI generation parameters
  * @returns object with args and stdinData to pass to runCli
  */
-function buildCliArgs(command: string, target: string, state: Partial<ControlPanelState>): { args: string[]; stdinData?: string } {
+function buildCliArgs(command: string, target: string, params: CliGenerationParams): { args: string[]; stdinData?: string } {
   const args: string[] = [command, target];
 
   // Required tokenization parameters
-  // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-  args.push("--lib", state.tokenizerLib!);
-  // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-  args.push("--encoder", state.encoder!);
-  // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-  args.push("--ctx-limit", String(state.ctxLimit!));
+  args.push("--lib", params.tokenizerLib);
+  args.push("--encoder", params.encoder);
+  args.push("--ctx-limit", String(params.ctxLimit));
 
   // Modes
-  if (state.modes) {
-    for (const [modeset, mode] of Object.entries(state.modes)) {
-      if (mode) {
-        args.push("--mode", `${modeset}:${mode}`);
-      }
+  for (const [modeset, mode] of Object.entries(params.modes)) {
+    if (mode) {
+      args.push("--mode", `${modeset}:${mode}`);
     }
   }
 
-  // Tags (convert from Record<tagSetId, tagId[]> to flat list)
-  if (state.tags) {
-    const flatTags: string[] = [];
-    for (const tagIds of Object.values(state.tags)) {
-      flatTags.push(...tagIds);
-    }
-    if (flatTags.length > 0) {
-      args.push("--tags", flatTags.join(","));
-    }
+  // Tags (flatten from Record<tagSetId, tagId[]> to flat list)
+  const flatTags: string[] = [];
+  for (const tagIds of Object.values(params.tags)) {
+    flatTags.push(...tagIds);
+  }
+  if (flatTags.length > 0) {
+    args.push("--tags", flatTags.join(","));
   }
 
   // Target branch (for review mode)
-  if (state.targetBranch && state.targetBranch.trim()) {
-    args.push("--target-branch", state.targetBranch.trim());
+  if (params.targetBranch && params.targetBranch.trim()) {
+    args.push("--target-branch", params.targetBranch.trim());
   }
 
   // Task text (pass via stdin)
   let stdinData: string | undefined;
-  if (state.taskText && state.taskText.trim()) {
+  if (params.taskText && params.taskText.trim()) {
     args.push("--task", "-");
-    stdinData = state.taskText.trim();
+    stdinData = params.taskText.trim();
   }
-  
+
   return { args, stdinData };
 }
 
-export async function cliRender(target: string, state: Partial<ControlPanelState>): Promise<string> {
-  const { args, stdinData } = buildCliArgs("render", target, state);
+export async function cliRender(target: string, params: CliGenerationParams): Promise<string> {
+  const { args, stdinData } = buildCliArgs("render", target, params);
   return runCli(args, { timeoutMs: 120_000, stdinData });
 }
 
-export async function cliReport(target: string, state: Partial<ControlPanelState>): Promise<RunResult> {
-  const { args, stdinData } = buildCliArgs("report", target, state);
+export async function cliReport(target: string, params: CliGenerationParams): Promise<RunResult> {
+  const { args, stdinData } = buildCliArgs("report", target, params);
   const out = await runCli(args, { timeoutMs: 120_000, stdinData });
   const data = JSON.parse(out);
   return data as RunResult;
