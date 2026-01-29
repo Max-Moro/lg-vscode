@@ -152,15 +152,9 @@ export class AiIntegrationService {
     generateTitle?: string
   ): Promise<boolean> {
     if (!providerId) {
-      const choice = await vscode.window.showErrorMessage(
-        "No AI provider configured.",
-        "Open Settings",
-        "Cancel"
+      vscode.window.showErrorMessage(
+        "No AI provider selected. Please select a provider in the Control Panel."
       );
-
-      if (choice === "Open Settings") {
-        vscode.commands.executeCommand("workbench.action.openSettings", "lg.ai.provider");
-      }
       return false;
     }
 
@@ -198,17 +192,15 @@ export class AiIntegrationService {
 
       const errorMessage = error instanceof Error ? error.message : String(error);
       const options = generatedContent
-        ? ["Open Settings", "Copy to Clipboard", "Cancel"]
-        : ["Open Settings", "Cancel"];
+        ? ["Copy to Clipboard", "Cancel"]
+        : ["Cancel"];
 
       const choice = await vscode.window.showErrorMessage(
         `Failed to send to ${providerName}: ${errorMessage}`,
         ...options
       );
 
-      if (choice === "Open Settings") {
-        vscode.commands.executeCommand("workbench.action.openSettings", "lg.ai.provider");
-      } else if (choice === "Copy to Clipboard" && generatedContent) {
+      if (choice === "Copy to Clipboard" && generatedContent) {
         // Fallback to clipboard in case of error
         await this.sendToProvider("clipboard", generatedContent, "");
       }

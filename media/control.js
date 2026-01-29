@@ -242,8 +242,6 @@
 
       applyState(msg.state);
       
-      // Update CLI block visibility based on current provider
-      updateCliSettingsVisibility();
     } else if (msg?.type === "encodersUpdated") {
       // Update encoder list after tokenizer library change
       const state = State.get();
@@ -278,9 +276,6 @@
       const state = State.get();
       if (state.modes) applyModesState(state.modes);
       if (state.tags) applyTagsState(state.tags);
-    } else if (msg?.type === "providerSettingResponse") {
-      // Handle provider setting response for CLI block visibility
-      handleProviderSettingResponse(msg.providerId);
     } else if (msg?.type === "theme") {
       document.documentElement.dataset.vscodeThemeKind = String(msg.kind);
     }
@@ -677,43 +672,6 @@
     });
   }
   
-  /**
-   * Update CLI settings block visibility based on current AI provider
-   * 
-   * Shows the block only when a CLI-based provider is selected.
-   * CLI-based providers: claude.cli
-   */
-  function updateCliSettingsVisibility() {
-    // Request current provider setting from VS Code
-    State.post("getProviderSetting");
-  }
-  
-  /**
-   * Handler for provider setting response
-   */
-  function handleProviderSettingResponse(providerId) {
-    const cliBlock = DOM.qs("#cli-settings-block");
-    const claudeSettings = DOM.qs("#claude-settings-container");
-    const codexSettings = DOM.qs("#codex-settings-container");
-    if (!cliBlock) return;
-
-    // List of CLI-based provider IDs
-    const cliProviders = ["claude.cli", "codex.cli"];
-
-    const shouldShow = cliProviders.includes(providerId);
-    cliBlock.style.display = shouldShow ? "flex" : "none";
-
-    // Show Claude-specific settings only for Claude CLI provider
-    if (claudeSettings) {
-      claudeSettings.style.display = (providerId === "claude.cli") ? "flex" : "none";
-    }
-
-    // Show Codex-specific settings only for Codex CLI provider
-    if (codexSettings) {
-      codexSettings.style.display = (providerId === "codex.cli") ? "flex" : "none";
-    }
-  }
-
   // ---- tags panel management ----
   function showTagsPanel() {
     const panel = DOM.qs("#tags-panel");

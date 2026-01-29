@@ -333,17 +333,6 @@ export class ControlPanelView implements vscode.WebviewViewProvider {
       this.context.subscriptions.push(watcher);
     }
     
-    // -------------------- watcher for AI provider changes -------------------- //
-    this.context.subscriptions.push(
-      vscode.workspace.onDidChangeConfiguration((e) => {
-        if (e.affectsConfiguration("lg.ai.provider")) {
-          // Notify webview about provider change to update CLI block visibility
-          const config = vscode.workspace.getConfiguration();
-          const providerId = config.get<string>("lg.ai.provider") || "clipboard";
-          this.post({ type: "providerSettingResponse", providerId });
-        }
-      })
-    );
   }
 
   /** Execute startup list/state loading exactly once. */
