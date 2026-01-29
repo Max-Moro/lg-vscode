@@ -62,6 +62,27 @@ export class AiIntegrationService {
   }
 
   /**
+   * Get list of all registered providers for UI display.
+   * Returns providers sorted by priority (descending).
+   */
+  getRegisteredProviders(): Array<{ id: string; name: string; priority: number }> {
+    const result: Array<{ id: string; name: string; priority: number }> = [];
+
+    for (const [id, module] of this.providers) {
+      result.push({
+        id,
+        name: module.provider.name,
+        priority: module.detector.priority
+      });
+    }
+
+    // Sort by priority descending
+    result.sort((a, b) => b.priority - a.priority);
+
+    return result;
+  }
+
+  /**
    * Get all supported modes from all providers.
    * Used for generating ai-interaction.sec.yaml
    *

@@ -154,6 +154,71 @@ export class ControlPanelView implements vscode.WebviewViewProvider {
     this.post({ type: "encodersUpdated", encoders });
   }
 
+  private async onProviderChanged(providerId: string) {
+    // 1. Save to state
+    await this.stateService.setState({ providerId }, "control-panel");
+
+    // 2. Reload contexts (filtered by provider)
+    const contexts = await listContextsJson(providerId).catch(() => [] as string[]);
+
+    // 3. Get current context
+    const currentState = this.stateService.getState();
+    const ctx = currentState.template || "";
+
+    // 4. Reload mode-sets and tag-sets if context is selected
+    let modeSets: ModeSetsList = { "mode-sets": [] };
+    let tagSets: TagSetsList = { "tag-sets": [] };
+
+    if (ctx) {
+      [modeSets, tagSets] = await Promise.all([
+        listModeSetsJson(ctx, providerId).catch(() => ({ "mode-sets": [] } as ModeSetsList)),
+        listTagSetsJson(ctx).catch(() => ({ "tag-sets": [] } as TagSetsList))
+      ]);
+
+      // Actualize state
+      await this.stateService.actualizeState(ctx, providerId, modeSets, tagSets);
+    }
+
+    // 5. Update CLI settings visibility
+    const cliProviders = ["claude.cli", "codex.cli"];
+    const showCliSettings = cliProviders.includes(providerId);
+
+    // 6. Send updates to webview
+    this.post({
+      type: "providerDataUpdate",
+      contexts,
+      modeSets,
+      tagSets,
+      showCliSettings
+    });
+  }
+
+  private async onContextChanged(template: string) {
+    // 1. Save to state
+    await this.stateService.setState({ template }, "control-panel");
+
+    const currentState = this.stateService.getState();
+    const providerId = currentState.providerId || "";
+
+    // 2. Reload mode-sets and tag-sets
+    const [modeSets, tagSets] = await Promise.all([
+      listModeSetsJson(template, providerId).catch(() => ({ "mode-sets": [] } as ModeSetsList)),
+      listTagSetsJson(template).catch(() => ({ "tag-sets": [] } as TagSetsList))
+    ]);
+
+    // 3. Actualize state
+    if (template && providerId) {
+      await this.stateService.actualizeState(template, providerId, modeSets, tagSets);
+    }
+
+    // 4. Send updates to webview
+    this.post({
+      type: "contextDataUpdate",
+      modeSets,
+      tagSets
+    });
+  }
+
   resolveWebviewView(view: vscode.WebviewView): void | Thenable<void> {
     this.view = view;
     view.webview.options = { enableScripts: true };
@@ -177,13 +242,12 @@ export class ControlPanelView implements vscode.WebviewViewProvider {
           case "tokenizerLibChanged":
             await this.onTokenizerLibChange(msg.lib);
             break;
-          case "getProviderSetting": {
-            // Request current AI provider setting to control CLI block visibility
-            const config = vscode.workspace.getConfiguration();
-            const providerId = config.get<string>("lg.ai.provider") || "clipboard";
-            this.post({ type: "providerSettingResponse", providerId });
+          case "providerChanged":
+            await this.onProviderChanged(msg.providerId);
             break;
-          }
+          case "contextChanged":
+            await this.onContextChanged(msg.template);
+            break;
           case "generateListing":
             await this.onGenerateListing();
             break;
@@ -474,6 +538,10 @@ export class ControlPanelView implements vscode.WebviewViewProvider {
 
         await this.stateService.actualizeState(ctx, provider, modeSets, tagSets);
 
+        // Get registered AI providers
+        const aiService = getAiService();
+        const providers = aiService.getRegisteredProviders();
+
         // Get available lists for CLI settings
         const cliShells = getAvailableShells();
         const claudeModels = getAvailableClaudeModels();
@@ -482,6 +550,13 @@ export class ControlPanelView implements vscode.WebviewViewProvider {
 
         // Get final state to send to webview
         const finalState = this.stateService.getState();
+
+        // Auto-detect provider if not set
+        if (!finalState.providerId) {
+          const bestProvider = await aiService.detectBestProvider();
+          await this.stateService.setState({ providerId: bestProvider }, "control-panel");
+          finalState.providerId = bestProvider;
+        }
 
         this.post({
           type: "data",
@@ -496,6 +571,7 @@ export class ControlPanelView implements vscode.WebviewViewProvider {
           claudeModels,
           claudeIntegrationMethods,
           codexReasoningEfforts,
+          providers,
           state: finalState
         });
       })

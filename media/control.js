@@ -48,6 +48,20 @@
     State.post("tokenizerLibChanged", { lib });
   });
 
+  // ---- special handler for provider change ----
+  Events.delegate(document, "#provider", "change", (el) => {
+    const providerId = el.value;
+    State.merge({ providerId });
+    State.post("providerChanged", { providerId });
+  });
+
+  // ---- special handler for context (template) change ----
+  Events.delegate(document, "#template", "change", (el) => {
+    const template = el.value;
+    State.merge({ template });
+    State.post("contextChanged", { template });
+  });
+
   // ---- client-side validation of ctxLimit ----
   Events.delegate(document, "#ctxLimit", "change", (el) => {
     const input = el;
@@ -174,13 +188,21 @@
     if (msg?.type === "data") {
       // fill selects with remote lists
       // If value from state exists - use it, otherwise the first element will be selected
-      LGUI.fillSelect(DOM.qs("#section"), msg.sections, { 
+      LGUI.fillSelect(DOM.qs("#section"), msg.sections, {
         value: msg.state.section,
-        keepValue: true 
+        keepValue: true
       });
-      LGUI.fillSelect(DOM.qs("#template"), msg.contexts, { 
+      LGUI.fillSelect(DOM.qs("#template"), msg.contexts, {
         value: msg.state.template,
-        keepValue: true 
+        keepValue: true
+      });
+
+      // fill providers
+      LGUI.fillSelect(DOM.qs("#provider"), msg.providers || [], {
+        getValue: it => it.id,
+        getLabel: it => it.name,
+        value: msg.state.providerId,
+        keepValue: true
       });
       
       // fill tokenization selects
@@ -226,6 +248,36 @@
       // Update encoder list after tokenizer library change
       const state = State.get();
       setupEncoderAutosuggest(msg.encoders, state.encoder);
+    } else if (msg?.type === "providerDataUpdate") {
+      // Update contexts list
+      LGUI.fillSelect(DOM.qs("#template"), msg.contexts, {
+        keepValue: true
+      });
+
+      // Update mode-sets and tag-sets
+      populateModeSets(msg.modeSets);
+      populateTagSets(msg.tagSets);
+
+      // Apply saved modes/tags from state
+      const state = State.get();
+      if (state.modes) applyModesState(state.modes);
+      if (state.tags) applyTagsState(state.tags);
+
+      // Update CLI block visibility
+      const cliBlock = DOM.qs("#cli-settings-block");
+      if (cliBlock) {
+        cliBlock.style.display = msg.showCliSettings ? "flex" : "none";
+      }
+
+    } else if (msg?.type === "contextDataUpdate") {
+      // Update mode-sets and tag-sets
+      populateModeSets(msg.modeSets);
+      populateTagSets(msg.tagSets);
+
+      // Apply saved modes/tags from state
+      const state = State.get();
+      if (state.modes) applyModesState(state.modes);
+      if (state.tags) applyTagsState(state.tags);
     } else if (msg?.type === "providerSettingResponse") {
       // Handle provider setting response for CLI block visibility
       handleProviderSettingResponse(msg.providerId);
@@ -248,6 +300,26 @@
     // Apply tags state (specific logic)
     if (s.tags !== undefined) {
       applyTagsState(s.tags);
+    }
+
+    // Update CLI settings visibility based on provider
+    if (s.providerId !== undefined) {
+      const cliProviders = ["claude.cli", "codex.cli"];
+      const cliBlock = DOM.qs("#cli-settings-block");
+      const claudeSettings = DOM.qs("#claude-settings-container");
+      const codexSettings = DOM.qs("#codex-settings-container");
+
+      if (cliBlock) {
+        const shouldShow = cliProviders.includes(s.providerId);
+        cliBlock.style.display = shouldShow ? "flex" : "none";
+
+        if (claudeSettings) {
+          claudeSettings.style.display = (s.providerId === "claude.cli") ? "flex" : "none";
+        }
+        if (codexSettings) {
+          codexSettings.style.display = (s.providerId === "codex.cli") ? "flex" : "none";
+        }
+      }
     }
 
     // Merge into local cache
