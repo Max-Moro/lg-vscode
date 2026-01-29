@@ -1,6 +1,8 @@
 import { runCli } from "./CliResolver";
 import type { RunResult } from "../models/report";
 import type { DiagReport } from "../models/diag_report";
+import type { ModeSetsList } from "../models/mode_sets_list";
+import type { TagSetsList } from "../models/tag_sets_list";
 import { CliException } from "./CliException";
 import { logDebug } from "../logging/log";
 
@@ -16,6 +18,7 @@ export interface CliGenerationParams {
   tags: Record<string, string[]>;       // tagSetId -> [tagId, ...]
   taskText?: string;
   targetBranch?: string;
+  providerId?: string;
 }
 
 /**
@@ -55,6 +58,11 @@ function buildCliArgs(command: string, target: string, params: CliGenerationPara
     args.push("--target-branch", params.targetBranch.trim());
   }
 
+  // Provider (for template conditions)
+  if (params.providerId && params.providerId.trim()) {
+    args.push("--provider", params.providerId.trim());
+  }
+
   // Task text (pass via stdin)
   let stdinData: string | undefined;
   if (params.taskText && params.taskText.trim()) {
@@ -77,27 +85,79 @@ export async function cliReport(target: string, params: CliGenerationParams): Pr
   return data as RunResult;
 }
 
-export async function cliList(what: "sections" | "contexts" | "mode-sets" | "tag-sets") {
+/**
+ * List sections from CLI.
+ */
+export async function cliListSections(): Promise<string[]> {
   try {
-    const out = await runCli(["list", what], { timeoutMs: 20_000 });
+    const out = await runCli(["list", "sections"], { timeoutMs: 20_000 });
     const data = JSON.parse(out);
-
-    if (what === "mode-sets" || what === "tag-sets") {
-      return data;
-    }
-
-    return data?.[what] ?? data ?? [];
+    return data?.sections ?? [];
   } catch (e) {
     if (e instanceof CliException && e.silent) {
-      logDebug(`[cliList] Silent failure: ${e.message}`);
-      // Return appropriate empty structure
-      if (what === "mode-sets") {
-        return { "mode-sets": [] };
-      } else if (what === "tag-sets") {
-        return { "tag-sets": [] };
-      } else {
-        return [];
-      }
+      logDebug(`[cliListSections] Silent failure: ${e.message}`);
+      return [];
+    }
+    throw e;
+  }
+}
+
+/**
+ * List contexts with optional provider filter.
+ * @param provider - Optional provider ID to filter contexts
+ */
+export async function cliListContexts(provider?: string): Promise<string[]> {
+  try {
+    const args = ["list", "contexts"];
+    if (provider && provider.trim()) {
+      args.push("--provider", provider.trim());
+    }
+    const out = await runCli(args, { timeoutMs: 20_000 });
+    const data = JSON.parse(out);
+    return data?.contexts ?? [];
+  } catch (e) {
+    if (e instanceof CliException && e.silent) {
+      logDebug(`[cliListContexts] Silent failure: ${e.message}`);
+      return [];
+    }
+    throw e;
+  }
+}
+
+/**
+ * List mode-sets for specific context and provider.
+ * @param context - Context name
+ * @param provider - Provider ID
+ */
+export async function cliListModeSets(context: string, provider: string): Promise<ModeSetsList> {
+  try {
+    const args = ["list", "mode-sets", "--context", context, "--provider", provider];
+    const out = await runCli(args, { timeoutMs: 20_000 });
+    const data = JSON.parse(out);
+    return data as ModeSetsList;
+  } catch (e) {
+    if (e instanceof CliException && e.silent) {
+      logDebug(`[cliListModeSets] Silent failure: ${e.message}`);
+      return { "mode-sets": [] };
+    }
+    throw e;
+  }
+}
+
+/**
+ * List tag-sets for specific context.
+ * @param context - Context name
+ */
+export async function cliListTagSets(context: string): Promise<TagSetsList> {
+  try {
+    const args = ["list", "tag-sets", "--context", context];
+    const out = await runCli(args, { timeoutMs: 20_000 });
+    const data = JSON.parse(out);
+    return data as TagSetsList;
+  } catch (e) {
+    if (e instanceof CliException && e.silent) {
+      logDebug(`[cliListTagSets] Silent failure: ${e.message}`);
+      return { "tag-sets": [] };
     }
     throw e;
   }

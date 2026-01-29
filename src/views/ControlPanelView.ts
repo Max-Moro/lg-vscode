@@ -423,16 +423,12 @@ export class ControlPanelView implements vscode.WebviewViewProvider {
           contexts,
           tokenizerLibs,
           encoders,
-          modeSets,
-          tagSets,
           { branches }
         ] = await Promise.all([
           listSectionsJson().catch(() => [] as string[]),
           listContextsJson().catch(() => [] as string[]),
           listTokenizerLibsJson().catch(() => [] as string[]),
           listEncodersJson(currentState.tokenizerLib ?? "tiktoken").catch(() => []),
-          listModeSetsJson().catch(() => ({ "mode-sets": [] } as ModeSetsList)),
-          listTagSetsJson().catch(() => ({ "tag-sets": [] } as TagSetsList)),
           this.stateService.updateBranches()
         ]);
 
@@ -441,6 +437,13 @@ export class ControlPanelView implements vscode.WebviewViewProvider {
         const state = this.stateService.getState();
         const ctx = state.template || "";
         const provider = state.providerId || "";
+
+        // Load mode-sets and tag-sets with context and provider
+        const [modeSets, tagSets] = await Promise.all([
+          listModeSetsJson(ctx, provider).catch(() => ({ "mode-sets": [] } as ModeSetsList)),
+          listTagSetsJson(ctx).catch(() => ({ "tag-sets": [] } as TagSetsList))
+        ]);
+
         await this.stateService.actualizeState(ctx, provider, modeSets, tagSets);
 
         // Get available lists for CLI settings

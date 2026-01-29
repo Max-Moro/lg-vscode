@@ -1,16 +1,14 @@
-import { cliList } from "../cli/CliClient";
+import { cliListSections, cliListContexts, cliListModeSets, cliListTagSets } from "../cli/CliClient";
 import { runCli } from "../cli/CliResolver";
 import type { ModeSetsList } from "../models/mode_sets_list";
 import type { TagSetsList } from "../models/tag_sets_list";
 
 export async function listSectionsJson(): Promise<string[]> {
-  const list = await cliList("sections");
-  return Array.isArray(list) ? (list as string[]) : [];
+  return cliListSections();
 }
 
-export async function listContextsJson(): Promise<string[]> {
-  const list = await cliList("contexts");
-  return Array.isArray(list) ? (list as string[]) : [];
+export async function listContextsJson(provider?: string): Promise<string[]> {
+  return cliListContexts(provider);
 }
 
 export interface EncoderEntry {
@@ -37,12 +35,10 @@ export async function listEncodersJson(lib: string): Promise<EncoderEntry[]> {
   );
 }
 
-export async function listModeSetsJson(): Promise<ModeSetsList> {
-  const data = await cliList("mode-sets");
-  return data as ModeSetsList;
+export async function listModeSetsJson(context: string, provider: string): Promise<ModeSetsList> {
+  return cliListModeSets(context, provider);
 }
 
-export async function listTagSetsJson(): Promise<TagSetsList> {
-  const data = await cliList("tag-sets");
-  return data as TagSetsList;
+export async function listTagSetsJson(context: string): Promise<TagSetsList> {
+  return cliListTagSets(context);
 }
