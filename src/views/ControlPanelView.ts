@@ -81,6 +81,9 @@ export class ControlPanelView implements vscode.WebviewViewProvider {
         case "openSettings":
           vscode.commands.executeCommand("workbench.action.openSettings", `@ext:${EXT_ID}`);
           break;
+        case "updateAiModes":
+          await this.onUpdateAiModes();
+          break;
       }
     } catch (e) {
       const errorMessage = e instanceof Error ? e.message : String(e);
@@ -102,6 +105,31 @@ export class ControlPanelView implements vscode.WebviewViewProvider {
       () => resetCache()
     );
     vscode.window.showInformationMessage("LG cache has been reset.");
+  }
+
+  private async onUpdateAiModes(): Promise<void> {
+    const { AiModesTemplateGenerator } = await import("../services/ai/AiModesTemplateGenerator");
+    const generator = new AiModesTemplateGenerator(getAiService());
+
+    try {
+      const filePath = await vscode.window.withProgress(
+        {
+          location: vscode.ProgressLocation.Notification,
+          title: "LG: Updating AI modes template...",
+          cancellable: false
+        },
+        () => generator.generate()
+      );
+
+      // Open the generated file
+      const doc = await vscode.workspace.openTextDocument(filePath);
+      await vscode.window.showTextDocument(doc);
+
+      vscode.window.showInformationMessage("AI modes template updated successfully");
+    } catch (e) {
+      const errorMessage = e instanceof Error ? e.message : String(e);
+      vscode.window.showErrorMessage(`Failed to update AI modes template: ${errorMessage}`);
+    }
   }
 
 

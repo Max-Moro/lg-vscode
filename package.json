@@ -99,6 +99,11 @@
         "command": "lg.openSettings",
         "title": "Settings",
         "icon": "$(gear)"
+      },
+      {
+        "command": "lg.updateAiModes",
+        "title": "LG: Update AI Modes Template",
+        "icon": "$(sync)"
       }
     ],
     "views": {
@@ -152,6 +157,11 @@
           "command": "lg.openSettings",
           "when": "view == lg.control",
           "group": "settings@1"
+        },
+        {
+          "command": "lg.updateAiModes",
+          "when": "view == lg.control",
+          "group": "config@3"
         }
       ],
       "commandPalette": [
@@ -181,6 +191,10 @@
         },
         {
           "command": "lg.openSettings",
+          "when": "false"
+        },
+        {
+          "command": "lg.updateAiModes",
           "when": "false"
         }
       ]

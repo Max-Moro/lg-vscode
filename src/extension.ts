@@ -104,6 +104,10 @@ export function activate(context: vscode.ExtensionContext) {
 
     vscode.commands.registerCommand("lg.openSettings", async () => {
       await control.handleCommand("openSettings");
+    }),
+
+    vscode.commands.registerCommand("lg.updateAiModes", async () => {
+      await control.handleCommand("updateAiModes");
     })
   );
 
