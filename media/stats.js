@@ -90,7 +90,7 @@
       ${taskFieldHtml}
 
       <div class="lg-toolbar">
-        <button id="btn-send-to-ai" class="lg-btn lg-btn--primary" title="Generate and send to AI provider">Send to AI</button>
+        ${scope === "context" ? '<button id="btn-send-to-ai" class="lg-btn lg-btn--primary" title="Generate and send to AI provider">Send to AI</button>' : ''}
         <button id="btn-generate" class="lg-btn" title="Render the final prompt now">${esc(genLabel)}</button>
         <button id="btn-refresh" class="lg-btn" title="Re-run stats">Refresh</button>
       </div>

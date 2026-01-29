@@ -437,7 +437,9 @@ export class ControlPanelView implements vscode.WebviewViewProvider {
   }
 
   /**
-   * Handler for "Send to AI" button
+   * Handler for "Send to AI" button.
+   *
+   * Only works with contexts (templates). Section listings cannot be sent to AI.
    */
   private async onSendToAI() {
     // Pull current state from WebView
@@ -448,52 +450,43 @@ export class ControlPanelView implements vscode.WebviewViewProvider {
     const currentState = this.stateService.getState();
     const providerId = currentState.providerId || "";
 
+    // Validate: must have provider selected
     if (!providerId) {
       vscode.window.showWarningMessage("No AI provider selected.");
       return;
     }
 
-    // Determine what to send: context or section
-    const template = this.contextService.getCurrentTemplate();
-    if (template) {
-      // Send context
-      try {
-        const modeSets = await listModeSetsJson(template, providerId);
-        const runs = this.stateService.getIntegrationModeRuns(template, providerId, modeSets) || "";
+    // Validate: must have context selected
+    const template = currentState.template || "";
+    if (!template) {
+      vscode.window.showWarningMessage("Select a context first. Section listings cannot be sent to AI.");
+      return;
+    }
 
-        await aiService.generateAndSend(
-          () => this.contextService.generateContext(),
-          providerId,
-          runs,
-          `Generating context '${template}'...`
+    try {
+      // Get mode-sets for the current context
+      const modeSets = await listModeSetsJson(template, providerId);
+      const runs = this.stateService.getIntegrationModeRuns(template, providerId, modeSets);
+
+      // Validate: must have integration mode configured (except clipboard)
+      if (runs === null && providerId !== "clipboard") {
+        vscode.window.showErrorMessage(
+          "No integration mode configured for this context and provider.\n" +
+          "Run 'Update AI Modes Template' from the toolbar to generate ai-interaction.sec.yaml."
         );
-      } catch (e) {
-        const errorMessage = e instanceof Error ? e.message : String(e);
-        vscode.window.showErrorMessage(`Failed to get mode configuration: ${errorMessage}`);
-      }
-    } else {
-      // Send section
-      const section = this.listingService.getCurrentSection();
-      if (!section) {
-        vscode.window.showWarningMessage("Select a section or template first.");
         return;
       }
 
-      try {
-        // For section-based listing, use "section" as context
-        const modeSets = await listModeSetsJson("section", providerId);
-        const runs = this.stateService.getIntegrationModeRuns("section", providerId, modeSets) || "";
-
-        await aiService.generateAndSend(
-          () => this.listingService.generateListing(),
-          providerId,
-          runs,
-          `Generating listing for '${section}'...`
-        );
-      } catch (e) {
-        const errorMessage = e instanceof Error ? e.message : String(e);
-        vscode.window.showErrorMessage(`Failed to get mode configuration: ${errorMessage}`);
-      }
+      // Send context to AI
+      await aiService.generateAndSend(
+        () => this.contextService.generateContext(),
+        providerId,
+        runs ?? "",
+        `Generating context '${template}'...`
+      );
+    } catch (e) {
+      const errorMessage = e instanceof Error ? e.message : String(e);
+      vscode.window.showErrorMessage(`Failed to send to AI: ${errorMessage}`);
     }
   }
 

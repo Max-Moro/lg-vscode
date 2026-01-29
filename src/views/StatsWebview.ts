@@ -22,12 +22,6 @@ export async function showStatsWebview(
     ? data.target.slice(4)
     : data.target;
 
-  // Extract context name from target for getting mode runs
-  const contextName = data.target.startsWith("ctx:")
-    ? data.target.slice(4)
-    : data.target.startsWith("sec:")
-    ? "section"
-    : "section";
 
   const panel = vscode.window.createWebviewPanel(
     "lg.stats",
@@ -118,6 +112,12 @@ export async function showStatsWebview(
         vscode.window.showErrorMessage(`Copy failed: ${errorMessage}`);
       }
     } else if (msg?.type === "sendToAI") {
+      // Send to AI only works for contexts, not sections
+      if (current.scope !== "context") {
+        vscode.window.showWarningMessage("Section listings cannot be sent to AI. Use contexts instead.");
+        return;
+      }
+
       try {
         const aiService = getAiService();
         const currentState = stateService.getState();
@@ -128,14 +128,28 @@ export async function showStatsWebview(
           return;
         }
 
+        // Extract context name from target (e.g., "ctx:my-context" -> "my-context")
+        const contextName = data.target.startsWith("ctx:")
+          ? data.target.slice(4)
+          : data.target;
+
         const modeSets = await listModeSetsJson(contextName, providerId);
-        const runs = stateService.getIntegrationModeRuns(contextName, providerId, modeSets) || "";
+        const runs = stateService.getIntegrationModeRuns(contextName, providerId, modeSets);
+
+        // Validate integration mode (except clipboard)
+        if (runs === null && providerId !== "clipboard") {
+          vscode.window.showErrorMessage(
+            "No integration mode configured for this context and provider.\n" +
+            "Run 'Update AI Modes Template' to generate ai-interaction.sec.yaml."
+          );
+          return;
+        }
 
         await aiService.generateAndSend(
           () => generate(),
           providerId,
-          runs,
-          "LG: Generating content..."
+          runs ?? "",
+          "LG: Generating context..."
         );
         panel.dispose();
       } catch (e) {
