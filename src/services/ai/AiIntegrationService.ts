@@ -83,6 +83,39 @@ export class AiIntegrationService {
   }
 
   /**
+   * Detect available providers in the current environment.
+   * Checks each provider's detector and returns only available ones.
+   * Returns providers sorted by priority (descending).
+   */
+  async detectAvailableProviders(): Promise<Array<{ id: string; name: string; priority: number }>> {
+    const available: Array<{ id: string; name: string; priority: number }> = [];
+
+    for (const [id, module] of this.providers) {
+      try {
+        const isAvailable = await module.detector.detect();
+        if (isAvailable) {
+          available.push({
+            id,
+            name: module.provider.name,
+            priority: module.detector.priority
+          });
+          logDebug(`Provider ${id} is available (priority: ${module.detector.priority})`);
+        } else {
+          logDebug(`Provider ${id} is not available`);
+        }
+      } catch (e) {
+        logError(`Failed to detect provider ${id}`, e);
+      }
+    }
+
+    // Sort by priority descending
+    available.sort((a, b) => b.priority - a.priority);
+
+    logInfo(`Detected ${available.length} available providers: ${available.map(p => p.id).join(", ")}`);
+    return available;
+  }
+
+  /**
    * Get all supported modes from all providers.
    * Used for generating ai-interaction.sec.yaml
    *

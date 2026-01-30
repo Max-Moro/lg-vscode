@@ -525,9 +525,9 @@ export class ControlPanelView implements vscode.WebviewViewProvider {
         // Get current state
         let currentState = this.stateService.getState();
 
-        // Get registered AI providers first (needed for provider resolution)
+        // Detect available AI providers (filters by environment availability)
         const aiService = getAiService();
-        const providers = aiService.getRegisteredProviders();
+        const providers = await aiService.detectAvailableProviders();
 
         // Determine provider FIRST (before loading contexts)
         // Priority: 1) saved in state, 2) auto-detect best available, 3) first in list
