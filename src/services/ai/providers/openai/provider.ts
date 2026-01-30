@@ -9,7 +9,7 @@ import { BaseAiProvider } from "../../base";
  * API key is stored securely in VS Code secrets.
  */
 export class OpenAiProvider extends BaseAiProvider {
-  readonly id = "openai.api";
+  readonly id = "com.openai.api";
   readonly name = "OpenAI API";
 
   private context?: vscode.ExtensionContext;

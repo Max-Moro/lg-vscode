@@ -3,7 +3,7 @@ import { BaseExtensionProvider } from "../../base";
 import type { ProviderModeInfo } from "../../types";
 
 export class CopilotProvider extends BaseExtensionProvider {
-  readonly id = "github.copilot";
+  readonly id = "com.github.copilot.ext";
   readonly name = "GitHub Copilot Chat";
   protected extensionId = "GitHub.copilot-chat";
 

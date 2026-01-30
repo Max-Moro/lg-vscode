@@ -299,20 +299,19 @@
 
     // Update CLI settings visibility based on provider
     if (s.providerId !== undefined) {
-      const cliProviders = ["claude.cli", "codex.cli"];
       const cliBlock = DOM.qs("#cli-settings-block");
       const claudeSettings = DOM.qs("#claude-settings-container");
       const codexSettings = DOM.qs("#codex-settings-container");
 
       if (cliBlock) {
-        const shouldShow = cliProviders.includes(s.providerId);
+        const shouldShow = s.providerId && s.providerId.endsWith(".cli");
         cliBlock.style.display = shouldShow ? "flex" : "none";
 
         if (claudeSettings) {
-          claudeSettings.style.display = (s.providerId === "claude.cli") ? "flex" : "none";
+          claudeSettings.style.display = (s.providerId === "com.anthropic.claude.cli") ? "flex" : "none";
         }
         if (codexSettings) {
-          codexSettings.style.display = (s.providerId === "codex.cli") ? "flex" : "none";
+          codexSettings.style.display = (s.providerId === "com.openai.codex.cli") ? "flex" : "none";
         }
       }
     }

@@ -6,7 +6,7 @@ import type { ProviderModeInfo } from "../../types";
  * Cursor IDE AI Integration Provider
  */
 export class CursorProvider extends BaseForkProvider {
-  readonly id = "cursor.composer";
+  readonly id = "com.cursor.composer.ext";
   readonly name = "Cursor Composer";
 
   async send(content: string, _runs: string): Promise<void> {

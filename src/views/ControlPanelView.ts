@@ -208,8 +208,7 @@ export class ControlPanelView implements vscode.WebviewViewProvider {
     }
 
     // 5. Update CLI settings visibility
-    const cliProviders = ["claude.cli", "codex.cli"];
-    const showCliSettings = cliProviders.includes(providerId);
+    const showCliSettings = providerId.endsWith(".cli");
 
     // 6. Send updates to webview
     this.post({

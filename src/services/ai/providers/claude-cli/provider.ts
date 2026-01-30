@@ -28,7 +28,7 @@ const SESSION_LOCK_FILE = ".claude-session.lock";
  * The method is selected via the lg.claude.integrationMethod setting
  */
 export class ClaudeCliProvider extends BaseCliProvider {
-  readonly id = "claude.cli";
+  readonly id = "com.anthropic.claude.cli";
   readonly name = "Claude CLI";
 
   /**

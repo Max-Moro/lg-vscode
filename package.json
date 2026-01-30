@@ -102,7 +102,7 @@
       },
       {
         "command": "lg.updateAiModes",
-        "title": "LG: Update AI Modes Template",
+        "title": "Update AI Modes Template",
         "icon": "$(sync)"
       }
     ],

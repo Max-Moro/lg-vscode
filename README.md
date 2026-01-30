@@ -71,10 +71,11 @@ If you don't have `lg-cfg/` yet — use the **"LG: Create Starter Config"** comm
 ## Settings
 
 Main parameters (Settings → Extensions → Listing Generator):
-- `lg.ai.provider` — provider for sending to AI (clipboard, copilot, cursor, claude.cli, openai.api)
 - `lg.developerMode` — enable Developer Mode to test unreleased CLI versions (default: false)
 - `lg.python.interpreter` — path to Python interpreter in CLI dev venv (Developer Mode only)
 - `lg.openAsEditable` — open results as editable files (instead of read-only virtual documents)
+
+AI provider selection is available directly in the Control Panel (not in Settings).
 <!-- lg:comment:end -->
 
 ---

@@ -14,7 +14,7 @@ import { getWorkspacePath, getWorkingDirectory, buildCodexCommand, CODEX_SESSION
  * 2. Launches `codex resume SESSION_ID` in terminal
  */
 export class CodexCliProvider extends BaseCliProvider {
-  readonly id = "codex.cli";
+  readonly id = "com.openai.codex.cli";
   readonly name = "Codex CLI";
 
   /**
