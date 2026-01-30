@@ -17,11 +17,10 @@
     <div class="block">
       <h3><span class="codicon codicon-run"></span>AI Contexts</h3>
 
-      <!-- Provider Selector Row -->
+      <!-- Context Selector Row -->
       <div class="row">
         <span class="cluster">
-          <label>Provider:</label>
-          <select id="provider" class="lg-select" data-state-key="providerId"></select>
+          <select id="template" class="lg-select grow" data-state-key="template" title="Context (.ctx.md) from lg-cfg/"></select>
         </span>
       </div>
 
@@ -34,10 +33,11 @@
           placeholder="Describe current task"
           rows="1"></textarea>
       </div>
-      
+
+      <!-- Provider and Actions Row -->
       <div class="row">
         <span class="cluster">
-          <select id="template" class="lg-select grow" data-state-key="template" title="Context (.ctx.md) from lg-cfg/"></select>
+          <select id="provider" class="lg-select" data-state-key="providerId" title="AI Provider"></select>
           <button class="lg-btn" data-action="sendToAI" title="Generate context and send to AI">
             <span class="codicon codicon-send"></span><span class="btn-text">Send to AI</span>
           </button>
