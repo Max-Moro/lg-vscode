@@ -189,11 +189,17 @@ export class ControlPanelView implements vscode.WebviewViewProvider {
     // 2. Reload contexts (filtered by provider)
     const contexts = await listContextsJson(providerId).catch(() => [] as string[]);
 
-    // 3. Get current context
-    const currentState = this.stateService.getState();
-    const ctx = currentState.template || "";
+    // 3. Get current context and validate it against new list
+    let currentState = this.stateService.getState();
+    let ctx = currentState.template || "";
 
-    // 4. Reload mode-sets and tag-sets if context is selected
+    // 4. Validate current context: if not in new list, reset to first available
+    if (ctx && !contexts.includes(ctx)) {
+      ctx = contexts.length > 0 ? contexts[0] : "";
+      await this.stateService.setState({ template: ctx }, "control-panel");
+    }
+
+    // 5. Reload mode-sets and tag-sets if context is selected
     let modeSets: ModeSetsList = { "mode-sets": [] };
     let tagSets: TagSetsList = { "tag-sets": [] };
 
@@ -203,20 +209,21 @@ export class ControlPanelView implements vscode.WebviewViewProvider {
         listTagSetsJson(ctx).catch(() => ({ "tag-sets": [] } as TagSetsList))
       ]);
 
-      // Actualize state
+      // Actualize state (clean up obsolete modes/tags)
       await this.stateService.actualizeState(ctx, providerId, modeSets, tagSets);
     }
 
-    // 5. Update CLI settings visibility
+    // 6. Update CLI settings visibility
     const showCliSettings = providerId.endsWith(".cli");
 
-    // 6. Send updates to webview
+    // 7. Send updates to webview (include validated template in state)
     this.post({
       type: "providerDataUpdate",
       contexts,
       modeSets,
       tagSets,
-      showCliSettings
+      showCliSettings,
+      template: ctx  // Send validated template to webview
     });
   }
 
@@ -515,10 +522,24 @@ export class ControlPanelView implements vscode.WebviewViewProvider {
     // Embed call in chain to protect against concurrent UI updates
     this.listsChain = this.listsChain
       .then(async () => {
-        // Get current state for encoders
-        const currentState = this.stateService.getState();
+        // Get current state
+        let currentState = this.stateService.getState();
+
+        // Get registered AI providers first (needed for provider resolution)
+        const aiService = getAiService();
+        const providers = aiService.getRegisteredProviders();
+
+        // Determine provider FIRST (before loading contexts)
+        // Priority: 1) saved in state, 2) auto-detect best available, 3) first in list
+        let providerId = currentState.providerId || "";
+        if (!providerId) {
+          providerId = await aiService.detectBestProvider();
+          await this.stateService.setState({ providerId }, "control-panel");
+          currentState = this.stateService.getState();
+        }
 
         // Parallel loading of all independent data from CLI
+        // Note: contexts are loaded WITH provider filter
         const [
           sections,
           contexts,
@@ -527,29 +548,24 @@ export class ControlPanelView implements vscode.WebviewViewProvider {
           { branches }
         ] = await Promise.all([
           listSectionsJson().catch(() => [] as string[]),
-          listContextsJson().catch(() => [] as string[]),
+          listContextsJson(providerId).catch(() => [] as string[]),
           listTokenizerLibsJson().catch(() => [] as string[]),
           listEncodersJson(currentState.tokenizerLib ?? "tiktoken").catch(() => []),
           this.stateService.updateBranches()
         ]);
 
-        // Update state (depends on loaded data)
+        // Validate and update state (depends on loaded data)
         await this.stateService.validateBasicParams(sections, contexts, tokenizerLibs);
         const state = this.stateService.getState();
         const ctx = state.template || "";
-        const provider = state.providerId || "";
 
         // Load mode-sets and tag-sets with context and provider
         const [modeSets, tagSets] = await Promise.all([
-          listModeSetsJson(ctx, provider).catch(() => ({ "mode-sets": [] } as ModeSetsList)),
+          listModeSetsJson(ctx, providerId).catch(() => ({ "mode-sets": [] } as ModeSetsList)),
           listTagSetsJson(ctx).catch(() => ({ "tag-sets": [] } as TagSetsList))
         ]);
 
-        await this.stateService.actualizeState(ctx, provider, modeSets, tagSets);
-
-        // Get registered AI providers
-        const aiService = getAiService();
-        const providers = aiService.getRegisteredProviders();
+        await this.stateService.actualizeState(ctx, providerId, modeSets, tagSets);
 
         // Get available lists for CLI settings
         const cliShells = getAvailableShells();
@@ -559,13 +575,6 @@ export class ControlPanelView implements vscode.WebviewViewProvider {
 
         // Get final state to send to webview
         const finalState = this.stateService.getState();
-
-        // Auto-detect provider if not set
-        if (!finalState.providerId) {
-          const bestProvider = await aiService.detectBestProvider();
-          await this.stateService.setState({ providerId: bestProvider }, "control-panel");
-          finalState.providerId = bestProvider;
-        }
 
         this.post({
           type: "data",

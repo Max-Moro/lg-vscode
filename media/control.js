@@ -247,10 +247,16 @@
       const state = State.get();
       setupEncoderAutosuggest(msg.encoders, state.encoder);
     } else if (msg?.type === "providerDataUpdate") {
-      // Update contexts list
+      // Update contexts list with validated template from server
       LGUI.fillSelect(DOM.qs("#template"), msg.contexts, {
+        value: msg.template,  // Use server-validated template
         keepValue: true
       });
+
+      // Update local state if template changed
+      if (msg.template !== undefined) {
+        State.merge({ template: msg.template });
+      }
 
       // Update mode-sets and tag-sets
       populateModeSets(msg.modeSets);
@@ -524,13 +530,19 @@
     currentModeSets.forEach(modeSet => {
       const select = DOM.qs(`#mode-${modeSet.id}`);
       if (select && modeSet.modes && modeSet.modes.length > 0) {
-        // Use saved mode or default to first available mode
         const savedMode = modes[modeSet.id];
         const defaultMode = modeSet.modes[0].id;
-        select.value = savedMode || defaultMode;
 
-        // If using the default, save it to state
-        if (!savedMode) {
+        // Check if saved mode is valid (exists in current mode-set)
+        const availableModeIds = modeSet.modes.map(m => m.id);
+        const isValidSavedMode = savedMode && availableModeIds.includes(savedMode);
+
+        // Use saved mode if valid, otherwise default to first
+        const effectiveMode = isValidSavedMode ? savedMode : defaultMode;
+        select.value = effectiveMode;
+
+        // Update state if saved mode was invalid or missing
+        if (!isValidSavedMode) {
           onModeChangeInternal(modeSet.id, defaultMode);
         }
       }
