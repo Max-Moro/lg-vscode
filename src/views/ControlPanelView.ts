@@ -530,10 +530,14 @@ export class ControlPanelView implements vscode.WebviewViewProvider {
         const providers = await aiService.detectAvailableProviders();
 
         // Determine provider FIRST (before loading contexts)
-        // Priority: 1) saved in state, 2) auto-detect best available, 3) first in list
+        // Priority: 1) saved in state (if valid), 2) auto-detect best available, 3) first in list
         let providerId = currentState.providerId || "";
-        if (!providerId) {
-          providerId = await aiService.detectBestProvider();
+
+        // Validate that saved providerId exists in available providers
+        const providerExists = providers.some(p => p.id === providerId);
+        if (!providerId || !providerExists) {
+          // Saved provider is empty or invalid - detect best available
+          providerId = providers.length > 0 ? providers[0].id : "clipboard";
           await this.stateService.setState({ providerId }, "control-panel");
           currentState = this.stateService.getState();
         }
