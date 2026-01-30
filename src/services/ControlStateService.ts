@@ -356,6 +356,42 @@ export class ControlStateService {
   }
 
   /**
+   * Saves state from WebView, correctly handling modes and tags.
+   *
+   * WebView sends modes/tags in flat format for current context/provider.
+   * This method converts them to the nested storage format.
+   *
+   * @param webViewState - State from WebView (may include flat modes/tags)
+   * @param source - Source identifier for change tracking
+   */
+  public async saveWebViewState(
+    webViewState: Partial<ControlPanelState> & { modes?: Record<string, string>; tags?: Record<string, string[]> },
+    source?: string
+  ): Promise<void> {
+    // Extract flat modes/tags (webview format)
+    const { modes, tags, ...restState } = webViewState;
+
+    // Get current context and provider for nested storage
+    const ctx = webViewState.template || this.getState().template || "";
+    const provider = webViewState.providerId || this.getState().providerId || "";
+
+    // Save flat modes to nested structure if present
+    if (modes && ctx && provider) {
+      await this.setCurrentModes(ctx, provider, modes, source);
+    }
+
+    // Save flat tags to nested structure if present
+    if (tags && ctx) {
+      await this.setCurrentTags(ctx, tags, source);
+    }
+
+    // Save other state fields
+    if (Object.keys(restState).length > 0) {
+      await this.setState(restState, source);
+    }
+  }
+
+  /**
    * Gets the 'runs' string from the integration mode-set for current selection.
    *
    * @param ctx Current context name

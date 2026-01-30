@@ -262,10 +262,12 @@
       populateModeSets(msg.modeSets);
       populateTagSets(msg.tagSets);
 
-      // Apply saved modes/tags from state
-      const state = State.get();
-      if (state.modes) applyModesState(state.modes);
-      if (state.tags) applyTagsState(state.tags);
+      // Apply modes/tags from server (flat format for current context/provider)
+      if (msg.modes) applyModesState(msg.modes);
+      if (msg.tags) applyTagsState(msg.tags);
+
+      // Update local cache with effective modes/tags
+      State.merge({ modes: msg.modes || {}, tags: msg.tags || {} });
 
       // Update CLI block visibility
       const cliBlock = DOM.qs("#cli-settings-block");
@@ -278,10 +280,12 @@
       populateModeSets(msg.modeSets);
       populateTagSets(msg.tagSets);
 
-      // Apply saved modes/tags from state
-      const state = State.get();
-      if (state.modes) applyModesState(state.modes);
-      if (state.tags) applyTagsState(state.tags);
+      // Apply modes/tags from server (flat format for current context/provider)
+      if (msg.modes) applyModesState(msg.modes);
+      if (msg.tags) applyTagsState(msg.tags);
+
+      // Update local cache with effective modes/tags
+      State.merge({ modes: msg.modes || {}, tags: msg.tags || {} });
     } else if (msg?.type === "theme") {
       document.documentElement.dataset.vscodeThemeKind = String(msg.kind);
     }
@@ -353,7 +357,7 @@
       const select = document.createElement("select");
       select.id = `mode-${modeSet.id}`;
       select.dataset.modeSet = modeSet.id;
-      select.className = "lg-select";
+      select.className = "lg-select mode-select";
 
       // Add mode options
       (modeSet.modes || []).forEach(mode => {

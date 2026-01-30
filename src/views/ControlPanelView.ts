@@ -216,14 +216,20 @@ export class ControlPanelView implements vscode.WebviewViewProvider {
     // 6. Update CLI settings visibility
     const showCliSettings = providerId.endsWith(".cli");
 
-    // 7. Send updates to webview (include validated template in state)
+    // 7. Get effective modes/tags for webview (flat format)
+    const effectiveModes = this.stateService.getCurrentModes(ctx, providerId);
+    const effectiveTags = this.stateService.getCurrentTags(ctx);
+
+    // 8. Send updates to webview (include validated template in state)
     this.post({
       type: "providerDataUpdate",
       contexts,
       modeSets,
       tagSets,
       showCliSettings,
-      template: ctx  // Send validated template to webview
+      template: ctx,  // Send validated template to webview
+      modes: effectiveModes,
+      tags: effectiveTags
     });
   }
 
@@ -245,11 +251,17 @@ export class ControlPanelView implements vscode.WebviewViewProvider {
       await this.stateService.actualizeState(template, providerId, modeSets, tagSets);
     }
 
-    // 4. Send updates to webview
+    // 4. Get effective modes/tags for webview (flat format)
+    const effectiveModes = this.stateService.getCurrentModes(template, providerId);
+    const effectiveTags = this.stateService.getCurrentTags(template);
+
+    // 5. Send updates to webview
     this.post({
       type: "contextDataUpdate",
       modeSets,
-      tagSets
+      tagSets,
+      modes: effectiveModes,
+      tags: effectiveTags
     });
   }
 
@@ -357,7 +369,7 @@ export class ControlPanelView implements vscode.WebviewViewProvider {
   private async onGenerateListing() {
     // Pull current state from WebView
     const state = await this.pullState();
-    await this.stateService.setState(state, "control-panel");
+    await this.stateService.saveWebViewState(state, "control-panel");
 
     const section = this.listingService.getCurrentSection();
     if (!section) {
@@ -375,7 +387,7 @@ export class ControlPanelView implements vscode.WebviewViewProvider {
   private async onGenerateContext() {
     // Pull current state from WebView
     const state = await this.pullState();
-    await this.stateService.setState(state, "control-panel");
+    await this.stateService.saveWebViewState(state, "control-panel");
 
     const template = this.contextService.getCurrentTemplate();
     if (!template) {
@@ -393,7 +405,7 @@ export class ControlPanelView implements vscode.WebviewViewProvider {
   private async onShowContextStats() {
     // Pull current state from WebView
     const state = await this.pullState();
-    await this.stateService.setState(state, "control-panel");
+    await this.stateService.saveWebViewState(state, "control-panel");
 
     const template = this.contextService.getCurrentTemplate();
     if (!template) {
@@ -418,7 +430,7 @@ export class ControlPanelView implements vscode.WebviewViewProvider {
   private async onShowIncluded() {
     // Pull current state from WebView
     const state = await this.pullState();
-    await this.stateService.setState(state, "control-panel");
+    await this.stateService.saveWebViewState(state, "control-panel");
 
     const section = this.listingService.getCurrentSection();
     if (!section) {
@@ -437,7 +449,7 @@ export class ControlPanelView implements vscode.WebviewViewProvider {
   private async onShowStats() {
     // Pull current state from WebView
     const state = await this.pullState();
-    await this.stateService.setState(state, "control-panel");
+    await this.stateService.saveWebViewState(state, "control-panel");
 
     const section = this.listingService.getCurrentSection();
     if (!section) {
@@ -467,7 +479,7 @@ export class ControlPanelView implements vscode.WebviewViewProvider {
   private async onSendToAI() {
     // Pull current state from WebView
     const state = await this.pullState();
-    await this.stateService.setState(state, "control-panel");
+    await this.stateService.saveWebViewState(state, "control-panel");
 
     const aiService = getAiService();
     const currentState = this.stateService.getState();
@@ -580,6 +592,10 @@ export class ControlPanelView implements vscode.WebviewViewProvider {
         // Get final state to send to webview
         const finalState = this.stateService.getState();
 
+        // Add effective modes/tags for current context/provider (flat format for webview)
+        const effectiveModes = this.stateService.getCurrentModes(ctx, providerId);
+        const effectiveTags = this.stateService.getCurrentTags(ctx);
+
         this.post({
           type: "data",
           sections,
@@ -594,7 +610,11 @@ export class ControlPanelView implements vscode.WebviewViewProvider {
           claudeIntegrationMethods,
           codexReasoningEfforts,
           providers,
-          state: finalState
+          state: {
+            ...finalState,
+            modes: effectiveModes,
+            tags: effectiveTags
+          }
         });
       })
       .catch(() => {
