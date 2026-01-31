@@ -1603,13 +1603,72 @@ media/
         └── lg-ui.js          # Bundled LGUI (DOM, Events, State, etc.)
 ```
 
+### 5.1. Multi-View Support
+
+`PKOStateStore` используется не только в `ControlPanelView`, но и в других views
+(например, `StatsWebview`). Архитектура учитывает это:
+
+```
+                    ┌─────────────────────┐
+                    │   PKOStateStore     │  ← Singleton, shared state
+                    │   (src/state/)      │
+                    └─────────┬───────────┘
+                              │
+              ┌───────────────┼───────────────┐
+              │               │               │
+              ▼               ▼               ▼
+    ┌─────────────────┐ ┌──────────────┐ ┌────────────────┐
+    │ StateCoordinator│ │ StatsWebview │ │ Future Views   │
+    │ (ControlPanel)  │ │ (read/write) │ │ (read/write)   │
+    └────────┬────────┘ └──────────────┘ └────────────────┘
+             │
+             ▼
+    ┌─────────────────┐
+    │    Renderer     │
+    │ (control.js)    │
+    └─────────────────┘
+```
+
+**Паттерн доступа:**
+
+1. **ControlPanelView** — полная State Machine через `StateCoordinator`
+   - Dispatches commands
+   - Receives ViewModel updates
+   - Full business rules
+
+2. **StatsWebview и другие** — Direct Store Access
+   - `store.getState()` — чтение состояния
+   - `store.dispatch({ type: 'SET_TASK_TEXT', text })` — простые обновления
+   - `store.subscribe(listener)` — подписка на изменения (опционально)
+
+**Простой API для вторичных views:**
+
+```typescript
+// В StatsWebview.ts
+import { getPKOStore } from '../state/store';
+
+const store = getPKOStore(context);
+
+// Чтение
+const { taskText, providerId } = store.getState();
+
+// Обновление (через стандартный dispatch)
+store.dispatch({ type: 'SET_TASK_TEXT', text: newTaskText });
+
+// Query methods (вычисляемые значения)
+const runs = store.getIntegrationModeRuns(contextName, providerId, modeSets);
+```
+
+**Принцип:** StateCoordinator с бизнес-правилами нужен только для views со сложной
+интерактивностью. Простые views могут работать напрямую со store.
+
 ---
 
 ## 6. Миграция
 
 ### 6.1. Что удаляется
 
-1. `ControlStateService.ts` — заменяется на `PKOStateStore` + `StateCoordinator`
+1. `ControlStateService.ts` — заменяется на `PKOStateStore` (удаляется после Phase 7)
 2. Вся бизнес-логика из `ControlPanelView.ts` — переносится в `rules/`
 3. State management в `control.js` — рендерер становится stateless
 
@@ -1627,6 +1686,7 @@ media/
 4. **Phase 4:** Реализовать `buildViewModel()` в `src/viewmodel/builder.ts`
 5. **Phase 5:** Переписать `media/control.js` как stateless рендерер с LGUI
 6. **Phase 6:** Обновить `ControlPanelView` как тонкий оркестрационный слой
+7. **Phase 7:** Мигрировать вторичные views (`StatsWebview` и др.) на direct store access
 
 ---
 
