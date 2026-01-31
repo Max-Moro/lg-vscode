@@ -4,7 +4,7 @@
  * Exports all business rules as a single array for the StateCoordinator.
  */
 
-import type { BusinessRule } from "../types";
+import type { BusinessRule, Command } from "../types";
 import { providerRules } from "./provider.rules";
 import { contextRules } from "./context.rules";
 import { adaptiveRules } from "./adaptive.rules";
@@ -22,7 +22,7 @@ export const ALL_RULES = [
   ...tokenizerRules,
   ...lifecycleRules,
   ...cliSettingsRules
-];
+] as BusinessRule<Command["type"]>[];
 
 /**
  * Re-export lifecycle dependencies setter

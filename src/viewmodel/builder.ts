@@ -10,6 +10,10 @@ import type {
   ModeSetViewModel,
   TagSetViewModel
 } from "./types";
+import { getAvailableShells } from "../models/ShellType";
+import { getAvailableClaudeModels } from "../models/ClaudeModel";
+import { getAvailableClaudeMethods } from "../models/ClaudeIntegrationMethod";
+import { getAvailableCodexReasoningEfforts } from "../models/CodexReasoningEffort";
 
 /**
  * Build ViewModel from PCE State
@@ -112,28 +116,28 @@ export function buildViewModel(state: PCEState): ViewModel {
     cached: enc.cached ?? false
   }));
 
-  // Build CLI shells options
-  const cliShells: SelectOption[] = e.cliShells.map(s => ({
+  // Build CLI shells options (static, platform-dependent)
+  const cliShells: SelectOption[] = getAvailableShells().map(s => ({
     value: s.id,
     label: s.label
   }));
 
-  // Build Claude models options
-  const claudeModels: SelectOption[] = e.claudeModels.map(m => ({
+  // Build Claude models options (static)
+  const claudeModels: SelectOption[] = getAvailableClaudeModels().map(m => ({
     value: m.id,
     label: m.label,
     description: m.description
   }));
 
-  // Build Claude methods options
-  const claudeMethods: SelectOption[] = e.claudeIntegrationMethods.map(m => ({
+  // Build Claude methods options (static)
+  const claudeMethods: SelectOption[] = getAvailableClaudeMethods().map(m => ({
     value: m.id,
     label: m.label,
     description: m.description
   }));
 
-  // Build Codex reasoning efforts options
-  const codexReasoningEfforts: SelectOption[] = e.codexReasoningEfforts.map(r => ({
+  // Build Codex reasoning efforts options (static)
+  const codexReasoningEfforts: SelectOption[] = getAvailableCodexReasoningEfforts().map(r => ({
     value: r.id,
     label: r.label,
     description: r.description

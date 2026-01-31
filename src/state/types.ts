@@ -6,10 +6,10 @@
 
 import type { ModeSetsList } from "../models/mode_sets_list";
 import type { TagSetsList } from "../models/tag_sets_list";
-import type { ShellType } from "../models/ShellType";
-import type { ClaudeModel } from "../models/ClaudeModel";
-import type { ClaudeIntegrationMethod } from "../models/ClaudeIntegrationMethod";
-import type { CodexReasoningEffort } from "../models/CodexReasoningEffort";
+import { type ShellType, getDefaultShell } from "../models/ShellType";
+import { type ClaudeModel, getDefaultClaudeModel } from "../models/ClaudeModel";
+import { type ClaudeIntegrationMethod, getDefaultClaudeMethod } from "../models/ClaudeIntegrationMethod";
+import { type CodexReasoningEffort, getDefaultCodexReasoningEffort } from "../models/CodexReasoningEffort";
 
 // ============================================
 // Persistent State (P) - saved between sessions
@@ -86,38 +86,9 @@ export interface ProviderInfo {
   priority: number;
 }
 
-export interface ShellDescriptor {
-  id: ShellType;
-  label: string;
-}
-
-export interface ClaudeModelDescriptor {
-  id: ClaudeModel;
-  label: string;
-  description?: string;
-}
-
-export interface ClaudeMethodDescriptor {
-  id: ClaudeIntegrationMethod;
-  label: string;
-  description?: string;
-}
-
-export interface CodexReasoningEffortDescriptor {
-  id: CodexReasoningEffort;
-  label: string;
-  description?: string;
-}
-
 export interface EnvironmentState {
   // Available AI providers (detected)
   providers: ProviderInfo[];
-
-  // Platform options
-  cliShells: ShellDescriptor[];
-  claudeModels: ClaudeModelDescriptor[];
-  claudeIntegrationMethods: ClaudeMethodDescriptor[];
-  codexReasoningEfforts: CodexReasoningEffortDescriptor[];
 }
 
 // ============================================
@@ -244,10 +215,10 @@ export function createDefaultPersistentState(): PersistentState {
     encoder: "cl100k_base",
     ctxLimit: 128000,
     cliScope: "",
-    cliShell: "bash",
-    claudeModel: "sonnet",
-    claudeIntegrationMethod: "session",
-    codexReasoningEffort: "medium",
+    cliShell: getDefaultShell(),
+    claudeModel: getDefaultClaudeModel(),
+    claudeIntegrationMethod: getDefaultClaudeMethod(),
+    codexReasoningEffort: getDefaultCodexReasoningEffort(),
     targetBranch: "",
     taskText: ""
   };
@@ -267,11 +238,7 @@ export function createDefaultConfigurationState(): ConfigurationState {
 
 export function createDefaultEnvironmentState(): EnvironmentState {
   return {
-    providers: [],
-    cliShells: [],
-    claudeModels: [],
-    claudeIntegrationMethods: [],
-    codexReasoningEfforts: []
+    providers: []
   };
 }
 

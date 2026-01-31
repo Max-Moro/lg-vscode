@@ -283,8 +283,16 @@
 
     // Shell
     const shellSelect = DOM.qs("#cliShell");
-    if (shellSelect && shellSelect.value !== vm.selectedShell) {
-      shellSelect.value = vm.selectedShell;
+    if (shellSelect) {
+      if (!prev || !arraysEqual(prev.cliShells, vm.cliShells)) {
+        LGUI.fillSelect(shellSelect, vm.cliShells, {
+          getValue: (s) => s.value,
+          getLabel: (s) => s.label
+        });
+      }
+      if (shellSelect.value !== vm.selectedShell) {
+        shellSelect.value = vm.selectedShell;
+      }
     }
 
     // Claude settings
@@ -294,13 +302,29 @@
 
       if (vm.claudeSettingsVisible) {
         const modelSelect = DOM.qs("#claudeModel");
-        if (modelSelect && modelSelect.value !== vm.selectedClaudeModel) {
-          modelSelect.value = vm.selectedClaudeModel;
+        if (modelSelect) {
+          if (!prev || !arraysEqual(prev.claudeModels, vm.claudeModels)) {
+            LGUI.fillSelect(modelSelect, vm.claudeModels, {
+              getValue: (m) => m.value,
+              getLabel: (m) => m.label
+            });
+          }
+          if (modelSelect.value !== vm.selectedClaudeModel) {
+            modelSelect.value = vm.selectedClaudeModel;
+          }
         }
 
         const methodSelect = DOM.qs("#claudeIntegrationMethod");
-        if (methodSelect && methodSelect.value !== vm.selectedClaudeMethod) {
-          methodSelect.value = vm.selectedClaudeMethod;
+        if (methodSelect) {
+          if (!prev || !arraysEqual(prev.claudeMethods, vm.claudeMethods)) {
+            LGUI.fillSelect(methodSelect, vm.claudeMethods, {
+              getValue: (m) => m.value,
+              getLabel: (m) => m.label
+            });
+          }
+          if (methodSelect.value !== vm.selectedClaudeMethod) {
+            methodSelect.value = vm.selectedClaudeMethod;
+          }
         }
       }
     }
@@ -312,8 +336,16 @@
 
       if (vm.codexSettingsVisible) {
         const reasoningSelect = DOM.qs("#codexReasoningEffort");
-        if (reasoningSelect && reasoningSelect.value !== vm.selectedCodexReasoning) {
-          reasoningSelect.value = vm.selectedCodexReasoning;
+        if (reasoningSelect) {
+          if (!prev || !arraysEqual(prev.codexReasoningEfforts, vm.codexReasoningEfforts)) {
+            LGUI.fillSelect(reasoningSelect, vm.codexReasoningEfforts, {
+              getValue: (r) => r.value,
+              getLabel: (r) => r.label
+            });
+          }
+          if (reasoningSelect.value !== vm.selectedCodexReasoning) {
+            reasoningSelect.value = vm.selectedCodexReasoning;
+          }
         }
       }
     }
