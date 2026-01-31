@@ -18,7 +18,7 @@ User Action → Renderer → Command → Coordinator → Rules → Store → Vie
 
 ### Ключевые принципы
 
-1. **Единая точка истины** — всё состояние хранится в `PKOStateStore`
+1. **Единая точка истины** — всё состояние хранится в `PCEStateStore`
 2. **Декларативные правила** — логика переходов состояния описана в бизнес-правилах
 3. **Команды как намерения** — все изменения инициируются через типизированные команды
 4. **Тонкие представления** — Views отвечают только за рендеринг и маршрутизацию
@@ -29,7 +29,7 @@ User Action → Renderer → Command → Coordinator → Rules → Store → Vie
 src/
 ├── state/                    # State Layer
 │   ├── types.ts              # Типы состояния и команд
-│   ├── store.ts              # PKOStateStore (синглтон)
+│   ├── store.ts              # PCEStateStore (синглтон)
 │   ├── coordinator.ts        # StateCoordinator (синглтон)
 │   ├── rules/                # Бизнес-правила
 │   └── watchers/             # Слушатели внешних событий
@@ -54,21 +54,21 @@ src/
 
 ## 2. State Layer
 
-### 2.1. PKOStateStore (`src/state/store.ts`)
+### 2.1. PCEStateStore (`src/state/store.ts`)
 
-Синглтон, хранящий всё состояние приложения. Название PKO отражает три типа состояния:
+Синглтон, хранящий всё состояние приложения. Название PCE отражает три типа состояния:
 
 - **P (Persistent)** — сохраняется между сессиями в `workspaceState`
-- **K (Konfig)** — загружается из CLI (списки контекстов, режимов, тегов)
-- **O (Okружение)** — детектируется при старте (провайдеры, платформа)
+- **C (Configuration)** — загружается из CLI (списки контекстов, режимов, тегов)
+- **E (Environment)** — детектируется при старте (провайдеры, платформа)
 
 **Почему синглтон:** Гарантирует единую точку истины. Все компоненты работают с одним
 экземпляром состояния, что исключает рассинхронизацию.
 
 **Паттерн доступа:**
 ```typescript
-import { getPKOStore } from "../state/store";
-const store = getPKOStore(context);
+import { getPCEStore } from "../state/store";
+const store = getPCEStore(context);
 ```
 
 **Основные методы:**
@@ -171,7 +171,7 @@ Git branches). Они инжектируются через `setLifecycleDepende
 
 ### 3.1. buildViewModel (`src/viewmodel/builder.ts`)
 
-**Чистая функция** без побочных эффектов: `PKOState → ViewModel`.
+**Чистая функция** без побочных эффектов: `PCEState → ViewModel`.
 
 **Почему чистая функция:** Гарантирует детерминированность. Одинаковое состояние
 всегда даёт одинаковый ViewModel. Упрощает тестирование и отладку.
@@ -328,7 +328,7 @@ WebView-рендерер без собственного состояния.
 ### Порядок инициализации
 
 1. `ControlPanelView.constructor()`:
-   - `getPKOStore(context)` — создание Store
+   - `getPCEStore(context)` — создание Store
    - `getCoordinator(store)` — создание Coordinator
    - `setLifecycleDependencies()` — инжекция внешних сервисов
    - `coordinator.setRules(ALL_RULES)` — регистрация правил

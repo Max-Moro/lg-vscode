@@ -4,7 +4,7 @@
 import * as vscode from "vscode";
 import type {RunResult} from "../models/report";
 import {buildHtml, getExtensionUri, lgUiUri, mediaUri} from "../webview/webviewKit";
-import {getPKOStore} from "../state/store";
+import {getPCEStore} from "../state/store";
 import {getCoordinator} from "../state/coordinator";
 import {getActionDispatcher} from "../actions";
 
@@ -41,7 +41,7 @@ export async function showStatsWebview(
   });
 
   // Get singletons
-  const store = getPKOStore(context);
+  const store = getPCEStore(context);
   const coordinator = getCoordinator();
   const actions = getActionDispatcher();
 

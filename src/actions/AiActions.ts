@@ -3,12 +3,12 @@
  */
 
 import * as vscode from "vscode";
-import type { PKOStateStore } from "../state/store";
+import type { PCEStateStore } from "../state/store";
 import type { ContextService } from "../services/ContextService";
 import type { AiIntegrationService } from "../services/ai/AiIntegrationService";
 
 export interface AiActionsDeps {
-  store: PKOStateStore;
+  store: PCEStateStore;
   contextService: ContextService;
   aiService: AiIntegrationService;
 }

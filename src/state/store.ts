@@ -1,26 +1,26 @@
 /**
- * PKO State Store - Single source of truth for Control Panel state
+ * PCE State Store - Single source of truth for Control Panel state
  */
 
 import * as vscode from "vscode";
 import type {
-  PKOState,
+  PCEState,
   PersistentState,
   ConfigurationState,
   EnvironmentState
 } from "./types";
 import {
-  createDefaultPKOState,
+  createDefaultPCEState,
   createDefaultPersistentState
 } from "./types";
 import { logDebug } from "../logging/log";
 
-const STATE_KEY = "lg.control.pkoState";
+const STATE_KEY = "lg.control.pceState";
 
-type StateListener = (state: PKOState) => void;
+type StateListener = (state: PCEState) => void;
 
 /**
- * PKO State Store
+ * PCE State Store
  *
  * Manages the unified state for Control Panel:
  * - Persistent state (saved to workspaceState)
@@ -29,10 +29,10 @@ type StateListener = (state: PKOState) => void;
  *
  * Provides subscription mechanism for state changes.
  */
-export class PKOStateStore {
-  private static instance: PKOStateStore | undefined;
+export class PCEStateStore {
+  private static instance: PCEStateStore | undefined;
 
-  private state: PKOState;
+  private state: PCEState;
   private listeners: Set<StateListener> = new Set();
 
   private constructor(
@@ -46,27 +46,27 @@ export class PKOStateStore {
     };
 
     this.state = {
-      ...createDefaultPKOState(),
+      ...createDefaultPCEState(),
       persistent
     };
 
-    logDebug("[PKOStateStore] Initialized with persistent state from storage");
+    logDebug("[PCEStateStore] Initialized with persistent state from storage");
   }
 
   /**
    * Get singleton instance
    */
-  public static getInstance(context: vscode.ExtensionContext): PKOStateStore {
-    if (!PKOStateStore.instance) {
-      PKOStateStore.instance = new PKOStateStore(context);
+  public static getInstance(context: vscode.ExtensionContext): PCEStateStore {
+    if (!PCEStateStore.instance) {
+      PCEStateStore.instance = new PCEStateStore(context);
     }
-    return PKOStateStore.instance;
+    return PCEStateStore.instance;
   }
 
   /**
    * Get current state (immutable snapshot)
    */
-  public getState(): PKOState {
+  public getState(): PCEState {
     return this.state;
   }
 
@@ -94,7 +94,7 @@ export class PKOStateStore {
     // Save to storage
     await this.context.workspaceState.update(STATE_KEY, newPersistent);
 
-    logDebug(`[PKOStateStore] Persistent state updated: ${Object.keys(partial).join(", ")}`);
+    logDebug(`[PCEStateStore] Persistent state updated: ${Object.keys(partial).join(", ")}`);
   }
 
   /**
@@ -109,7 +109,7 @@ export class PKOStateStore {
       }
     };
 
-    logDebug(`[PKOStateStore] Configuration state updated: ${Object.keys(partial).join(", ")}`);
+    logDebug(`[PCEStateStore] Configuration state updated: ${Object.keys(partial).join(", ")}`);
   }
 
   /**
@@ -121,7 +121,7 @@ export class PKOStateStore {
       environment: env
     };
 
-    logDebug("[PKOStateStore] Environment state updated");
+    logDebug("[PCEStateStore] Environment state updated");
   }
 
   /**
@@ -170,7 +170,7 @@ export class PKOStateStore {
       try {
         listener(this.state);
       } catch (e) {
-        logDebug(`[PKOStateStore] Listener error: ${e}`);
+        logDebug(`[PCEStateStore] Listener error: ${e}`);
       }
     }
   }
@@ -190,9 +190,9 @@ export class PKOStateStore {
    * Reset state to defaults (for testing)
    */
   public async reset(): Promise<void> {
-    this.state = createDefaultPKOState();
+    this.state = createDefaultPCEState();
     await this.context.workspaceState.update(STATE_KEY, undefined);
-    logDebug("[PKOStateStore] State reset to defaults");
+    logDebug("[PCEStateStore] State reset to defaults");
   }
 
   // ============================================
@@ -247,8 +247,8 @@ export class PKOStateStore {
 }
 
 /**
- * Get PKO Store instance (convenience function)
+ * Get PCE Store instance (convenience function)
  */
-export function getPKOStore(context: vscode.ExtensionContext): PKOStateStore {
-  return PKOStateStore.getInstance(context);
+export function getPCEStore(context: vscode.ExtensionContext): PCEStateStore {
+  return PCEStateStore.getInstance(context);
 }

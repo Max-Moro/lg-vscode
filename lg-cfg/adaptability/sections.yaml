@@ -25,6 +25,7 @@ src:
           - "/state/store.ts"
           - "/state/coordinator.ts"
           - "/state/rules/index.ts"
+          - "/state/rules/lifecycle.rules.ts"
           - "/state/rules/adaptive.rules.ts"
           - "/services/CatalogService.ts"
           - "/services/GitService.ts"
@@ -78,7 +79,7 @@ src:
   # TypeScript optimization levels (disabled in review mode)
   #
   # Level 1: Core adaptive state - FULL CODE
-  #   - state/types.ts, store.ts, coordinator.ts (PKO state)
+  #   - state/types.ts, store.ts, coordinator.ts (PCE state)
   #   - state/rules/adaptive.rules.ts (modes/tags rules)
   #   - ControlPanelView.ts (thin orchestration)
   #   - control.js (stateless renderer)

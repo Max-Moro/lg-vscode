@@ -1,8 +1,8 @@
 /**
- * ViewModel Builder - Pure function transforming PKO State to ViewModel
+ * ViewModel Builder - Pure function transforming PCE State to ViewModel
  */
 
-import type { PKOState } from "../state/types";
+import type { PCEState } from "../state/types";
 import type {
   ViewModel,
   SelectOption,
@@ -12,15 +12,15 @@ import type {
 } from "./types";
 
 /**
- * Build ViewModel from PKO State
+ * Build ViewModel from PCE State
  *
  * This is a pure function with no side effects.
  * All transformation rules are consolidated here.
  *
- * @param state - Current PKO state
+ * @param state - Current PCE state
  * @returns ViewModel for rendering
  */
-export function buildViewModel(state: PKOState): ViewModel {
+export function buildViewModel(state: PCEState): ViewModel {
   const { persistent: p, configuration: c, environment: e } = state;
 
   // Current context and provider for lookups

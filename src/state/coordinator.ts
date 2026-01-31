@@ -9,7 +9,7 @@ import type {
   AsyncOperation,
   UIMeta
 } from "./types";
-import { PKOStateStore } from "./store";
+import { PCEStateStore } from "./store";
 import { logDebug, logError } from "../logging/log";
 
 type MetaListener = (meta: UIMeta) => void;
@@ -29,14 +29,14 @@ export class StateCoordinator {
   private pendingPromises = new Map<string, Promise<void>>();
 
   constructor(
-    private readonly store: PKOStateStore
+    private readonly store: PCEStateStore
   ) {}
 
   /**
    * Register business rules
    */
-  public setRules(rules: Array<BusinessRule<any>>): void {
-    this.rules = rules as BusinessRule[];
+  public setRules(rules: Array<BusinessRule>): void {
+    this.rules = rules;
     logDebug(`[StateCoordinator] Registered ${rules.length} business rules`);
   }
 
@@ -194,7 +194,7 @@ let coordinatorInstance: StateCoordinator | undefined;
  * Get StateCoordinator singleton.
  * Must be initialized with store on first call (done by ControlPanelView).
  */
-export function getCoordinator(store?: PKOStateStore): StateCoordinator {
+export function getCoordinator(store?: PCEStateStore): StateCoordinator {
   if (!coordinatorInstance) {
     if (!store) {
       throw new Error("StateCoordinator not initialized");

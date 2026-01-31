@@ -1,16 +1,16 @@
 import * as vscode from "vscode";
 import { cliRender, cliReport, type CliGenerationParams } from "../cli/CliClient";
-import { getPKOStore, type PKOStateStore } from "../state/store";
+import { getPCEStore, type PCEStateStore } from "../state/store";
 
 /**
  * Service for working with section listings.
- * Gets all parameters from PKOStateStore.
+ * Gets all parameters from PCEStateStore.
  */
 export class ListingService {
-  private store: PKOStateStore;
+  private store: PCEStateStore;
 
   constructor(context: vscode.ExtensionContext) {
-    this.store = getPKOStore(context);
+    this.store = getPCEStore(context);
   }
   
   /**

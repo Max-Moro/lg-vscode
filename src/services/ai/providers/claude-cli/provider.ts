@@ -39,8 +39,8 @@ export class ClaudeCliProvider extends BaseCliProvider {
       return "session"; // fallback
     }
 
-    const { getPKOStore } = await import("../../../../state/store");
-    const store = getPKOStore(this.context);
+    const { getPCEStore } = await import("../../../../state/store");
+    const store = getPCEStore(this.context);
     const state = store.getPersistentState();
 
     return state.claudeIntegrationMethod || "session";

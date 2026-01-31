@@ -3,14 +3,14 @@
  */
 
 import * as vscode from "vscode";
-import type { PKOStateStore } from "../state/store";
+import type { PCEStateStore } from "../state/store";
 import type { ListingService } from "../services/ListingService";
 import type { VirtualDocProvider } from "../views/VirtualDocProvider";
 import type { IncludedTree } from "../views/IncludedTree";
 import type { RunResult } from "../models/report";
 
 export interface ListingActionsDeps {
-  store: PKOStateStore;
+  store: PCEStateStore;
   listingService: ListingService;
   vdocs: VirtualDocProvider;
   included: IncludedTree;

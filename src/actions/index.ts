@@ -2,7 +2,7 @@
  * Action Dispatcher - Central routing for all business actions
  */
 
-import type { PKOStateStore } from "../state/store";
+import type { PCEStateStore } from "../state/store";
 import type { StateCoordinator } from "../state/coordinator";
 import type { ListingService } from "../services/ListingService";
 import type { ContextService } from "../services/ContextService";
@@ -17,7 +17,7 @@ import * as AiActions from "./AiActions";
 import * as ToolbarActions from "./ToolbarActions";
 
 export interface ActionDispatcherDeps {
-  store: PKOStateStore;
+  store: PCEStateStore;
   coordinator: StateCoordinator;
   listingService: ListingService;
   contextService: ContextService;

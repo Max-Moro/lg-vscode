@@ -1,7 +1,7 @@
 /**
  * State Management Types for Control Panel
  *
- * PKO = Persistent + Konfig (Configuration) + Environment (O for Russian "Окружение")
+ * PCE = Persistent + Configuration + Environment
  */
 
 import type { ModeSetsList } from "../models/mode_sets_list";
@@ -121,10 +121,10 @@ export interface EnvironmentState {
 }
 
 // ============================================
-// Combined PKO State
+// Combined PCE State
 // ============================================
 
-export interface PKOState {
+export interface PCEState {
   persistent: PersistentState;
   configuration: ConfigurationState;
   environment: EnvironmentState;
@@ -135,7 +135,7 @@ export interface PKOState {
 }
 
 // ============================================
-// UI Meta State (separate from PKO)
+// UI Meta State (separate from PCE)
 // ============================================
 
 export interface UIMeta {
@@ -220,10 +220,10 @@ export interface BusinessRule<T extends Command["type"] = Command["type"]> {
   trigger: T;
 
   /** Check if rule should be applied */
-  condition: (state: PKOState, cmd: Extract<Command, { type: T }>) => boolean;
+  condition: (state: PCEState, cmd: Extract<Command, { type: T }>) => boolean;
 
   /** Apply rule: returns state mutations and/or follow-up commands */
-  apply: (state: PKOState, cmd: Extract<Command, { type: T }>) => RuleResult;
+  apply: (state: PCEState, cmd: Extract<Command, { type: T }>) => RuleResult;
 }
 
 /** Helper type to create typed rule */
@@ -275,7 +275,7 @@ export function createDefaultEnvironmentState(): EnvironmentState {
   };
 }
 
-export function createDefaultPKOState(): PKOState {
+export function createDefaultPCEState(): PCEState {
   return {
     persistent: createDefaultPersistentState(),
     configuration: createDefaultConfigurationState(),

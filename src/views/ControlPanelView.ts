@@ -10,7 +10,7 @@
 import * as vscode from "vscode";
 
 // State management
-import { PKOStateStore, getPKOStore } from "../state/store";
+import { PCEStateStore, getPCEStore } from "../state/store";
 import { getCoordinator, StateCoordinator } from "../state/coordinator";
 import { ALL_RULES, setLifecycleDependencies } from "../state/rules";
 import { WatcherManager } from "../state/watchers";
@@ -34,7 +34,7 @@ import type { RunResult } from "../models/report";
 
 export class ControlPanelView implements vscode.WebviewViewProvider {
   private view?: vscode.WebviewView;
-  private store: PKOStateStore;
+  private store: PCEStateStore;
   private coordinator: StateCoordinator;
   private watcherManager: WatcherManager;
   private actionDispatcher: ActionDispatcher;
@@ -48,7 +48,7 @@ export class ControlPanelView implements vscode.WebviewViewProvider {
     private readonly included: IncludedTree
   ) {
     // Initialize state management
-    this.store = getPKOStore(context);
+    this.store = getPCEStore(context);
     this.coordinator = getCoordinator(this.store);
 
     // Setup lifecycle dependencies for rules

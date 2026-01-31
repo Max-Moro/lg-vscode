@@ -3,13 +3,13 @@
  */
 
 import * as vscode from "vscode";
-import type { PKOStateStore } from "../state/store";
+import type { PCEStateStore } from "../state/store";
 import type { ContextService } from "../services/ContextService";
 import type { VirtualDocProvider } from "../views/VirtualDocProvider";
 import type { RunResult } from "../models/report";
 
 export interface ContextActionsDeps {
-  store: PKOStateStore;
+  store: PCEStateStore;
   contextService: ContextService;
   vdocs: VirtualDocProvider;
   showStats: (data: RunResult, refreshFn: () => Promise<RunResult>) => Promise<void>;
