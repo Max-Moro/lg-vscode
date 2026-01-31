@@ -25,9 +25,9 @@ export class CodexCliProvider extends BaseCliProvider {
       return getDefaultCodexReasoningEffort();
     }
 
-    const { ControlStateService } = await import("../../../ControlStateService");
-    const stateService = ControlStateService.getInstance(this.context);
-    const state = stateService.getState();
+    const { getPKOStore } = await import("../../../../state/store");
+    const store = getPKOStore(this.context);
+    const state = store.getPersistentState();
 
     return (state.codexReasoningEffort as CodexReasoningEffort) || getDefaultCodexReasoningEffort();
   }

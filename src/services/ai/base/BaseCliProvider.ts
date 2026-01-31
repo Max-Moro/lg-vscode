@@ -32,7 +32,7 @@ export interface CliExecutionContext {
  * - Detection of incomplete processes in the terminal
  */
 export abstract class BaseCliProvider extends BaseAiProvider {
-  /** Extension context for accessing ControlStateService */
+  /** Extension context for accessing PKOStateStore */
   protected context?: vscode.ExtensionContext;
 
   /**
@@ -44,7 +44,7 @@ export abstract class BaseCliProvider extends BaseAiProvider {
   }
 
   /**
-   * Get basic CLI execution context from ControlStateService
+   * Get basic CLI execution context from PKOStateStore
    * @param runs - Provider-specific runs string
    * @returns Basic CLI execution context with scope, shell, and claudeModel settings
    */
@@ -53,10 +53,10 @@ export abstract class BaseCliProvider extends BaseAiProvider {
       throw new Error("Extension context not set for CLI provider");
     }
 
-    // Import ControlStateService
-    const { ControlStateService } = await import("../../ControlStateService");
-    const stateService = ControlStateService.getInstance(this.context);
-    const state = stateService.getState();
+    // Import PKOStateStore
+    const { getPKOStore } = await import("../../../state/store");
+    const store = getPKOStore(this.context);
+    const state = store.getPersistentState();
 
     return {
       scope: state.cliScope || "",

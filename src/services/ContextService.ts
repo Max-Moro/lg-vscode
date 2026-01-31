@@ -1,17 +1,17 @@
 import * as vscode from "vscode";
 import { cliRender, cliReport, type CliGenerationParams } from "../cli/CliClient";
 import type { RunResult } from "../models/report";
-import { ControlStateService } from "./ControlStateService";
+import { getPKOStore, type PKOStateStore } from "../state/store";
 
 /**
  * Service for working with contexts.
- * Gets all parameters from ControlStateService.
+ * Gets all parameters from PKOStateStore.
  */
 export class ContextService {
-  private stateService: ControlStateService;
-  
+  private store: PKOStateStore;
+
   constructor(context: vscode.ExtensionContext) {
-    this.stateService = ControlStateService.getInstance(context);
+    this.store = getPKOStore(context);
   }
   
   /**
@@ -19,7 +19,7 @@ export class ContextService {
    * @throws {Error} if template is not selected
    */
   async generateContext(): Promise<string> {
-    const state = this.stateService.getState();
+    const state = this.store.getPersistentState();
     if (!state.template) {
       throw new Error("No template selected");
     }
@@ -32,8 +32,8 @@ export class ContextService {
       tokenizerLib: state.tokenizerLib || "tiktoken",
       encoder: state.encoder || "cl100k_base",
       ctxLimit: state.ctxLimit || 128000,
-      modes: this.stateService.getCurrentModes(ctx, provider),
-      tags: this.stateService.getCurrentTags(ctx),
+      modes: this.store.getCurrentModes(ctx, provider),
+      tags: this.store.getCurrentTags(ctx),
       taskText: state.taskText,
       targetBranch: state.targetBranch,
     };
@@ -46,7 +46,7 @@ export class ContextService {
    * @throws {Error} if template is not selected or CLI unavailable
    */
   async getStats(): Promise<RunResult> {
-    const state = this.stateService.getState();
+    const state = this.store.getPersistentState();
     if (!state.template) {
       throw new Error("No template selected");
     }
@@ -59,8 +59,8 @@ export class ContextService {
       tokenizerLib: state.tokenizerLib || "tiktoken",
       encoder: state.encoder || "cl100k_base",
       ctxLimit: state.ctxLimit || 128000,
-      modes: this.stateService.getCurrentModes(ctx, provider),
-      tags: this.stateService.getCurrentTags(ctx),
+      modes: this.store.getCurrentModes(ctx, provider),
+      tags: this.store.getCurrentTags(ctx),
       taskText: state.taskText,
       targetBranch: state.targetBranch,
     };
@@ -71,13 +71,13 @@ export class ContextService {
     }
     return result;
   }
-  
+
   /**
    * Get current context template name
    * @returns template name or empty string if not selected
    */
   getCurrentTemplate(): string {
-    const state = this.stateService.getState();
+    const state = this.store.getPersistentState();
     return state.template || "";
   }
 }

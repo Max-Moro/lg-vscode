@@ -35,8 +35,8 @@ export class StateCoordinator {
   /**
    * Register business rules
    */
-  public setRules(rules: BusinessRule[]): void {
-    this.rules = rules;
+  public setRules(rules: BusinessRule<any>[]): void {
+    this.rules = rules as BusinessRule[];
     logDebug(`[StateCoordinator] Registered ${rules.length} business rules`);
   }
 

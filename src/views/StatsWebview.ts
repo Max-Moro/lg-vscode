@@ -6,7 +6,7 @@ import {getVirtualProvider} from "./virtualBus";
 import type {RunResult} from "../models/report";
 import {buildHtml, getExtensionUri, lgUiUri, mediaUri} from "../webview/webviewKit";
 import {getAiService} from "../extension";
-import {ControlStateService} from "../services/ControlStateService";
+import {getPKOStore} from "../state/store";
 import {listModeSetsJson} from "../services/CatalogService";
 
 export async function showStatsWebview(
@@ -45,15 +45,16 @@ export async function showStatsWebview(
 
   // Current content (updated after refresh)
   let current: RunResult = data;
-  const stateService = ControlStateService.getInstance(context);
+  const store = getPKOStore(context);
 
   // Handshake: wait for "ready" from browser and send data
   panel.webview.onDidReceiveMessage((msg) => {
     if (msg?.type === "ready") {
+      const taskText = current.scope === "context" ? store.getPersistentState().taskText : undefined;
       panel.webview.postMessage({
         type: "runResult",
         payload: current,
-        taskText: current.scope === "context" ? stateService.getState().taskText : undefined
+        taskText
       });
     }
   });
@@ -66,10 +67,11 @@ export async function showStatsWebview(
           {location: vscode.ProgressLocation.Notification, title: "LG: Refreshing stats…", cancellable: false},
           () => refetch()
         );
+        const taskText = current.scope === "context" ? store.getPersistentState().taskText : undefined;
         panel.webview.postMessage({
           type: "runResult",
           payload: current,
-          taskText: current.scope === "context" ? stateService.getState().taskText : undefined
+          taskText
         });
       } catch (e) {
         const errorMessage = e instanceof Error ? e.message : String(e);
@@ -78,7 +80,7 @@ export async function showStatsWebview(
     } else if (msg?.type === "updateTaskText") {
       if (current.scope === "context") {
         const newTaskText = msg.taskText || "";
-        await stateService.setState({ taskText: newTaskText }, "stats-webview");
+        await store.updatePersistent({ taskText: newTaskText });
       }
     } else if (msg?.type === "generate") {
       try {
@@ -120,8 +122,8 @@ export async function showStatsWebview(
 
       try {
         const aiService = getAiService();
-        const currentState = stateService.getState();
-        const providerId = currentState.providerId || "";
+        const persistentState = store.getPersistentState();
+        const providerId = persistentState.providerId || "";
 
         if (!providerId) {
           vscode.window.showWarningMessage("No AI provider selected.");
@@ -134,7 +136,7 @@ export async function showStatsWebview(
           : data.target;
 
         const modeSets = await listModeSetsJson(contextName, providerId);
-        const runs = stateService.getIntegrationModeRuns(contextName, providerId, modeSets);
+        const runs = store.getIntegrationModeRuns(contextName, providerId);
 
         // Validate integration mode (except clipboard)
         if (runs === null && providerId !== "clipboard") {
