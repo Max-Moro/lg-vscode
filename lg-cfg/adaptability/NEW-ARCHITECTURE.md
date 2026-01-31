@@ -976,75 +976,104 @@ function buildViewModel(state: PKOState): ViewModel {
 
 **Назначение:** Stateless рендеринг UI по ViewModel с минимальным DOM-манипулированием.
 
-#### 3.6.1. Renderer Interface
+**Технология:** Чистый JavaScript с использованием утилит из `media/ui/utils/` (LGUI).
+TypeScript-типы в этом разделе приводятся только для документации контракта.
+
+#### 3.6.1. Renderer Contract (TypeScript для документации)
 
 ```typescript
+// Контракт рендерера - реализация на JavaScript
 interface Renderer {
-  /**
-   * Render ViewModel to DOM
-   * Uses diff-based approach to minimize DOM updates
-   * Called only when state is stable (all async ops complete)
-   */
+  /** Render ViewModel to DOM (diff-based, called only when state is stable) */
   render(viewModel: ViewModel): void;
 
-  /**
-   * Update UI meta state (loading indicator, errors)
-   * Separate channel from render() to avoid diff overhead
-   * Can be called frequently without triggering full diff
-   */
+  /** Update UI meta state (loading indicator) - separate lightweight channel */
   setMeta(meta: UIMeta): void;
 
-  /**
-   * Subscribe to user events
-   * Returns Command based on user action
-   */
+  /** Subscribe to user events, returns Command */
   onCommand(callback: (command: UserCommand) => void): void;
 }
 ```
 
-#### 3.6.2. Implementation Strategy
+#### 3.6.2. JavaScript Implementation with LGUI
 
-```typescript
-class ControlPanelRenderer implements Renderer {
-  private lastViewModel: ViewModel | null = null;
-  private commandCallback: ((cmd: UserCommand) => void) | null = null;
+Рендерер реализуется в `media/control.js` и использует утилиты из `media/ui/`:
 
-  constructor(private root: HTMLElement) {
-    this.setupEventDelegation();
-  }
+- **`DOM.qs/qsa`** — querySelector shortcuts
+- **`DOM.applyFormState`** — batch-применение значений к form controls
+- **`Events.delegate`** — делегирование событий
+- **`Events.debounce`** — дебаунс для text inputs
+- **`LGUI.fillSelect`** — заполнение select с опциями
 
-  render(vm: ViewModel): void {
-    const prev = this.lastViewModel;
-    this.lastViewModel = vm;
+```javascript
+/* media/control.js */
+(function () {
+  const { DOM, Events } = LGUI;
+
+  // ========== State ==========
+  let lastViewModel = null;
+  let commandCallback = null;
+
+  // ========== Renderer API ==========
+
+  /**
+   * Main render function - called when ViewModel changes
+   * Uses diff to minimize DOM updates
+   * @param {ViewModel} vm
+   */
+  function render(vm) {
+    const prev = lastViewModel;
+    lastViewModel = vm;
 
     // Diff-based updates for each section
-    this.renderProviders(vm, prev);
-    this.renderContexts(vm, prev);
-    this.renderModeSets(vm, prev);
-    this.renderTagSets(vm, prev);
-    this.renderTargetBranch(vm, prev);
-    this.renderTokenization(vm, prev);
-    this.renderCliSettings(vm, prev);
-    this.renderTask(vm, prev);
-    this.renderLoadingState(vm, prev);
+    renderProviders(vm, prev);
+    renderContexts(vm, prev);
+    renderSections(vm, prev);
+    renderModeSets(vm, prev);
+    renderTagSets(vm, prev);
+    renderTargetBranch(vm, prev);
+    renderTokenization(vm, prev);
+    renderCliSettings(vm, prev);
+    renderTask(vm, prev);
   }
 
-  private renderProviders(vm: ViewModel, prev: ViewModel | null): void {
-    // Skip if unchanged
-    if (prev &&
-        arraysEqual(prev.providers, vm.providers) &&
+  /**
+   * Update UI meta state (loading overlay)
+   * Lightweight - no diffing needed
+   * @param {UIMeta} meta
+   */
+  function setMeta(meta) {
+    const overlay = DOM.qs("#loading-overlay");
+    if (overlay) {
+      overlay.style.display = meta.isLoading ? "flex" : "none";
+    }
+  }
+
+  /**
+   * Subscribe to user commands
+   * @param {(cmd: UserCommand) => void} callback
+   */
+  function onCommand(callback) {
+    commandCallback = callback;
+  }
+
+  // ========== Section Renderers ==========
+
+  function renderProviders(vm, prev) {
+    if (prev && arraysEqual(prev.providers, vm.providers) &&
         prev.selectedProviderId === vm.selectedProviderId) {
       return;
     }
 
-    const select = this.root.querySelector('#provider') as HTMLSelectElement;
+    const select = DOM.qs("#provider");
     if (!select) return;
 
-    // Update options if changed
+    // Update options only if list changed
     if (!prev || !arraysEqual(prev.providers, vm.providers)) {
-      select.innerHTML = vm.providers
-        .map(p => `<option value="${p.value}">${p.label}</option>`)
-        .join('');
+      LGUI.fillSelect(select, vm.providers, {
+        getValue: (p) => p.value,
+        getLabel: (p) => p.label
+      });
     }
 
     // Update selection
@@ -1053,85 +1082,415 @@ class ControlPanelRenderer implements Renderer {
     }
   }
 
-  private renderModeSets(vm: ViewModel, prev: ViewModel | null): void {
-    const container = this.root.querySelector('#mode-sets-row');
+  function renderContexts(vm, prev) {
+    if (prev && arraysEqual(prev.contexts, vm.contexts) &&
+        prev.selectedContextId === vm.selectedContextId) {
+      return;
+    }
+
+    const select = DOM.qs("#template");
+    if (!select) return;
+
+    if (!prev || !arraysEqual(prev.contexts, vm.contexts)) {
+      LGUI.fillSelect(select, vm.contexts, {
+        getValue: (c) => c.value,
+        getLabel: (c) => c.label
+      });
+    }
+
+    if (select.value !== vm.selectedContextId) {
+      select.value = vm.selectedContextId;
+    }
+  }
+
+  function renderSections(vm, prev) {
+    if (prev && arraysEqual(prev.sections, vm.sections) &&
+        prev.selectedSectionId === vm.selectedSectionId) {
+      return;
+    }
+
+    const select = DOM.qs("#section");
+    if (!select) return;
+
+    if (!prev || !arraysEqual(prev.sections, vm.sections)) {
+      LGUI.fillSelect(select, vm.sections, {
+        getValue: (s) => s.value,
+        getLabel: (s) => s.label
+      });
+    }
+
+    if (select.value !== vm.selectedSectionId) {
+      select.value = vm.selectedSectionId;
+    }
+  }
+
+  function renderModeSets(vm, prev) {
+    const container = DOM.qs("#mode-sets-row");
     if (!container) return;
 
-    // Check if mode-sets structure changed
-    const structureChanged = !prev ||
-      !modeSetsStructureEqual(prev.modeSets, vm.modeSets);
+    // Check if structure changed (different mode-sets or different modes within)
+    const structureChanged = !prev || !modeSetsStructureEqual(prev.modeSets, vm.modeSets);
 
     if (structureChanged) {
-      // Full rebuild needed
-      container.innerHTML = this.buildModeSetsHtml(vm.modeSets);
+      // Full rebuild
+      container.innerHTML = buildModeSetsHtml(vm.modeSets);
     } else {
       // Just update selections
-      for (const ms of vm.modeSets) {
-        const select = container.querySelector(`#mode-${ms.id}`) as HTMLSelectElement;
+      vm.modeSets.forEach((ms) => {
+        const select = DOM.qs(`#mode-${ms.id}`, container);
         if (select && select.value !== ms.selectedModeId) {
           select.value = ms.selectedModeId;
+        }
+      });
+    }
+  }
+
+  function renderTagSets(vm, prev) {
+    const container = DOM.qs("#tag-sets-container");
+    if (!container) return;
+
+    // Check if structure changed
+    const structureChanged = !prev || !tagSetsStructureEqual(prev.tagSets, vm.tagSets);
+
+    if (structureChanged) {
+      container.innerHTML = buildTagSetsHtml(vm.tagSets);
+    } else {
+      // Just update checked state
+      vm.tagSets.forEach((ts) => {
+        ts.tags.forEach((tag) => {
+          const checkbox = DOM.qs(`#tag-${ts.id}--${tag.id}`, container);
+          if (checkbox && checkbox.checked !== tag.checked) {
+            checkbox.checked = tag.checked;
+          }
+        });
+      });
+    }
+
+    // Update button text with count
+    const btn = DOM.qs("#tags-toggle .btn-text");
+    if (btn) {
+      btn.textContent = vm.selectedTagsCount > 0
+        ? `Configure Tags (${vm.selectedTagsCount})`
+        : "Configure Tags";
+    }
+  }
+
+  function renderTargetBranch(vm, prev) {
+    const cluster = DOM.qs("#target-branch-cluster");
+
+    // Handle visibility
+    if (!vm.targetBranchVisible) {
+      if (cluster) cluster.remove();
+      return;
+    }
+
+    // Create if doesn't exist
+    if (!cluster) {
+      const container = DOM.qs("#mode-sets-row");
+      if (container) {
+        container.insertAdjacentHTML("beforeend", buildTargetBranchHtml(vm));
+      }
+      return;
+    }
+
+    // Update options and selection
+    const select = DOM.qs("#targetBranch", cluster);
+    if (!select) return;
+
+    if (!prev || !arraysEqual(prev.branches, vm.branches)) {
+      LGUI.fillSelect(select, vm.branches, {
+        getValue: (b) => b.value,
+        getLabel: (b) => b.label
+      });
+    }
+
+    if (select.value !== vm.selectedBranch) {
+      select.value = vm.selectedBranch;
+    }
+  }
+
+  function renderTokenization(vm, prev) {
+    // Tokenizer lib
+    const libSelect = DOM.qs("#tokenizerLib");
+    if (libSelect) {
+      if (!prev || !arraysEqual(prev.tokenizerLibs, vm.tokenizerLibs)) {
+        LGUI.fillSelect(libSelect, vm.tokenizerLibs, {
+          getValue: (l) => l.value,
+          getLabel: (l) => l.label
+        });
+      }
+      if (libSelect.value !== vm.selectedTokenizerLib) {
+        libSelect.value = vm.selectedTokenizerLib;
+      }
+    }
+
+    // Encoder (uses autosuggest, just update value)
+    const encoderInput = DOM.qs("#encoder");
+    if (encoderInput && encoderInput.value !== vm.selectedEncoder) {
+      encoderInput.value = vm.selectedEncoder;
+    }
+
+    // Context limit
+    const ctxLimitInput = DOM.qs("#ctxLimit");
+    if (ctxLimitInput && ctxLimitInput.value !== String(vm.ctxLimit)) {
+      ctxLimitInput.value = String(vm.ctxLimit);
+    }
+  }
+
+  function renderCliSettings(vm, prev) {
+    const block = DOM.qs("#cli-settings-block");
+    if (!block) return;
+
+    // Visibility
+    block.style.display = vm.cliSettingsVisible ? "flex" : "none";
+    if (!vm.cliSettingsVisible) return;
+
+    // CLI Scope
+    const scopeInput = DOM.qs("#cliScope");
+    if (scopeInput && scopeInput.value !== vm.cliScope) {
+      scopeInput.value = vm.cliScope;
+    }
+
+    // Shell
+    const shellSelect = DOM.qs("#cliShell");
+    if (shellSelect && shellSelect.value !== vm.selectedShell) {
+      shellSelect.value = vm.selectedShell;
+    }
+
+    // Claude settings
+    const claudeContainer = DOM.qs("#claude-settings-container");
+    if (claudeContainer) {
+      claudeContainer.style.display = vm.claudeSettingsVisible ? "flex" : "none";
+
+      if (vm.claudeSettingsVisible) {
+        const modelSelect = DOM.qs("#claudeModel");
+        if (modelSelect && modelSelect.value !== vm.selectedClaudeModel) {
+          modelSelect.value = vm.selectedClaudeModel;
+        }
+
+        const methodSelect = DOM.qs("#claudeIntegrationMethod");
+        if (methodSelect && methodSelect.value !== vm.selectedClaudeMethod) {
+          methodSelect.value = vm.selectedClaudeMethod;
         }
       }
     }
 
-    // Update target branch visibility
-    this.updateTargetBranchVisibility(vm);
+    // Codex settings
+    const codexContainer = DOM.qs("#codex-settings-container");
+    if (codexContainer) {
+      codexContainer.style.display = vm.codexSettingsVisible ? "flex" : "none";
+
+      if (vm.codexSettingsVisible) {
+        const reasoningSelect = DOM.qs("#codexReasoningEffort");
+        if (reasoningSelect && reasoningSelect.value !== vm.selectedCodexReasoning) {
+          reasoningSelect.value = vm.selectedCodexReasoning;
+        }
+      }
+    }
   }
 
-  private setupEventDelegation(): void {
-    // Single event listener for all interactive elements
-    this.root.addEventListener('change', (e) => {
-      const target = e.target as HTMLElement;
-      const command = this.eventToCommand(target);
-      if (command && this.commandCallback) {
-        this.commandCallback(command);
+  function renderTask(vm, prev) {
+    const textarea = DOM.qs("#taskText");
+    if (textarea && textarea.value !== vm.taskText) {
+      textarea.value = vm.taskText;
+    }
+  }
+
+  // ========== HTML Builders ==========
+
+  function buildModeSetsHtml(modeSets) {
+    return modeSets.map((ms) => `
+      <span class="cluster">
+        <label>${ms.title}:</label>
+        <select id="mode-${ms.id}" data-mode-set="${ms.id}" class="lg-select mode-select">
+          ${ms.modes.map((m) => `
+            <option value="${m.id}" ${m.id === ms.selectedModeId ? "selected" : ""}
+                    ${m.description ? `title="${m.description}"` : ""}>
+              ${m.title}
+            </option>
+          `).join("")}
+        </select>
+      </span>
+    `).join("");
+  }
+
+  function buildTagSetsHtml(tagSets) {
+    return tagSets.map((ts) => `
+      <div class="tag-set ${ts.expanded ? "expanded" : ""}">
+        <div class="tag-set-header">
+          <span class="codicon codicon-chevron-right tag-set-chevron"></span>
+          <span class="tag-set-title">${ts.title}</span>
+        </div>
+        <div class="tag-set-tags">
+          ${ts.tags.map((tag) => `
+            <div class="tag-item">
+              <input type="checkbox" id="tag-${ts.id}--${tag.id}"
+                     data-tag-set="${ts.id}" data-tag="${tag.id}"
+                     ${tag.checked ? "checked" : ""}>
+              <label class="tag-item-label" for="tag-${ts.id}--${tag.id}">
+                ${tag.title}
+              </label>
+              ${tag.description ? `<div class="tag-item-description">${tag.description}</div>` : ""}
+            </div>
+          `).join("")}
+        </div>
+      </div>
+    `).join("");
+  }
+
+  function buildTargetBranchHtml(vm) {
+    return `
+      <span id="target-branch-cluster" class="cluster">
+        <label>Target Branch:</label>
+        <select id="targetBranch" class="lg-select">
+          ${vm.branches.map((b) => `
+            <option value="${b.value}" ${b.value === vm.selectedBranch ? "selected" : ""}>
+              ${b.label}
+            </option>
+          `).join("")}
+        </select>
+      </span>
+    `;
+  }
+
+  // ========== Diff Helpers ==========
+
+  function arraysEqual(a, b) {
+    if (!a || !b) return false;
+    if (a.length !== b.length) return false;
+    return a.every((item, i) => {
+      if (typeof item === "object") {
+        return JSON.stringify(item) === JSON.stringify(b[i]);
+      }
+      return item === b[i];
+    });
+  }
+
+  function modeSetsStructureEqual(a, b) {
+    if (!a || !b || a.length !== b.length) return false;
+    return a.every((msA, i) => {
+      const msB = b[i];
+      return msA.id === msB.id &&
+             msA.modes.length === msB.modes.length &&
+             msA.modes.every((mA, j) => mA.id === msB.modes[j].id);
+    });
+  }
+
+  function tagSetsStructureEqual(a, b) {
+    if (!a || !b || a.length !== b.length) return false;
+    return a.every((tsA, i) => {
+      const tsB = b[i];
+      return tsA.id === tsB.id &&
+             tsA.tags.length === tsB.tags.length &&
+             tsA.tags.every((tA, j) => tA.id === tsB.tags[j].id);
+    });
+  }
+
+  // ========== Event Handling ==========
+
+  function setupEventDelegation() {
+    // Select changes → immediate command
+    Events.delegate(document, "select", "change", (el) => {
+      const cmd = selectToCommand(el);
+      if (cmd && commandCallback) {
+        commandCallback(cmd);
       }
     });
 
-    this.root.addEventListener('input', debounce((e: Event) => {
-      const target = e.target as HTMLElement;
-      const command = this.eventToCommand(target);
-      if (command && this.commandCallback) {
-        this.commandCallback(command);
+    // Checkbox changes → immediate command
+    Events.delegate(document, "input[type=checkbox]", "change", (el) => {
+      const cmd = checkboxToCommand(el);
+      if (cmd && commandCallback) {
+        commandCallback(cmd);
       }
-    }, 300));
+    });
+
+    // Text input → debounced command
+    Events.delegate(document, "textarea, input[type=text], input[type=number]", "input",
+      Events.debounce((el) => {
+        const cmd = inputToCommand(el);
+        if (cmd && commandCallback) {
+          commandCallback(cmd);
+        }
+      }, 300)
+    );
+
+    // Tag set header click → toggle expand (local UI, no command)
+    Events.delegate(document, ".tag-set-header", "click", (el) => {
+      const tagSet = el.closest(".tag-set");
+      if (tagSet) {
+        tagSet.classList.toggle("expanded");
+      }
+    });
   }
 
-  private eventToCommand(target: HTMLElement): UserCommand | null {
-    const id = target.id;
+  function selectToCommand(el) {
+    const id = el.id;
+    const value = el.value;
 
-    if (id === 'provider') {
-      return { type: 'SELECT_PROVIDER', providerId: (target as HTMLSelectElement).value };
+    switch (id) {
+      case "provider":
+        return { type: "SELECT_PROVIDER", providerId: value };
+      case "template":
+        return { type: "SELECT_CONTEXT", template: value };
+      case "section":
+        return { type: "SELECT_SECTION", section: value };
+      case "targetBranch":
+        return { type: "SELECT_TARGET_BRANCH", branch: value };
+      case "tokenizerLib":
+        return { type: "SELECT_TOKENIZER_LIB", lib: value };
+      case "cliShell":
+        return { type: "SELECT_CLI_SHELL", shell: value };
+      case "claudeModel":
+        return { type: "SELECT_CLAUDE_MODEL", model: value };
+      case "claudeIntegrationMethod":
+        return { type: "SELECT_CLAUDE_METHOD", method: value };
+      case "codexReasoningEffort":
+        return { type: "SELECT_CODEX_REASONING", effort: value };
+      default:
+        // Mode select
+        if (id.startsWith("mode-")) {
+          const modeSetId = el.dataset.modeSet;
+          return { type: "SELECT_MODE", modeSetId, modeId: value };
+        }
+        return null;
     }
-    if (id === 'template') {
-      return { type: 'SELECT_CONTEXT', template: (target as HTMLSelectElement).value };
-    }
-    if (id === 'section') {
-      return { type: 'SELECT_SECTION', section: (target as HTMLSelectElement).value };
-    }
-    if (id.startsWith('mode-')) {
-      const modeSetId = target.dataset.modeSet!;
-      return { type: 'SELECT_MODE', modeSetId, modeId: (target as HTMLSelectElement).value };
-    }
-    if (id.startsWith('tag-')) {
-      const [tagSetId, tagId] = this.parseTagId(id);
-      return { type: 'TOGGLE_TAG', tagSetId, tagId };
-    }
-    if (id === 'taskText') {
-      return { type: 'SET_TASK_TEXT', text: (target as HTMLTextAreaElement).value };
-    }
-    if (id === 'targetBranch') {
-      return { type: 'SELECT_TARGET_BRANCH', branch: (target as HTMLSelectElement).value };
-    }
-    // ... other mappings
+  }
 
+  function checkboxToCommand(el) {
+    const tagSetId = el.dataset.tagSet;
+    const tagId = el.dataset.tag;
+    if (tagSetId && tagId) {
+      return { type: "TOGGLE_TAG", tagSetId, tagId };
+    }
     return null;
   }
 
-  onCommand(callback: (command: UserCommand) => void): void {
-    this.commandCallback = callback;
+  function inputToCommand(el) {
+    const id = el.id;
+    const value = el.value;
+
+    switch (id) {
+      case "taskText":
+        return { type: "SET_TASK_TEXT", text: value };
+      case "encoder":
+        return { type: "SET_ENCODER", encoder: value };
+      case "ctxLimit":
+        return { type: "SET_CTX_LIMIT", limit: parseInt(value, 10) || 0 };
+      case "cliScope":
+        return { type: "SET_CLI_SCOPE", scope: value };
+      default:
+        return null;
+    }
   }
-}
+
+  // ========== Initialization ==========
+
+  setupEventDelegation();
+
+  // Export renderer API for TypeScript orchestration layer
+  window.ControlPanelRenderer = { render, setMeta, onCommand };
+})();
 ```
 
 ---
@@ -1229,13 +1588,19 @@ src/
 │   ├── builder.ts            # buildViewModel() pure function
 │   └── helpers.ts            # Transformation helpers
 │
-├── render/
-│   ├── renderer.ts           # ControlPanelRenderer class
-│   ├── diff.ts               # DOM diffing utilities
-│   └── templates.ts          # HTML generation helpers
-│
 └── views/
-    └── ControlPanelView.ts   # Thin orchestration layer
+    └── ControlPanelView.ts   # Thin orchestration layer (WebView host)
+
+media/
+├── control.js                # Renderer implementation (JavaScript)
+├── control.css               # Styles
+├── control.html              # HTML template
+└── ui/
+    ├── utils/
+    │   ├── dom.js            # DOM utilities (qs, qsa, applyFormState, etc.)
+    │   └── events.js         # Event utilities (delegate, debounce, etc.)
+    └── dist/
+        └── lg-ui.js          # Bundled LGUI (DOM, Events, State, etc.)
 ```
 
 ---
@@ -1256,13 +1621,12 @@ src/
 
 ### 6.3. План миграции
 
-1. **Phase 1:** Создать новые типы и интерфейсы (`state/types.ts`, `viewmodel/types.ts`)
+1. **Phase 1:** Создать типы и интерфейсы (`src/state/types.ts`, `src/viewmodel/types.ts`)
 2. **Phase 2:** Реализовать `PKOStateStore` и `StateCoordinator`
-3. **Phase 3:** Перенести бизнес-правила в `rules/`
-4. **Phase 4:** Реализовать `buildViewModel()`
-5. **Phase 5:** Создать `ControlPanelRenderer`
+3. **Phase 3:** Перенести бизнес-правила в `src/state/rules/`
+4. **Phase 4:** Реализовать `buildViewModel()` в `src/viewmodel/builder.ts`
+5. **Phase 5:** Переписать `media/control.js` как stateless рендерер с LGUI
 6. **Phase 6:** Обновить `ControlPanelView` как тонкий оркестрационный слой
-7. **Phase 7:** Обновить `control.js` как stateless рендерер
 
 ---
 
