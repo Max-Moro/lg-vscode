@@ -20,8 +20,12 @@ src:
           - "/models/ClaudeModel.ts"
           - "/models/ClaudeIntegrationMethod.ts"
           - "/models/CodexReasoningEffort.ts"
-          # State management
-          - "/services/ControlStateService.ts"
+          # State management - only adaptive-related parts
+          - "/state/types.ts"
+          - "/state/store.ts"
+          - "/state/coordinator.ts"
+          - "/state/rules/index.ts"
+          - "/state/rules/adaptive.rules.ts"
           - "/services/CatalogService.ts"
           - "/services/GitService.ts"
           # CLI integration
@@ -73,10 +77,11 @@ src:
 
   # TypeScript optimization levels (disabled in review mode)
   #
-  # Level 1: Core state management - FULL CODE, will be refactored
-  #   - ControlPanelView.ts (UI backend, state coordination)
-  #   - ControlStateService.ts (state persistence)
-  #   - control.js (WebView client state)
+  # Level 1: Core adaptive state - FULL CODE
+  #   - state/types.ts, store.ts, coordinator.ts (PKO state)
+  #   - state/rules/adaptive.rules.ts (modes/tags rules)
+  #   - ControlPanelView.ts (thin orchestration)
+  #   - control.js (stateless renderer)
   #
   # Level 2: Supporting services - keep_doc + strip imports
   #   - CatalogService, GitService, CliClient

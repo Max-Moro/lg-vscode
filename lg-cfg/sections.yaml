@@ -45,24 +45,38 @@ src:
               - "/cli/CliClient.ts"
               - "/services/ContextService.ts"
               - "/services/ListingService.ts"
-              - "/services/ControlStateService.ts"
+              - "/state/types.ts"
+              - "/state/store.ts"
+              - "/state/coordinator.ts"
+              - "/state/rules/index.ts"
+              - "/state/rules/lifecycle.rules.ts"
+              - "/state/watchers/"
+              - "/actions/index.ts"
               - "/webview/webviewKit.ts"
           - condition: "TAGSET:vscode-extension:cli"
             allow: ["/cli/", "/runner/"]
           - condition: "TAGSET:vscode-extension:ui-components"
             allow: ["/build-ui.ts"]
           - condition: "TAGSET:vscode-extension:control"
-            allow: ["/views/ControlPanelView.ts"]
+            allow:
+              - "/views/ControlPanelView.ts"
+              - "/viewmodel/"
+              - "/actions/ToolbarActions.ts"
           - condition: "TAGSET:vscode-extension:catalog"
             allow:
               - "/services/CatalogService.ts"
               - "/services/GitService.ts"
               - "/models/mode_sets_list.ts"
               - "/models/tag_sets_list.ts"
+              - "/state/rules/tokenizer.rules.ts"
+              - "/state/rules/context.rules.ts"
+              - "/state/rules/adaptive.rules.ts"
           - condition: "TAGSET:vscode-extension:stats"
             allow:
               - "/views/StatsWebview.ts"
               - "/models/report.ts"
+              - "/actions/ListingActions.ts"
+              - "/actions/ContextActions.ts"
           - condition: "TAGSET:vscode-extension:diag"
             allow:
               - "/services/DoctorService.ts"
@@ -71,8 +85,10 @@ src:
           - condition: "TAGSET:vscode-extension:send-to-ai"
             allow:
               - "/services/ai/"
-              - "/models/AiInteractionMode.ts"
               - "/models/ShellType.ts"
+              - "/state/rules/provider.rules.ts"
+              - "/state/rules/cli-settings.rules.ts"
+              - "/actions/AiActions.ts"
           - condition: "TAGSET:vscode-extension:starter"
             allow: ["/starter/StarterConfig.ts"]
           - condition: "TAGSET:vscode-extension:included-tree"
