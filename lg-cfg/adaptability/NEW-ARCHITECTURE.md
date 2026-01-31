@@ -19,6 +19,10 @@
 3. **Предсказуемый data flow** — однонаправленный поток данных без race conditions
 4. **Минимальный рендеринг** — UI обновляется только при изменении View Model
 5. **Тестируемость** — каждый слой можно тестировать изолированно
+6. **Полнота состояния в бизнес-слое** — все selections (provider, context, modes, etc.) всегда имеют явное значение, установленное бизнес-логикой. UI никогда не "угадывает" дефолты — он только отображает реальное состояние. Это гарантирует:
+   - Пользователь видит действительное состояние, а не "выдуманное"
+   - "Send to AI" работает с теми параметрами, которые видит пользователь
+   - Очевидное поведение при автовыборе единственного варианта
 
 ---
 
@@ -343,15 +347,17 @@ const BUSINESS_RULES: BusinessRule[] = [
   },
 
   // ============================================
-  // RULE: Context change triggers mode-sets and tag-sets reload
+  // RULE: Context selection triggers mode-sets and tag-sets reload
   // ============================================
   {
     id: 'context-change-adaptive',
-    description: 'When context changes, reload mode-sets and tag-sets',
+    description: 'When context is selected, reload mode-sets and tag-sets',
     triggers: ['SELECT_CONTEXT'],
     condition: (state, cmd) => {
       if (cmd.type !== 'SELECT_CONTEXT') return false;
-      return !!cmd.template; // only if template is not empty
+      // Always reload when context is selected (not just when changed)
+      // because: 1) initial load, 2) provider change invalidates mode-sets
+      return !!cmd.template;
     },
     apply: (state, cmd) => {
       if (cmd.type !== 'SELECT_CONTEXT') return {};
@@ -386,7 +392,7 @@ const BUSINESS_RULES: BusinessRule[] = [
   // ============================================
   {
     id: 'mode-sets-actualize',
-    description: 'When mode-sets are loaded, remove invalid saved modes',
+    description: 'When mode-sets are loaded, ensure all mode-sets have valid selection',
     triggers: ['MODE_SETS_LOADED'],
     condition: () => true,
     apply: (state, cmd) => {
@@ -396,25 +402,26 @@ const BUSINESS_RULES: BusinessRule[] = [
       const provider = state.persistent.providerId;
       const savedModes = state.persistent.modesByContextProvider[ctx]?.[provider] || {};
 
-      // Validate each saved mode against loaded mode-sets
-      const validatedModes: Record<string, string> = {};
-      const availableSets = new Set(cmd.modeSets['mode-sets'].map(ms => ms.id));
+      // Build complete modes object for ALL available mode-sets
+      // This ensures UI always shows real state, not "guessed" defaults
+      const actualizedModes: Record<string, string> = {};
 
-      for (const [setId, modeId] of Object.entries(savedModes)) {
-        if (!availableSets.has(setId)) continue;
+      for (const modeSet of cmd.modeSets['mode-sets']) {
+        const savedModeId = savedModes[modeSet.id];
+        const modeExists = modeSet.modes.some(m => m.id === savedModeId);
 
-        const modeSet = cmd.modeSets['mode-sets'].find(ms => ms.id === setId);
-        const modeExists = modeSet?.modes.some(m => m.id === modeId);
-
-        if (modeExists) {
-          validatedModes[setId] = modeId;
+        if (savedModeId && modeExists) {
+          // Saved mode is valid - keep it
+          actualizedModes[modeSet.id] = savedModeId;
+        } else {
+          // Saved mode is invalid or missing - select first available
+          // This is explicit business decision, not UI fallback
+          const defaultMode = modeSet.modes[0];
+          if (defaultMode) {
+            actualizedModes[modeSet.id] = defaultMode.id;
+          }
         }
-        // If mode doesn't exist, don't add - UI will show first option
       }
-
-      // Only update if there were changes
-      const hasChanges = JSON.stringify(savedModes) !== JSON.stringify(validatedModes);
-      if (!hasChanges) return {};
 
       return {
         mutations: {
@@ -422,7 +429,7 @@ const BUSINESS_RULES: BusinessRule[] = [
             ...state.persistent.modesByContextProvider,
             [ctx]: {
               ...state.persistent.modesByContextProvider[ctx],
-              [provider]: validatedModes
+              [provider]: actualizedModes
             }
           }
         }
@@ -861,6 +868,7 @@ function buildViewModel(state: PKOState): ViewModel {
   const isCodexCli = provider === 'com.openai.codex.cli';
 
   // Build mode-sets view models
+  // Note: selectedModeId is always present - business layer guarantees it
   const modeSets: ModeSetViewModel[] = c.modeSets['mode-sets'].map(ms => ({
     id: ms.id,
     title: ms.title,
@@ -869,7 +877,7 @@ function buildViewModel(state: PKOState): ViewModel {
       title: m.title,
       description: m.description
     })),
-    selectedModeId: currentModes[ms.id] || ms.modes[0]?.id || ''
+    selectedModeId: currentModes[ms.id]  // Always defined by business rules
   }));
 
   // Build tag-sets view models (exclude 'global')
