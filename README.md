@@ -76,7 +76,6 @@ Main parameters (Settings → Extensions → Listing Generator):
 - `lg.openAsEditable` — open results as editable files (instead of read-only virtual documents)
 
 AI provider selection is available directly in the Control Panel (not in Settings).
-<!-- lg:comment:end -->
 
 ---
 
@@ -84,3 +83,4 @@ AI provider selection is available directly in the Control Panel (not in Setting
 
 VS Code Extension for Listing Generator is licensed under the Apache License, Version 2.0.  
 See the `LICENSE` file for the full license text.
+<!-- lg:comment:end -->

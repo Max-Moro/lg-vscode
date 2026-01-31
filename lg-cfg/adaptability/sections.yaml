@@ -1,0 +1,141 @@
+# Adaptive capabilities in VS Code Extension
+# Focuses on: modes, tags, provider integration, state management
+
+src:
+  extensions: [".ts", ".js", ".html", ".json"]
+  filters:
+    mode: allow
+    allow:
+      - "/package.json"
+      - "/src/"
+      - "/media/"
+    children:
+      src:
+        mode: allow
+        allow:
+          # Core models (always needed)
+          - "/models/mode_sets_list.ts"
+          - "/models/tag_sets_list.ts"
+          - "/models/ShellType.ts"
+          - "/models/ClaudeModel.ts"
+          - "/models/ClaudeIntegrationMethod.ts"
+          - "/models/CodexReasoningEffort.ts"
+          # State management
+          - "/services/ControlStateService.ts"
+          - "/services/CatalogService.ts"
+          - "/services/GitService.ts"
+          # CLI integration
+          - "/cli/CliClient.ts"
+          # AI integration
+          - "/services/ai/"
+          # UI backend
+          - "/views/ControlPanelView.ts"
+          # Entry point (for command registration)
+          - "/extension.ts"
+          - "/constants.ts"
+          # WebView utilities
+          - "/webview/webviewKit.ts"
+          - "/logging/log.ts"
+        children:
+          services:
+            mode: block
+            children:
+              ai:
+                mode: allow
+                allow:
+                  - "/types.ts"
+                  - "/index.ts"
+                  - "/AiIntegrationService.ts"
+                  - "/AiModesTemplateGenerator.ts"
+                  - "/BaseAiProvider.ts"
+                  - "/BaseCliProvider.ts"
+                  - "/BaseExtensionProvider.ts"
+                  - "/BaseForkProvider.ts"
+                  - "/providers/"
+                children:
+                  providers:
+                    mode: allow
+                    allow:
+                      - "/clipboard/"
+                      - "/copilot/"
+                      - "/cursor/"
+                      - "/claude-cli/"
+                      - "/codex-cli/"
+                      - "/openai/"
+      media:
+        mode: allow
+        allow:
+          - "control.html"
+          - "control.js"
+          - "control.css"
+          - "/ui/utils/dom.js"
+          - "/ui/utils/events.js"
+
+  # TypeScript optimization levels (disabled in review mode)
+  #
+  # Level 1: Core state management - FULL CODE, will be refactored
+  #   - ControlPanelView.ts (UI backend, state coordination)
+  #   - ControlStateService.ts (state persistence)
+  #   - control.js (WebView client state)
+  #
+  # Level 2: Supporting services - keep_doc + strip imports
+  #   - CatalogService, GitService, CliClient
+  #   - AI types and registration
+  #
+  # Level 3: AI infrastructure - keep_public only
+  #   - AiIntegrationService, AiModesTemplateGenerator
+  #   - Base provider classes
+  #
+  # Level 4: Providers and Logging - signatures only
+
+  typescript:
+    when:
+      # Level 1: Core state management - FULL CODE
+      - condition: "NOT tag:review"
+        imports:
+          policy: "strip_external"
+
+  targets:
+    # Level 2: Supporting services - readable with minimal noise
+    - match:
+        - "/src/services/CatalogService.ts"
+        - "/src/services/GitService.ts"
+        - "/src/cli/CliClient.ts"
+        - "/src/services/ai/types.ts"
+        - "/src/services/ai/index.ts"
+      typescript:
+        when:
+          - condition: "NOT tag:review"
+            comment_policy: "keep_doc"
+            imports:
+              policy: "strip_all"
+
+    # Level 3: AI infrastructure - public API visible
+    - match:
+        - "/src/services/ai/AiIntegrationService.ts"
+        - "/src/services/ai/AiModesTemplateGenerator.ts"
+        - "/src/services/ai/BaseAiProvider.ts"
+        - "/src/services/ai/BaseCliProvider.ts"
+        - "/src/services/ai/BaseExtensionProvider.ts"
+        - "/src/services/ai/BaseForkProvider.ts"
+      typescript:
+        when:
+          - condition: "NOT tag:review"
+            comment_policy: "keep_doc"
+            imports:
+              policy: "strip_all"
+            strip_function_bodies:
+              policy: "keep_public"
+
+    # Level 4: Providers and Logging - signatures only
+    - match:
+        - "/src/services/ai/providers/**/*.ts"
+        - "/src/logging/log.ts"
+      typescript:
+        when:
+          - condition: "NOT tag:review"
+            public_api_only: true
+            comment_policy: "keep_doc"
+            imports:
+              policy: "strip_all"
+            strip_function_bodies: true
