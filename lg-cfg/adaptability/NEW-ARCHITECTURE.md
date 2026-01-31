@@ -250,21 +250,25 @@ type Command = UserCommand | SystemCommand | LifecycleCommand;
 #### 3.3.1. Rule Structure
 
 ```typescript
-interface BusinessRule {
+/**
+ * Typed business rule - trigger determines command type in callbacks
+ * This eliminates redundant type checks in condition/apply
+ */
+interface BusinessRule<T extends Command['type'] = Command['type']> {
   /** Unique rule identifier for debugging */
   id: string;
 
   /** Human-readable description */
   description: string;
 
-  /** Commands that trigger this rule */
-  triggers: Command['type'][];
+  /** Single command type that triggers this rule */
+  trigger: T;
 
-  /** Check if rule should be applied */
-  condition: (state: PKOState, command: Command) => boolean;
+  /** Check if rule should be applied (command is already typed) */
+  condition: (state: PKOState, cmd: Extract<Command, { type: T }>) => boolean;
 
   /** Apply rule: returns state mutations and/or follow-up commands */
-  apply: (state: PKOState, command: Command) => RuleResult;
+  apply: (state: PKOState, cmd: Extract<Command, { type: T }>) => RuleResult;
 }
 
 interface RuleResult {
@@ -282,6 +286,9 @@ interface AsyncOperation {
   id: string;
   execute: () => Promise<SystemCommand>;
 }
+
+/** Helper type to create typed rule */
+type TypedRule<T extends Command['type']> = BusinessRule<T>;
 ```
 
 #### 3.3.2. Core Business Rules
@@ -294,25 +301,19 @@ const BUSINESS_RULES: BusinessRule[] = [
   {
     id: 'provider-change-contexts',
     description: 'When provider changes, reload contexts filtered by new provider',
-    triggers: ['SELECT_PROVIDER'],
-    condition: (state, cmd) => {
-      if (cmd.type !== 'SELECT_PROVIDER') return false;
-      return cmd.providerId !== state.persistent.providerId;
-    },
-    apply: (state, cmd) => {
-      if (cmd.type !== 'SELECT_PROVIDER') return {};
-      return {
-        mutations: { providerId: cmd.providerId },
-        asyncOps: [{
-          id: 'load-contexts',
-          execute: async () => {
-            const contexts = await cliListContexts(cmd.providerId);
-            return { type: 'CONTEXTS_LOADED', contexts };
-          }
-        }]
-      };
-    }
-  },
+    trigger: 'SELECT_PROVIDER',
+    condition: (state, cmd) => cmd.providerId !== state.persistent.providerId,
+    apply: (state, cmd) => ({
+      mutations: { providerId: cmd.providerId },
+      asyncOps: [{
+        id: 'load-contexts',
+        execute: async () => {
+          const contexts = await cliListContexts(cmd.providerId);
+          return { type: 'CONTEXTS_LOADED', contexts };
+        }
+      }]
+    })
+  } satisfies TypedRule<'SELECT_PROVIDER'>,
 
   // ============================================
   // RULE: Contexts loaded - validate current selection
@@ -320,11 +321,9 @@ const BUSINESS_RULES: BusinessRule[] = [
   {
     id: 'contexts-validate-selection',
     description: 'When contexts are loaded, validate current template selection',
-    triggers: ['CONTEXTS_LOADED'],
+    trigger: 'CONTEXTS_LOADED',
     condition: () => true,
     apply: (state, cmd) => {
-      if (cmd.type !== 'CONTEXTS_LOADED') return {};
-
       const currentTemplate = state.persistent.template;
       const contexts = cmd.contexts;
 
@@ -344,7 +343,7 @@ const BUSINESS_RULES: BusinessRule[] = [
           : []
       };
     }
-  },
+  } satisfies TypedRule<'CONTEXTS_LOADED'>,
 
   // ============================================
   // RULE: Context selection triggers mode-sets and tag-sets reload
@@ -352,40 +351,30 @@ const BUSINESS_RULES: BusinessRule[] = [
   {
     id: 'context-change-adaptive',
     description: 'When context is selected, reload mode-sets and tag-sets',
-    triggers: ['SELECT_CONTEXT'],
-    condition: (state, cmd) => {
-      if (cmd.type !== 'SELECT_CONTEXT') return false;
-      // Always reload when context is selected (not just when changed)
-      // because: 1) initial load, 2) provider change invalidates mode-sets
-      return !!cmd.template;
-    },
-    apply: (state, cmd) => {
-      if (cmd.type !== 'SELECT_CONTEXT') return {};
-
-      const providerId = state.persistent.providerId;
-      const template = cmd.template;
-
-      return {
-        mutations: { template },
-        asyncOps: [
-          {
-            id: 'load-mode-sets',
-            execute: async () => {
-              const modeSets = await cliListModeSets(template, providerId);
-              return { type: 'MODE_SETS_LOADED', modeSets };
-            }
-          },
-          {
-            id: 'load-tag-sets',
-            execute: async () => {
-              const tagSets = await cliListTagSets(template);
-              return { type: 'TAG_SETS_LOADED', tagSets };
-            }
+    trigger: 'SELECT_CONTEXT',
+    // Always reload when context is selected (not just when changed)
+    // because: 1) initial load, 2) provider change invalidates mode-sets
+    condition: (state, cmd) => !!cmd.template,
+    apply: (state, cmd) => ({
+      mutations: { template: cmd.template },
+      asyncOps: [
+        {
+          id: 'load-mode-sets',
+          execute: async () => {
+            const modeSets = await cliListModeSets(cmd.template, state.persistent.providerId);
+            return { type: 'MODE_SETS_LOADED', modeSets };
           }
-        ]
-      };
-    }
-  },
+        },
+        {
+          id: 'load-tag-sets',
+          execute: async () => {
+            const tagSets = await cliListTagSets(cmd.template);
+            return { type: 'TAG_SETS_LOADED', tagSets };
+          }
+        }
+      ]
+    })
+  } satisfies TypedRule<'SELECT_CONTEXT'>,
 
   // ============================================
   // RULE: Mode-sets loaded - actualize saved modes
@@ -393,11 +382,9 @@ const BUSINESS_RULES: BusinessRule[] = [
   {
     id: 'mode-sets-actualize',
     description: 'When mode-sets are loaded, ensure all mode-sets have valid selection',
-    triggers: ['MODE_SETS_LOADED'],
+    trigger: 'MODE_SETS_LOADED',
     condition: () => true,
     apply: (state, cmd) => {
-      if (cmd.type !== 'MODE_SETS_LOADED') return {};
-
       const ctx = state.persistent.template;
       const provider = state.persistent.providerId;
       const savedModes = state.persistent.modesByContextProvider[ctx]?.[provider] || {};
@@ -435,7 +422,7 @@ const BUSINESS_RULES: BusinessRule[] = [
         }
       };
     }
-  },
+  } satisfies TypedRule<'MODE_SETS_LOADED'>,
 
   // ============================================
   // RULE: Tag-sets loaded - actualize saved tags
@@ -443,11 +430,9 @@ const BUSINESS_RULES: BusinessRule[] = [
   {
     id: 'tag-sets-actualize',
     description: 'When tag-sets are loaded, remove invalid saved tags',
-    triggers: ['TAG_SETS_LOADED'],
+    trigger: 'TAG_SETS_LOADED',
     condition: () => true,
     apply: (state, cmd) => {
-      if (cmd.type !== 'TAG_SETS_LOADED') return {};
-
       const ctx = state.persistent.template;
       const savedTags = state.persistent.tagsByContext[ctx] || {};
 
@@ -481,7 +466,7 @@ const BUSINESS_RULES: BusinessRule[] = [
         }
       };
     }
-  },
+  } satisfies TypedRule<'TAG_SETS_LOADED'>,
 
   // ============================================
   // RULE: Tokenizer lib change triggers encoders reload
@@ -489,41 +474,29 @@ const BUSINESS_RULES: BusinessRule[] = [
   {
     id: 'tokenizer-lib-encoders',
     description: 'When tokenizer lib changes, reload encoders list',
-    triggers: ['SELECT_TOKENIZER_LIB'],
-    condition: (state, cmd) => {
-      if (cmd.type !== 'SELECT_TOKENIZER_LIB') return false;
-      return cmd.lib !== state.persistent.tokenizerLib;
-    },
-    apply: (state, cmd) => {
-      if (cmd.type !== 'SELECT_TOKENIZER_LIB') return {};
-      return {
-        mutations: { tokenizerLib: cmd.lib },
-        asyncOps: [{
-          id: 'load-encoders',
-          execute: async () => {
-            const encoders = await listEncodersJson(cmd.lib);
-            return { type: 'ENCODERS_LOADED', encoders };
-          }
-        }]
-      };
-    }
-  },
+    trigger: 'SELECT_TOKENIZER_LIB',
+    condition: (state, cmd) => cmd.lib !== state.persistent.tokenizerLib,
+    apply: (state, cmd) => ({
+      mutations: { tokenizerLib: cmd.lib },
+      asyncOps: [{
+        id: 'load-encoders',
+        execute: async () => {
+          const encoders = await listEncodersJson(cmd.lib);
+          return { type: 'ENCODERS_LOADED', encoders };
+        }
+      }]
+    })
+  } satisfies TypedRule<'SELECT_TOKENIZER_LIB'>,
 
   // ============================================
-  // RULE: Check review mode for target branch visibility
+  // RULE: Mode selection - update persistent state
   // ============================================
   {
-    id: 'review-mode-branch',
-    description: 'When mode changes to review, ensure branches are loaded',
-    triggers: ['SELECT_MODE'],
-    condition: (state, cmd) => {
-      if (cmd.type !== 'SELECT_MODE') return false;
-      return cmd.modeId === 'review';
-    },
+    id: 'mode-selection',
+    description: 'When mode is selected, update persistent state',
+    trigger: 'SELECT_MODE',
+    condition: () => true,
     apply: (state, cmd) => {
-      if (cmd.type !== 'SELECT_MODE') return {};
-
-      // Branches should already be loaded, just update mode
       const ctx = state.persistent.template;
       const provider = state.persistent.providerId;
 
@@ -542,7 +515,7 @@ const BUSINESS_RULES: BusinessRule[] = [
         }
       };
     }
-  },
+  } satisfies TypedRule<'SELECT_MODE'>,
 
   // ============================================
   // RULE: Initialize - full bootstrap
@@ -550,7 +523,7 @@ const BUSINESS_RULES: BusinessRule[] = [
   {
     id: 'initialize-bootstrap',
     description: 'On initialize, detect providers and load all catalogs',
-    triggers: ['INITIALIZE'],
+    trigger: 'INITIALIZE',
     condition: () => true,
     apply: () => ({
       asyncOps: [
@@ -584,7 +557,7 @@ const BUSINESS_RULES: BusinessRule[] = [
         }
       ]
     })
-  },
+  } satisfies TypedRule<'INITIALIZE'>,
 
   // ============================================
   // RULE: Providers detected - select best or restore saved
@@ -592,11 +565,9 @@ const BUSINESS_RULES: BusinessRule[] = [
   {
     id: 'providers-select-initial',
     description: 'When providers detected, select saved or best available',
-    triggers: ['PROVIDERS_DETECTED'],
+    trigger: 'PROVIDERS_DETECTED',
     condition: () => true,
     apply: (state, cmd) => {
-      if (cmd.type !== 'PROVIDERS_DETECTED') return {};
-
       const savedProvider = state.persistent.providerId;
       const providers = cmd.providers;
 
@@ -610,7 +581,7 @@ const BUSINESS_RULES: BusinessRule[] = [
         followUp: [{ type: 'SELECT_PROVIDER', providerId: effectiveProvider }]
       };
     }
-  }
+  } satisfies TypedRule<'PROVIDERS_DETECTED'>
 ];
 ```
 
@@ -642,10 +613,10 @@ class StateCoordinator {
    * Process a command through the rules engine
    */
   async dispatch(command: Command): Promise<void> {
-    // 1. Find applicable rules
+    // 1. Find applicable rules (typed command is passed to condition/apply)
     const applicableRules = this.rules.filter(rule =>
-      rule.triggers.includes(command.type) &&
-      rule.condition(this.state, command)
+      rule.trigger === command.type &&
+      rule.condition(this.state, command as any)
     );
 
     // 2. Apply rules and collect results
@@ -654,7 +625,7 @@ class StateCoordinator {
     const allFollowUps: Command[] = [];
 
     for (const rule of applicableRules) {
-      const result = rule.apply(this.state, command);
+      const result = rule.apply(this.state, command as any);
 
       if (result.mutations) {
         allMutations.push(result.mutations);
