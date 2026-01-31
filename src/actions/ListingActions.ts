@@ -14,7 +14,7 @@ export interface ListingActionsDeps {
   listingService: ListingService;
   vdocs: VirtualDocProvider;
   included: IncludedTree;
-  showStats: (data: RunResult, refreshFn: () => Promise<RunResult>, generateFn: () => Promise<string>) => Promise<void>;
+  showStats: (data: RunResult, refreshFn: () => Promise<RunResult>) => Promise<void>;
 }
 
 /**
@@ -78,7 +78,6 @@ export async function showSectionStats(deps: ListingActionsDeps): Promise<void> 
 
   await showStats(
     data,
-    () => listingService.getStats(),
-    () => listingService.generateListing()
+    () => listingService.getStats()
   );
 }

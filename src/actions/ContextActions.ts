@@ -12,7 +12,7 @@ export interface ContextActionsDeps {
   store: PKOStateStore;
   contextService: ContextService;
   vdocs: VirtualDocProvider;
-  showStats: (data: RunResult, refreshFn: () => Promise<RunResult>, generateFn: () => Promise<string>) => Promise<void>;
+  showStats: (data: RunResult, refreshFn: () => Promise<RunResult>) => Promise<void>;
 }
 
 /**
@@ -55,7 +55,6 @@ export async function showContextStats(deps: ContextActionsDeps): Promise<void> 
 
   await showStats(
     data,
-    () => contextService.getStats(),
-    () => contextService.generateContext()
+    () => contextService.getStats()
   );
 }

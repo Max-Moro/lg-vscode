@@ -11,13 +11,13 @@ import * as vscode from "vscode";
 
 // State management
 import { PKOStateStore, getPKOStore } from "../state/store";
-import { StateCoordinator } from "../state/coordinator";
+import { getCoordinator, StateCoordinator } from "../state/coordinator";
 import { ALL_RULES, setLifecycleDependencies } from "../state/rules";
 import { WatcherManager } from "../state/watchers";
 import type { Command, UIMeta } from "../state/types";
 
 // Actions
-import { ActionDispatcher } from "../actions";
+import { initActionDispatcher, ActionDispatcher } from "../actions";
 
 // ViewModel
 import { buildViewModel } from "../viewmodel/builder";
@@ -49,7 +49,7 @@ export class ControlPanelView implements vscode.WebviewViewProvider {
   ) {
     // Initialize state management
     this.store = getPKOStore(context);
-    this.coordinator = new StateCoordinator(this.store);
+    this.coordinator = getCoordinator(this.store);
 
     // Setup lifecycle dependencies for rules
     const aiService = getAiService();
@@ -65,8 +65,8 @@ export class ControlPanelView implements vscode.WebviewViewProvider {
     // Initialize watchers
     this.watcherManager = new WatcherManager(this.coordinator);
 
-    // Initialize action dispatcher
-    this.actionDispatcher = new ActionDispatcher({
+    // Initialize action dispatcher singleton
+    this.actionDispatcher = initActionDispatcher({
       store: this.store,
       coordinator: this.coordinator,
       listingService: new ListingService(context),
@@ -74,9 +74,9 @@ export class ControlPanelView implements vscode.WebviewViewProvider {
       aiService,
       vdocs,
       included,
-      showStats: async (data: RunResult, refreshFn: () => Promise<RunResult>, generateFn: () => Promise<string>) => {
+      showStats: async (data: RunResult, refreshFn: () => Promise<RunResult>) => {
         const { showStatsWebview } = await import("./StatsWebview");
-        await showStatsWebview(context, data, refreshFn, generateFn);
+        await showStatsWebview(context, data, refreshFn);
       }
     });
 

@@ -6,7 +6,7 @@ import type { PKOStateStore } from "../state/store";
 import type { StateCoordinator } from "../state/coordinator";
 import type { ListingService } from "../services/ListingService";
 import type { ContextService } from "../services/ContextService";
-import type { AiIntegrationService } from "../services/ai/AiIntegrationService";
+import type { AiIntegrationService } from "../services/ai";
 import type { VirtualDocProvider } from "../views/VirtualDocProvider";
 import type { IncludedTree } from "../views/IncludedTree";
 import type { RunResult } from "../models/report";
@@ -24,7 +24,7 @@ export interface ActionDispatcherDeps {
   aiService: AiIntegrationService;
   vdocs: VirtualDocProvider;
   included: IncludedTree;
-  showStats: (data: RunResult, refreshFn: () => Promise<RunResult>, generateFn: () => Promise<string>) => Promise<void>;
+  showStats: (data: RunResult, refreshFn: () => Promise<RunResult>) => Promise<void>;
 }
 
 /**
@@ -92,6 +92,29 @@ export class ActionDispatcher {
   async updateAiModes(): Promise<void> {
     await ToolbarActions.updateAiModes(this.deps);
   }
+}
+
+// Singleton instance
+let dispatcherInstance: ActionDispatcher | undefined;
+
+/**
+ * Initialize ActionDispatcher singleton.
+ * Called once by ControlPanelView during setup.
+ */
+export function initActionDispatcher(deps: ActionDispatcherDeps): ActionDispatcher {
+  dispatcherInstance = new ActionDispatcher(deps);
+  return dispatcherInstance;
+}
+
+/**
+ * Get ActionDispatcher singleton.
+ * Must be initialized first via initActionDispatcher().
+ */
+export function getActionDispatcher(): ActionDispatcher {
+  if (!dispatcherInstance) {
+    throw new Error("ActionDispatcher not initialized");
+  }
+  return dispatcherInstance;
 }
 
 // Re-export individual action modules for direct use

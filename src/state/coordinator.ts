@@ -35,7 +35,7 @@ export class StateCoordinator {
   /**
    * Register business rules
    */
-  public setRules(rules: BusinessRule<any>[]): void {
+  public setRules(rules: Array<BusinessRule<any>>): void {
     this.rules = rules as BusinessRule[];
     logDebug(`[StateCoordinator] Registered ${rules.length} business rules`);
   }
@@ -185,4 +185,21 @@ export class StateCoordinator {
       await Promise.all(promises);
     }
   }
+}
+
+// Singleton instance
+let coordinatorInstance: StateCoordinator | undefined;
+
+/**
+ * Get StateCoordinator singleton.
+ * Must be initialized with store on first call (done by ControlPanelView).
+ */
+export function getCoordinator(store?: PKOStateStore): StateCoordinator {
+  if (!coordinatorInstance) {
+    if (!store) {
+      throw new Error("StateCoordinator not initialized");
+    }
+    coordinatorInstance = new StateCoordinator(store);
+  }
+  return coordinatorInstance;
 }
