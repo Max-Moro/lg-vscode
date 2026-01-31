@@ -626,7 +626,9 @@ class StateCoordinator {
   private rules: BusinessRule[];
   private pendingOps = new Map<string, Promise<SystemCommand>>();
 
+  // Two separate channels: stable state and UI meta
   private readonly onStateChange = new EventEmitter<PKOState>();
+  private readonly onMetaChange = new EventEmitter<UIMeta>();
 
   constructor(
     initialState: PKOState,
@@ -726,17 +728,33 @@ class StateCoordinator {
   }
 
   private updateStability(): void {
+    const wasStable = this.state.isStable;
+    const isNowStable = this.state.pendingOps.size === 0;
+
     this.state = {
       ...this.state,
-      isStable: this.state.pendingOps.size === 0
+      isStable: isNowStable
     };
+
+    // Emit meta change when loading state changes
+    if (wasStable !== isNowStable) {
+      this.onMetaChange.emit({ isLoading: !isNowStable });
+    }
   }
 
   /**
-   * Subscribe to stable state changes
+   * Subscribe to stable state changes (for ViewModel building)
    */
   subscribe(callback: (state: PKOState) => void): () => void {
     return this.onStateChange.subscribe(callback);
+  }
+
+  /**
+   * Subscribe to UI meta changes (loading state, errors)
+   * Separate from state subscription - can fire more frequently
+   */
+  subscribeToMeta(callback: (meta: UIMeta) => void): () => void {
+    return this.onMetaChange.subscribe(callback);
   }
 }
 ```
@@ -801,9 +819,15 @@ interface ViewModel {
 
   // Task text
   taskText: string;
+}
 
-  // Loading state
+/**
+ * UI Meta State - delivered through separate channel
+ * Not part of ViewModel to avoid violating "stable state only" principle
+ */
+interface UIMeta {
   isLoading: boolean;
+  // Future: error messages, notifications, etc.
 }
 
 interface SelectOption {
@@ -970,10 +994,7 @@ function buildViewModel(state: PKOState): ViewModel {
     selectedCodexReasoning: p.codexReasoningEffort,
 
     // Task
-    taskText: p.taskText,
-
-    // Loading
-    isLoading: !state.isStable
+    taskText: p.taskText
   };
 }
 ```
@@ -991,8 +1012,16 @@ interface Renderer {
   /**
    * Render ViewModel to DOM
    * Uses diff-based approach to minimize DOM updates
+   * Called only when state is stable (all async ops complete)
    */
   render(viewModel: ViewModel): void;
+
+  /**
+   * Update UI meta state (loading indicator, errors)
+   * Separate channel from render() to avoid diff overhead
+   * Can be called frequently without triggering full diff
+   */
+  setMeta(meta: UIMeta): void;
 
   /**
    * Subscribe to user events
