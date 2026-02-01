@@ -67,10 +67,6 @@
         "title": "LG: Show Logs"
       },
       {
-        "command": "lg.ai.configureOpenAI",
-        "title": "LG: Configure OpenAI API Key"
-      },
-      {
         "command": "lg.refreshCatalogs",
         "title": "Refresh",
         "icon": "$(refresh)"
@@ -227,12 +223,6 @@
           "type": "boolean",
           "default": false,
           "description": "Open generated listings/contexts as editable Markdown files instead of read-only virtual documents."
-        },
-        "lg.openai.apiKey": {
-          "type": "string",
-          "default": "",
-          "description": "OpenAI API Key (stored in VS Code secrets)",
-          "markdownDescription": "OpenAI API Key for network integration. [Get your key](https://platform.openai.com/api-keys)"
         }
       }
     }

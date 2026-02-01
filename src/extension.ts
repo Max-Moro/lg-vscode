@@ -43,23 +43,6 @@ export function activate(context: vscode.ExtensionContext) {
       vscode.window.setStatusBarMessage(`LG Included: ${mode === "tree" ? "Tree" : "Flat"} view`, 2000);
     }),
 
-    vscode.commands.registerCommand("lg.ai.configureOpenAI", async () => {
-      const currentKey = await context.secrets.get("lg.openai.apiKey");
-      const input = await vscode.window.showInputBox({
-        prompt: "Enter your OpenAI API Key",
-        password: true,
-        value: currentKey ? "••••••••••••" : "",
-        placeHolder: "sk-..."
-      });
-
-      if (input === undefined || !input || input === "••••••••••••") {
-        return;
-      }
-
-      await context.secrets.store("lg.openai.apiKey", input);
-      vscode.window.showInformationMessage("OpenAI API key saved successfully");
-    }),
-
     // Toolbar commands - delegate to dispatcher
     vscode.commands.registerCommand("lg.refreshCatalogs", () => getDispatcher().refreshCatalogs()),
     vscode.commands.registerCommand("lg.createStarter", () => getDispatcher().createStarter()),

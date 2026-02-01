@@ -6,7 +6,6 @@ import * as copilot from "./providers/copilot";
 import * as cursor from "./providers/cursor";
 import * as claudeCli from "./providers/claude-cli";
 import * as codexCli from "./providers/codex-cli";
-import * as openai from "./providers/openai";
 
 // Settings modules
 import { claudeCliSettings } from "./providers/claude-cli/settings";
@@ -23,7 +22,6 @@ const ALL_PROVIDERS: ProviderModule[] = [
   cursor,
   claudeCli,
   codexCli,
-  openai,
 ];
 
 // List of all settings modules
