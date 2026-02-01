@@ -165,6 +165,9 @@ export interface RuleResult {
   /** Configuration mutations to apply */
   configMutations?: Partial<ConfigurationState>;
 
+  /** Environment mutations to apply */
+  envMutations?: Partial<EnvironmentState>;
+
   /** Async operations to initiate */
   asyncOps?: AsyncOperation[];
 

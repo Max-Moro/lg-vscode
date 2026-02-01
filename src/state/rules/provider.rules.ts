@@ -26,11 +26,11 @@ export const providerChangeContexts: TypedRule<"SELECT_PROVIDER"> = {
 };
 
 /**
- * Rule: When providers detected, select saved or best available
+ * Rule: When providers detected, store in environment and select best available
  */
 export const providersSelectInitial: TypedRule<"PROVIDERS_DETECTED"> = {
   id: "providers-select-initial",
-  description: "When providers detected, select saved or best available",
+  description: "When providers detected, store in environment and select best available",
   trigger: "PROVIDERS_DETECTED",
   condition: () => true,
   apply: (state, cmd) => {
@@ -44,9 +44,7 @@ export const providersSelectInitial: TypedRule<"PROVIDERS_DETECTED"> = {
       : (providers[0]?.id || "clipboard");
 
     return {
-      configMutations: {
-        // Note: providers are stored in environment, handled by lifecycle rules
-      },
+      envMutations: { providers },
       followUp: [{ type: "SELECT_PROVIDER", providerId: effectiveProvider }]
     };
   }

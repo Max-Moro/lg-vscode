@@ -73,6 +73,11 @@ export class StateCoordinator {
           this.store.updateConfiguration(result.configMutations);
         }
 
+        // Apply environment mutations
+        if (result.envMutations && Object.keys(result.envMutations).length > 0) {
+          this.store.updateEnvironment(result.envMutations);
+        }
+
         // Collect async ops
         if (result.asyncOps) {
           allAsyncOps.push(...result.asyncOps);

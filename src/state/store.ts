@@ -126,15 +126,18 @@ export class PCEStateStore {
   }
 
   /**
-   * Update environment state (full replacement)
+   * Update environment state (partial merge)
    */
-  public updateEnvironment(env: EnvironmentState): void {
+  public updateEnvironment(partial: Partial<EnvironmentState>): void {
     this.state = {
       ...this.state,
-      environment: env
+      environment: {
+        ...this.state.environment,
+        ...partial
+      }
     };
 
-    logDebug("[PCEStateStore] Environment state updated");
+    logDebug(`[PCEStateStore] Environment state updated: ${Object.keys(partial).join(", ")}`);
   }
 
   /**
