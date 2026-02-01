@@ -15,11 +15,6 @@ import { CliException, CliUnavailableException } from "./CliException";
 
 export type RunSpec = { cmd: string; args: string[] };
 
-let _ctx: vscode.ExtensionContext | undefined;
-export function setExtensionContext(ctx: vscode.ExtensionContext) {
-  _ctx = ctx;
-}
-
 /** Single rule for selecting root: parent of lg-cfg, otherwise first root. */
 export function effectiveWorkspaceRoot(): string | undefined {
   const folders = vscode.workspace.workspaceFolders;
@@ -183,12 +178,9 @@ export async function runCliResult(
  * Analyzes error types and shows appropriate UI only for first (loud) errors.
  * Silent errors (cached fatal failures) are logged but don't trigger popups.
  *
- * @param ctx Extension context
  * @returns CLI command path or undefined if unavailable
  */
-export async function locateCliOrOfferInstall(ctx: vscode.ExtensionContext): Promise<string | undefined> {
-  setExtensionContext(ctx);
-
+export async function locateCliOrOfferInstall(): Promise<string | undefined> {
   try {
     const spec = await resolveCliRunSpec();
     return spec.cmd;

@@ -12,18 +12,9 @@ export class OpenAiProvider extends BaseAiProvider {
   readonly id = "com.openai.api";
   readonly name = "OpenAI API";
 
-  private context?: vscode.ExtensionContext;
-
-  setContext(context: vscode.ExtensionContext): void {
-    this.context = context;
-  }
-
   async send(content: string, _runs: string): Promise<void> {
-    if (!this.context) {
-      throw new Error("Extension context not set");
-    }
-
-    const token = await this.context.secrets.get("lg.openai.apiKey");
+    const { getContext } = await import("../../../../bootstrap");
+    const token = await getContext().secrets.get("lg.openai.apiKey");
     if (!token) {
       throw new Error("OpenAI API key not configured. Use 'LG: Configure OpenAI API Key' command.");
     }

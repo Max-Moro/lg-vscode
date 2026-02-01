@@ -3,25 +3,17 @@
  */
 
 import * as vscode from "vscode";
-import type { PCEStateStore } from "../state/store";
-import type { ListingService } from "../services/ListingService";
-import type { VirtualDocProvider } from "../views/VirtualDocProvider";
-import type { IncludedTree } from "../views/IncludedTree";
-import type { RunResult } from "../models/report";
-
-export interface ListingActionsDeps {
-  store: PCEStateStore;
-  listingService: ListingService;
-  vdocs: VirtualDocProvider;
-  included: IncludedTree;
-  showStats: (data: RunResult, refreshFn: () => Promise<RunResult>) => Promise<void>;
-}
+import { getStore, getListingService, getVdocs, getIncludedTree } from "../bootstrap";
+import { showStatsWebview } from "../views/StatsWebview";
 
 /**
  * Generate listing and open in virtual document
  */
-export async function generateListing(deps: ListingActionsDeps): Promise<void> {
-  const { store, listingService, vdocs } = deps;
+export async function generateListing(): Promise<void> {
+  const store = getStore();
+  const listingService = getListingService();
+  const vdocs = getVdocs();
+
   const state = store.getPersistentState();
   const section = state.section;
 
@@ -40,8 +32,11 @@ export async function generateListing(deps: ListingActionsDeps): Promise<void> {
 /**
  * Show included files in tree view
  */
-export async function showIncluded(deps: ListingActionsDeps): Promise<void> {
-  const { store, listingService, included } = deps;
+export async function showIncluded(): Promise<void> {
+  const store = getStore();
+  const listingService = getListingService();
+  const included = getIncludedTree();
+
   const state = store.getPersistentState();
   const section = state.section;
 
@@ -61,8 +56,10 @@ export async function showIncluded(deps: ListingActionsDeps): Promise<void> {
 /**
  * Show stats for section
  */
-export async function showSectionStats(deps: ListingActionsDeps): Promise<void> {
-  const { store, listingService, showStats } = deps;
+export async function showSectionStats(): Promise<void> {
+  const store = getStore();
+  const listingService = getListingService();
+
   const state = store.getPersistentState();
   const section = state.section;
 
@@ -76,8 +73,5 @@ export async function showSectionStats(deps: ListingActionsDeps): Promise<void> 
     () => listingService.getStats()
   );
 
-  await showStats(
-    data,
-    () => listingService.getStats()
-  );
+  await showStatsWebview(data, () => listingService.getStats());
 }

@@ -3,27 +3,23 @@
  */
 
 import * as vscode from "vscode";
-import type { StateCoordinator } from "../state/coordinator";
-import type { AiIntegrationService } from "../services/ai/AiIntegrationService";
+import { getCoordinator, getAiService } from "../bootstrap";
 import { resetCache, runDoctor } from "../services/DoctorService";
 import { openConfigOrInit, runInitWizard } from "../starter/StarterConfig";
 import { EXT_ID } from "../constants";
 import { logError } from "../logging/log";
 
-export interface ToolbarActionsDeps {
-  coordinator: StateCoordinator;
-  aiService: AiIntegrationService;
-}
-
 /**
  * Refresh catalogs
  */
-export async function refreshCatalogs(deps: ToolbarActionsDeps): Promise<void> {
+export async function refreshCatalogs(): Promise<void> {
+  const coordinator = getCoordinator();
+
   await vscode.window.withProgress(
     { location: vscode.ProgressLocation.Notification, title: "LG: Refreshing catalogs…", cancellable: false },
     async () => {
-      await deps.coordinator.dispatch({ type: "REFRESH" });
-      await deps.coordinator.waitForStability();
+      await coordinator.dispatch({ type: "REFRESH" });
+      await coordinator.waitForStability();
     }
   );
   vscode.window.showInformationMessage("LG catalogs refreshed successfully");
@@ -71,9 +67,10 @@ export function openSettings(): void {
 /**
  * Update AI modes template
  */
-export async function updateAiModes(deps: ToolbarActionsDeps): Promise<void> {
+export async function updateAiModes(): Promise<void> {
+  const aiService = getAiService();
   const { AiModesTemplateGenerator } = await import("../services/ai/AiModesTemplateGenerator");
-  const generator = new AiModesTemplateGenerator(deps.aiService);
+  const generator = new AiModesTemplateGenerator(aiService);
 
   try {
     const filePath = await vscode.window.withProgress(

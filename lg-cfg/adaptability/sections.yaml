@@ -38,6 +38,7 @@ src:
           # Entry point (for command registration)
           - "/extension.ts"
           - "/constants.ts"
+          - "/bootstrap/"
           # WebView utilities
           - "/webview/webviewKit.ts"
           - "/logging/log.ts"

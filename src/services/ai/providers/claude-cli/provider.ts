@@ -35,12 +35,8 @@ export class ClaudeCliProvider extends BaseCliProvider {
    * Get the preferred integration method from the state
    */
   private async getIntegrationMethod(): Promise<ClaudeIntegrationMethod> {
-    if (!this.context) {
-      return "session"; // fallback
-    }
-
-    const { getPCEStore } = await import("../../../../state/store");
-    const store = getPCEStore(this.context);
+    const { getStore } = await import("../../../../bootstrap");
+    const store = getStore();
     const state = store.getPersistentState();
 
     return state.claudeIntegrationMethod || "session";

@@ -1,17 +1,17 @@
-import * as vscode from "vscode";
 import { cliRender, cliReport, type CliGenerationParams } from "../cli/CliClient";
-import { getPCEStore, type PCEStateStore } from "../state/store";
+import { getStore } from "../bootstrap";
+import type { PCEStateStore } from "../state/store";
 
 /**
  * Service for working with section listings.
  * Gets all parameters from PCEStateStore.
  */
 export class ListingService {
-  private store: PCEStateStore;
-
-  constructor(context: vscode.ExtensionContext) {
-    this.store = getPCEStore(context);
+  private get store(): PCEStateStore {
+    return getStore();
   }
+
+  constructor() {}
   
   /**
    * Generate listing for current section from state

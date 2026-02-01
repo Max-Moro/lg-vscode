@@ -41,6 +41,7 @@ src:
             allow:
               - "/extension.ts"
               - "/constants.ts"
+              - "/bootstrap/"
               - "/logging/"
               - "/cli/CliClient.ts"
               - "/services/ContextService.ts"

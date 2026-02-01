@@ -1,5 +1,5 @@
 import * as vscode from "vscode";
-import type { ProviderModule, ProviderModeInfo } from "./types";
+import type { ProviderModule } from "./types";
 import { logInfo, logDebug, logError } from "../../logging/log";
 
 /**
@@ -7,11 +7,8 @@ import { logInfo, logDebug, logError } from "../../logging/log";
  */
 export class AiIntegrationService {
   private providers = new Map<string, ProviderModule>();
-  private context: vscode.ExtensionContext;
 
-  constructor(context: vscode.ExtensionContext) {
-    this.context = context;
-  }
+  constructor() {}
 
   /**
    * Register a provider
@@ -154,12 +151,6 @@ export class AiIntegrationService {
     logInfo(`Sending content to provider: ${providerId} (runs: ${runs || '(empty)'})`);
 
     try {
-      // Set context for providers that require it
-      const provider = module.provider as { setContext?: (context: vscode.ExtensionContext) => void };
-      if (provider.setContext) {
-        provider.setContext(this.context);
-      }
-
       await module.provider.send(content, runs);
       logInfo(`Successfully sent content to ${providerId}`);
     } catch (e) {

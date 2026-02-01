@@ -36,10 +36,10 @@ export class PCEStateStore {
   private listeners: Set<StateListener> = new Set();
 
   private constructor(
-    private readonly context: vscode.ExtensionContext
+    private readonly workspaceState: vscode.Memento
   ) {
     // Load persistent state from storage, merge with defaults
-    const savedPersistent = context.workspaceState.get<Partial<PersistentState>>(STATE_KEY);
+    const savedPersistent = workspaceState.get<Partial<PersistentState>>(STATE_KEY);
     const persistent = {
       ...createDefaultPersistentState(),
       ...savedPersistent
@@ -54,11 +54,24 @@ export class PCEStateStore {
   }
 
   /**
-   * Get singleton instance
+   * Create singleton instance. Called once by bootstrap.
+   * @throws Error if already initialized
    */
-  public static getInstance(context: vscode.ExtensionContext): PCEStateStore {
+  public static createInstance(workspaceState: vscode.Memento): PCEStateStore {
+    if (PCEStateStore.instance) {
+      throw new Error("PCEStateStore already initialized");
+    }
+    PCEStateStore.instance = new PCEStateStore(workspaceState);
+    return PCEStateStore.instance;
+  }
+
+  /**
+   * Get singleton instance.
+   * @throws Error if not initialized
+   */
+  public static getInstance(): PCEStateStore {
     if (!PCEStateStore.instance) {
-      PCEStateStore.instance = new PCEStateStore(context);
+      throw new Error("PCEStateStore not initialized - call bootstrap() first");
     }
     return PCEStateStore.instance;
   }
@@ -92,7 +105,7 @@ export class PCEStateStore {
     };
 
     // Save to storage
-    await this.context.workspaceState.update(STATE_KEY, newPersistent);
+    await this.workspaceState.update(STATE_KEY, newPersistent);
 
     logDebug(`[PCEStateStore] Persistent state updated: ${Object.keys(partial).join(", ")}`);
   }
@@ -191,7 +204,7 @@ export class PCEStateStore {
    */
   public async reset(): Promise<void> {
     this.state = createDefaultPCEState();
-    await this.context.workspaceState.update(STATE_KEY, undefined);
+    await this.workspaceState.update(STATE_KEY, undefined);
     logDebug("[PCEStateStore] State reset to defaults");
   }
 
@@ -247,8 +260,9 @@ export class PCEStateStore {
 }
 
 /**
- * Get PCE Store instance (convenience function)
+ * Get PCE Store instance.
+ * Convenience alias for PCEStateStore.getInstance().
  */
-export function getPCEStore(context: vscode.ExtensionContext): PCEStateStore {
-  return PCEStateStore.getInstance(context);
+export function getStore(): PCEStateStore {
+  return PCEStateStore.getInstance();
 }

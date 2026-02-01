@@ -4,12 +4,9 @@
 import * as vscode from "vscode";
 import type {RunResult} from "../models/report";
 import {buildHtml, getExtensionUri, lgUiUri, mediaUri} from "../webview/webviewKit";
-import {getPCEStore} from "../state/store";
-import {getCoordinator} from "../state/coordinator";
-import {getActionDispatcher} from "../actions";
+import {getStore, getCoordinator, getDispatcher} from "../bootstrap";
 
 export async function showStatsWebview(
-  context: vscode.ExtensionContext,
   data: RunResult,
   refetch: () => Promise<RunResult>
 ) {
@@ -41,9 +38,9 @@ export async function showStatsWebview(
   });
 
   // Get singletons
-  const store = getPCEStore(context);
+  const store = getStore();
   const coordinator = getCoordinator();
-  const actions = getActionDispatcher();
+  const actions = getDispatcher();
 
   // Current content (updated after refresh)
   let current: RunResult = data;

@@ -21,12 +21,8 @@ export class CodexCliProvider extends BaseCliProvider {
    * Get reasoning effort from state
    */
   private async getReasoningEffort(): Promise<CodexReasoningEffort> {
-    if (!this.context) {
-      return getDefaultCodexReasoningEffort();
-    }
-
-    const { getPCEStore } = await import("../../../../state/store");
-    const store = getPCEStore(this.context);
+    const { getStore } = await import("../../../../bootstrap");
+    const store = getStore();
     const state = store.getPersistentState();
 
     return (state.codexReasoningEffort as CodexReasoningEffort) || getDefaultCodexReasoningEffort();

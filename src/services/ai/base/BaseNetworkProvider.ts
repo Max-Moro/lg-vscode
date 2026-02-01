@@ -1,4 +1,3 @@
-import * as vscode from "vscode";
 import { BaseAiProvider } from "./BaseAiProvider";
 
 /**
@@ -16,36 +15,19 @@ import { BaseAiProvider } from "./BaseAiProvider";
 export abstract class BaseNetworkProvider extends BaseAiProvider {
   /** API endpoint URL (e.g., "https://api.openai.com/v1/chat/completions") */
   protected abstract apiEndpoint: string;
-  
+
   /** Key for storing token in VS Code secrets (e.g., "lg.openai.apiKey") */
   protected abstract secretKey: string;
-  
-  /** Extension context for accessing VS Code Secrets API */
-  protected context?: vscode.ExtensionContext;
-
-  /**
-   * Set context for accessing secrets
-   *
-   * Must be called before first use of the provider,
-   * otherwise getApiToken will throw an error.
-   *
-   * @param context - Extension context from activate()
-   */
-  setContext(context: vscode.ExtensionContext): void {
-    this.context = context;
-  }
 
   /**
    * Get API token from VS Code secrets
    *
    * @returns API token
-   * @throws Error if context is not set or token is not found
+   * @throws Error if token is not found
    */
   protected async getApiToken(): Promise<string> {
-    if (!this.context) {
-      throw new Error("Extension context not set for network provider");
-    }
-    const token = await this.context.secrets.get(this.secretKey);
+    const { getContext } = await import("../../../bootstrap");
+    const token = await getContext().secrets.get(this.secretKey);
     if (!token) {
       throw new Error(
         `API token not found. Please set it in VS Code settings: ${this.secretKey}`

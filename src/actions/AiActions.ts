@@ -3,21 +3,16 @@
  */
 
 import * as vscode from "vscode";
-import type { PCEStateStore } from "../state/store";
-import type { ContextService } from "../services/ContextService";
-import type { AiIntegrationService } from "../services/ai/AiIntegrationService";
-
-export interface AiActionsDeps {
-  store: PCEStateStore;
-  contextService: ContextService;
-  aiService: AiIntegrationService;
-}
+import { getStore, getContextService, getAiService } from "../bootstrap";
 
 /**
  * Send context to AI provider
  */
-export async function sendToAI(deps: AiActionsDeps): Promise<void> {
-  const { store, contextService, aiService } = deps;
+export async function sendToAI(): Promise<void> {
+  const store = getStore();
+  const contextService = getContextService();
+  const aiService = getAiService();
+
   const state = store.getPersistentState();
   const providerId = state.providerId;
   const template = state.template;

@@ -3,23 +3,17 @@
  */
 
 import * as vscode from "vscode";
-import type { PCEStateStore } from "../state/store";
-import type { ContextService } from "../services/ContextService";
-import type { VirtualDocProvider } from "../views/VirtualDocProvider";
-import type { RunResult } from "../models/report";
-
-export interface ContextActionsDeps {
-  store: PCEStateStore;
-  contextService: ContextService;
-  vdocs: VirtualDocProvider;
-  showStats: (data: RunResult, refreshFn: () => Promise<RunResult>) => Promise<void>;
-}
+import { getStore, getContextService, getVdocs } from "../bootstrap";
+import { showStatsWebview } from "../views/StatsWebview";
 
 /**
  * Generate context and open in virtual document
  */
-export async function generateContext(deps: ContextActionsDeps): Promise<void> {
-  const { store, contextService, vdocs } = deps;
+export async function generateContext(): Promise<void> {
+  const store = getStore();
+  const contextService = getContextService();
+  const vdocs = getVdocs();
+
   const state = store.getPersistentState();
   const template = state.template;
 
@@ -38,8 +32,10 @@ export async function generateContext(deps: ContextActionsDeps): Promise<void> {
 /**
  * Show stats for context
  */
-export async function showContextStats(deps: ContextActionsDeps): Promise<void> {
-  const { store, contextService, showStats } = deps;
+export async function showContextStats(): Promise<void> {
+  const store = getStore();
+  const contextService = getContextService();
+
   const state = store.getPersistentState();
   const template = state.template;
 
@@ -53,8 +49,5 @@ export async function showContextStats(deps: ContextActionsDeps): Promise<void> 
     () => contextService.getStats()
   );
 
-  await showStats(
-    data,
-    () => contextService.getStats()
-  );
+  await showStatsWebview(data, () => contextService.getStats());
 }

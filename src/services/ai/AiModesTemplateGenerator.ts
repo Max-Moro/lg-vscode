@@ -4,7 +4,6 @@
  * Collects supported modes from all registered AI providers
  * and generates/updates the canonical integration meta-section.
  */
-import * as vscode from "vscode";
 import * as fs from "fs";
 import * as path from "path";
 import { AiIntegrationService } from "./AiIntegrationService";
@@ -146,7 +145,7 @@ export class AiModesTemplateGenerator {
 
     for (const line of content.split("\n")) {
       // Detect mode start (8 spaces indent)
-      const modeMatch = line.match(/^        (\w+):\s*$/);
+      const modeMatch = line.match(/^ {8}(\w+):\s*$/);
       if (modeMatch) {
         currentMode = modeMatch[1];
         inRuns = false;
@@ -164,7 +163,7 @@ export class AiModesTemplateGenerator {
 
       // Parse provider runs (12 spaces indent)
       if (inRuns && currentMode) {
-        const runsMatch = line.match(/^            ([a-z0-9._-]+):\s*"?([^"]*)"?\s*$/);
+        const runsMatch = line.match(/^ {12}([a-z0-9._-]+):\s*"?([^"]*)"?\s*$/);
         if (runsMatch) {
           const providerId = runsMatch[1];
           const runsValue = runsMatch[2].trim();

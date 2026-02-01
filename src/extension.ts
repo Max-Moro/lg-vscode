@@ -1,67 +1,50 @@
 /**
- * Extension entry point. Commands, providers, and views are registered here.
- * Important: Activated by command invocation or when lg-cfg/config.yaml is present.
+ * Extension entry point.
+ * Registers commands, providers, and views.
+ * All initialization delegated to bootstrap().
  */
 import * as vscode from "vscode";
-import { VirtualDocProvider } from "./views/VirtualDocProvider";
+import { bootstrap, getDispatcher } from "./bootstrap";
 import { setVirtualProvider } from "./views/virtualBus";
-import { IncludedTree } from "./views/IncludedTree";
 import { ControlPanelView } from "./views/ControlPanelView";
-import { locateCliOrOfferInstall, setExtensionContext } from "./cli/CliResolver";
-import { initLogging, showLogs, logInfo, logError } from "./logging/log";
-import { createAiIntegrationService, AiIntegrationService } from "./services/ai";
-
-
-let virtualProvider: VirtualDocProvider;
-let includedTree: IncludedTree;
-let aiService: AiIntegrationService;
+import { locateCliOrOfferInstall } from "./cli/CliResolver";
+import { showLogs } from "./logging/log";
 
 export function activate(context: vscode.ExtensionContext) {
-  setExtensionContext(context);
-  initLogging(context);
-  logInfo("Extension activated");
+  // 1. Bootstrap all singletons and services
+  const { vdocs, includedTree } = bootstrap(context);
 
-  // Initialize AI Integration
-  aiService = createAiIntegrationService(context);
-
-  // 1) Virtual document provider (lg://listing, lg://context)
-  virtualProvider = new VirtualDocProvider();
+  // 2. Register virtual document provider
   context.subscriptions.push(
-    vscode.workspace.registerTextDocumentContentProvider("lg", virtualProvider)
+    vscode.workspace.registerTextDocumentContentProvider("lg", vdocs)
   );
-  setVirtualProvider(virtualProvider);
+  setVirtualProvider(vdocs);
 
-  // 2) Included paths tree
-  includedTree = new IncludedTree(context);
-  context.subscriptions.push(vscode.window.registerTreeDataProvider("lg.included", includedTree));
-
-  // 2.1) Control panel as webview view
-  const control = new ControlPanelView(context, virtualProvider, includedTree);
-  context.subscriptions.push(vscode.window.registerWebviewViewProvider("lg.control", control, { webviewOptions: { retainContextWhenHidden: true } }));
-  // 2.2) Subscribe to VS Code theme change → send to webview (if open)
+  // 3. Register tree data provider
   context.subscriptions.push(
-    vscode.window.onDidChangeActiveColorTheme(theme => {
-      control.postTheme(theme.kind);
+    vscode.window.registerTreeDataProvider("lg.included", includedTree)
+  );
+
+  // 4. Register Control Panel webview
+  const control = new ControlPanelView();
+  context.subscriptions.push(
+    vscode.window.registerWebviewViewProvider("lg.control", control, {
+      webviewOptions: { retainContextWhenHidden: true }
     })
   );
 
-  // 3) Commands
+  // 5. Register commands
   context.subscriptions.push(
-    vscode.commands.registerCommand("lg.showLogs", async () => {
-      showLogs();
-    }),
+    vscode.commands.registerCommand("lg.showLogs", showLogs),
 
-    // View mode toggle: flat/tree
-    vscode.commands.registerCommand("lg.toggleIncludedViewMode", async () => {
+    vscode.commands.registerCommand("lg.toggleIncludedViewMode", () => {
       includedTree.toggleViewMode();
       const mode = includedTree.getMode();
       vscode.window.setStatusBarMessage(`LG Included: ${mode === "tree" ? "Tree" : "Flat"} view`, 2000);
     }),
 
-    // Configure OpenAI API key
     vscode.commands.registerCommand("lg.ai.configureOpenAI", async () => {
       const currentKey = await context.secrets.get("lg.openai.apiKey");
-
       const input = await vscode.window.showInputBox({
         prompt: "Enter your OpenAI API Key",
         password: true,
@@ -69,57 +52,28 @@ export function activate(context: vscode.ExtensionContext) {
         placeHolder: "sk-..."
       });
 
-      if (input === undefined) {
-        return; // cancelled
-      }
-
-      if (!input || input === "••••••••••••") {
-        return; // no change
+      if (input === undefined || !input || input === "••••••••••••") {
+        return;
       }
 
       await context.secrets.store("lg.openai.apiKey", input);
       vscode.window.showInformationMessage("OpenAI API key saved successfully");
     }),
 
-    // Toolbar commands (delegate to Control Panel)
-    vscode.commands.registerCommand("lg.refreshCatalogs", async () => {
-      await control.handleCommand("refreshCatalogs");
-    }),
-
-    vscode.commands.registerCommand("lg.createStarter", async () => {
-      await control.handleCommand("createStarter");
-    }),
-
-    vscode.commands.registerCommand("lg.openConfig", async () => {
-      await control.handleCommand("openConfig");
-    }),
-
-    vscode.commands.registerCommand("lg.doctor", async () => {
-      await control.handleCommand("doctor");
-    }),
-
-    vscode.commands.registerCommand("lg.resetCache", async () => {
-      await control.handleCommand("resetCache");
-    }),
-
-    vscode.commands.registerCommand("lg.openSettings", async () => {
-      await control.handleCommand("openSettings");
-    }),
-
-    vscode.commands.registerCommand("lg.updateAiModes", async () => {
-      await control.handleCommand("updateAiModes");
-    })
+    // Toolbar commands - delegate to dispatcher
+    vscode.commands.registerCommand("lg.refreshCatalogs", () => getDispatcher().refreshCatalogs()),
+    vscode.commands.registerCommand("lg.createStarter", () => getDispatcher().createStarter()),
+    vscode.commands.registerCommand("lg.openConfig", () => getDispatcher().openConfig()),
+    vscode.commands.registerCommand("lg.doctor", () => getDispatcher().doctor()),
+    vscode.commands.registerCommand("lg.resetCache", () => getDispatcher().resetCache()),
+    vscode.commands.registerCommand("lg.openSettings", () => getDispatcher().openSettings()),
+    vscode.commands.registerCommand("lg.updateAiModes", () => getDispatcher().updateAiModes())
   );
 
-  // 4) Quick CLI presence check (suggestion, not a blocker)
-  locateCliOrOfferInstall(context).catch(() => {
+  // 6. Quick CLI presence check
+  locateCliOrOfferInstall().catch(() => {
     // Silently ignore — installer will appear on first real run.
   });
-}
-
-// Helper function to get aiService from other modules
-export function getAiService(): AiIntegrationService {
-  return aiService;
 }
 
 export function deactivate() {}

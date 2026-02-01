@@ -1,18 +1,18 @@
-import * as vscode from "vscode";
 import { cliRender, cliReport, type CliGenerationParams } from "../cli/CliClient";
 import type { RunResult } from "../models/report";
-import { getPCEStore, type PCEStateStore } from "../state/store";
+import { getStore } from "../bootstrap";
+import type { PCEStateStore } from "../state/store";
 
 /**
  * Service for working with contexts.
  * Gets all parameters from PCEStateStore.
  */
 export class ContextService {
-  private store: PCEStateStore;
-
-  constructor(context: vscode.ExtensionContext) {
-    this.store = getPCEStore(context);
+  private get store(): PCEStateStore {
+    return getStore();
   }
+
+  constructor() {}
   
   /**
    * Generate context for current template from state

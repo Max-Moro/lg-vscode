@@ -8,94 +8,33 @@
  */
 
 import * as vscode from "vscode";
-
-// State management
-import { PCEStateStore, getPCEStore } from "../state/store";
-import { getCoordinator, StateCoordinator } from "../state/coordinator";
-import { ALL_RULES, setLifecycleDependencies } from "../state/rules";
-import { WatcherManager } from "../state/watchers";
+import { getStore, getCoordinator, getDispatcher, getWatchers } from "../bootstrap";
 import type { Command, UIMeta } from "../state/types";
-
-// Actions
-import { initActionDispatcher, ActionDispatcher } from "../actions";
-
-// ViewModel
 import { buildViewModel } from "../viewmodel/builder";
-
-// Services
-import { VirtualDocProvider } from "./VirtualDocProvider";
-import { IncludedTree } from "./IncludedTree";
-import { ListingService } from "../services/ListingService";
-import { ContextService } from "../services/ContextService";
-import { GitService } from "../services/GitService";
-import { getAiService } from "../extension";
 import { logDebug, logError } from "../logging/log";
-import type { RunResult } from "../models/report";
 
 export class ControlPanelView implements vscode.WebviewViewProvider {
   private view?: vscode.WebviewView;
-  private store: PCEStateStore;
-  private coordinator: StateCoordinator;
-  private watcherManager: WatcherManager;
-  private actionDispatcher: ActionDispatcher;
   private unsubscribeStore?: () => void;
   private unsubscribeMeta?: () => void;
   private unsubscribeTheme?: () => void;
 
-  constructor(
-    private readonly context: vscode.ExtensionContext,
-    private readonly vdocs: VirtualDocProvider,
-    private readonly included: IncludedTree
-  ) {
-    // Initialize state management
-    this.store = getPCEStore(context);
-    this.coordinator = getCoordinator(this.store);
-
-    // Setup lifecycle dependencies for rules
-    const aiService = getAiService();
-    const gitService = new GitService();
-    setLifecycleDependencies({
-      detectProviders: () => aiService.detectAvailableProviders(),
-      getBranchNames: () => gitService.getBranchNames()
-    });
-
-    // Register business rules
-    this.coordinator.setRules(ALL_RULES);
-
-    // Initialize watchers
-    this.watcherManager = new WatcherManager(this.coordinator);
-
-    // Initialize action dispatcher singleton
-    this.actionDispatcher = initActionDispatcher({
-      store: this.store,
-      coordinator: this.coordinator,
-      listingService: new ListingService(context),
-      contextService: new ContextService(context),
-      aiService,
-      vdocs,
-      included,
-      showStats: async (data: RunResult, refreshFn: () => Promise<RunResult>) => {
-        const { showStatsWebview } = await import("./StatsWebview");
-        await showStatsWebview(context, data, refreshFn);
-      }
-    });
-
-    logDebug("[ControlPanelView] Initialized");
-  }
+  constructor() {}
 
   /**
    * Handle toolbar commands
    */
   public async handleCommand(command: string): Promise<void> {
+    const dispatcher = getDispatcher();
     try {
       switch (command) {
-        case "refreshCatalogs": await this.actionDispatcher.refreshCatalogs(); break;
-        case "createStarter": await this.actionDispatcher.createStarter(); break;
-        case "openConfig": await this.actionDispatcher.openConfig(); break;
-        case "doctor": await this.actionDispatcher.doctor(); break;
-        case "resetCache": await this.actionDispatcher.resetCache(); break;
-        case "openSettings": this.actionDispatcher.openSettings(); break;
-        case "updateAiModes": await this.actionDispatcher.updateAiModes(); break;
+        case "refreshCatalogs": await dispatcher.refreshCatalogs(); break;
+        case "createStarter": await dispatcher.createStarter(); break;
+        case "openConfig": await dispatcher.openConfig(); break;
+        case "doctor": await dispatcher.doctor(); break;
+        case "resetCache": await dispatcher.resetCache(); break;
+        case "openSettings": dispatcher.openSettings(); break;
+        case "updateAiModes": await dispatcher.updateAiModes(); break;
       }
     } catch (e) {
       const errorMessage = e instanceof Error ? e.message : String(e);
@@ -103,25 +42,27 @@ export class ControlPanelView implements vscode.WebviewViewProvider {
     }
   }
 
-
-
   resolveWebviewView(view: vscode.WebviewView): void {
     this.view = view;
     view.webview.options = { enableScripts: true };
     view.webview.html = this.buildHtml(view);
 
+    const store = getStore();
+    const coordinator = getCoordinator();
+    const watchers = getWatchers();
+
     // Subscribe to store → render ViewModel
-    this.unsubscribeStore = this.store.subscribe((state) => {
+    this.unsubscribeStore = store.subscribe((state) => {
       this.postRender(buildViewModel(state));
     });
 
     // Subscribe to meta (loading state)
-    this.unsubscribeMeta = this.coordinator.subscribeToMeta((meta) => {
+    this.unsubscribeMeta = coordinator.subscribeToMeta((meta) => {
       this.postMeta(meta);
     });
 
     // Subscribe to theme changes
-    this.unsubscribeTheme = this.watcherManager.themeWatcher.subscribe((kind) => {
+    this.unsubscribeTheme = watchers.themeWatcher.subscribe((kind) => {
       this.postTheme(kind);
     });
 
@@ -129,40 +70,44 @@ export class ControlPanelView implements vscode.WebviewViewProvider {
     view.webview.onDidReceiveMessage((msg) => this.handleMessage(msg));
 
     // Start watchers and initialize
-    this.watcherManager.startAll();
-    void this.coordinator.dispatch({ type: "INITIALIZE" });
+    watchers.startAll();
+    void coordinator.dispatch({ type: "INITIALIZE" });
 
     // Send current theme
-    this.postTheme(this.watcherManager.themeWatcher.getCurrentTheme());
+    this.postTheme(watchers.themeWatcher.getCurrentTheme());
 
     // Cleanup on dispose
     view.onDidDispose(() => this.dispose());
+
+    logDebug("[ControlPanelView] Resolved");
   }
 
   private async handleMessage(msg: Record<string, unknown>): Promise<void> {
     try {
       const type = msg.type as string;
+      const coordinator = getCoordinator();
+      const dispatcher = getDispatcher();
 
       // Route commands to coordinator
       if (type === "command") {
-        await this.coordinator.dispatch(msg.command as Command);
+        await coordinator.dispatch(msg.command as Command);
         return;
       }
 
       // Renderer ready → send initial render
       if (type === "rendererReady") {
-        this.postRender(buildViewModel(this.store.getState()));
+        this.postRender(buildViewModel(getStore().getState()));
         return;
       }
 
       // Route actions to dispatcher
       switch (type) {
-        case "generateListing": await this.actionDispatcher.generateListing(); break;
-        case "generateContext": await this.actionDispatcher.generateContext(); break;
-        case "showContextStats": await this.actionDispatcher.showContextStats(); break;
-        case "showIncluded": await this.actionDispatcher.showIncluded(); break;
-        case "showStats": await this.actionDispatcher.showSectionStats(); break;
-        case "sendToAI": await this.actionDispatcher.sendToAI(); break;
+        case "generateListing": await dispatcher.generateListing(); break;
+        case "generateContext": await dispatcher.generateContext(); break;
+        case "showContextStats": await dispatcher.showContextStats(); break;
+        case "showIncluded": await dispatcher.showIncluded(); break;
+        case "showStats": await dispatcher.showSectionStats(); break;
+        case "sendToAI": await dispatcher.sendToAI(); break;
       }
     } catch (e) {
       const errorMessage = e instanceof Error ? e.message : String(e);
@@ -207,7 +152,6 @@ export class ControlPanelView implements vscode.WebviewViewProvider {
     this.unsubscribeStore?.();
     this.unsubscribeMeta?.();
     this.unsubscribeTheme?.();
-    this.watcherManager.dispose();
     logDebug("[ControlPanelView] Disposed");
   }
 }

@@ -187,19 +187,3 @@ export class StateCoordinator {
   }
 }
 
-// Singleton instance
-let coordinatorInstance: StateCoordinator | undefined;
-
-/**
- * Get StateCoordinator singleton.
- * Must be initialized with store on first call (done by ControlPanelView).
- */
-export function getCoordinator(store?: PCEStateStore): StateCoordinator {
-  if (!coordinatorInstance) {
-    if (!store) {
-      throw new Error("StateCoordinator not initialized");
-    }
-    coordinatorInstance = new StateCoordinator(store);
-  }
-  return coordinatorInstance;
-}

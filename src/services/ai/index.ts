@@ -1,7 +1,6 @@
 /**
  * Central point for registering all AI providers
  */
-import * as vscode from "vscode";
 import * as clipboard from "./providers/clipboard";
 import * as copilot from "./providers/copilot";
 import * as cursor from "./providers/cursor";
@@ -25,8 +24,8 @@ const ALL_PROVIDERS: ProviderModule[] = [
 /**
  * Initialize AI Integration Service
  */
-export function createAiIntegrationService(context: vscode.ExtensionContext): AiIntegrationService {
-  const service = new AiIntegrationService(context);
+export function createAiIntegrationService(): AiIntegrationService {
+  const service = new AiIntegrationService();
 
   // Register all providers
   for (const provider of ALL_PROVIDERS) {
