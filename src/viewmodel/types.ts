@@ -52,6 +52,39 @@ export interface TagSetViewModel {
 }
 
 // ============================================
+// Provider Settings (Dynamic)
+// ============================================
+
+export interface ProviderSettingsField {
+  /** DOM element id */
+  id: string;
+  /** Field type */
+  type: "select" | "text";
+  /** Label text */
+  label: string;
+  /** Options for select type */
+  options?: SelectOption[];
+  /** Current value */
+  value: string;
+  /** Command to emit on change */
+  command: {
+    type: string;
+    payloadKey: string;
+  };
+}
+
+export interface ProviderSettingsContribution {
+  /** Provider ID */
+  providerId: string;
+  /** Section title (e.g., "Claude Settings") */
+  title: string;
+  /** Whether this section is visible */
+  visible: boolean;
+  /** Fields to render */
+  fields: ProviderSettingsField[];
+}
+
+// ============================================
 // Main ViewModel
 // ============================================
 
@@ -88,23 +121,14 @@ export interface ViewModel {
   selectedEncoder: string;
   ctxLimit: number;
 
-  // CLI settings (visible only for CLI providers)
+  // CLI settings (common for all CLI providers)
   cliSettingsVisible: boolean;
   cliScope: string;
   cliShells: SelectOption[];
   selectedShell: string;
 
-  // Claude-specific (visible only for Claude CLI)
-  claudeSettingsVisible: boolean;
-  claudeModels: SelectOption[];
-  selectedClaudeModel: string;
-  claudeMethods: SelectOption[];
-  selectedClaudeMethod: string;
-
-  // Codex-specific (visible only for Codex CLI)
-  codexSettingsVisible: boolean;
-  codexReasoningEfforts: SelectOption[];
-  selectedCodexReasoning: string;
+  // Dynamic provider-specific settings
+  providerSettings: ProviderSettingsContribution[];
 
   // Task text
   taskText: string;

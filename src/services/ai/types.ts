@@ -64,7 +64,7 @@ export interface ProviderModule {
 
 /**
  * Provider settings module interface.
- * Allows providers to define their own commands, rules, and ViewModel contributions.
+ * Allows providers to define their own commands, rules, and UI contributions.
  */
 export interface ProviderSettingsModule {
   /** Provider ID this module belongs to */
@@ -76,9 +76,6 @@ export interface ProviderSettingsModule {
   /** Default values for provider-specific persistent state */
   stateDefaults: Record<string, unknown>;
 
-  /** Build provider-specific ViewModel properties */
-  buildViewModel: (state: import("../../state/types").PCEState) => Record<string, unknown>;
-
-  /** Check if this provider's settings should be visible */
-  isVisible: (state: import("../../state/types").PCEState) => boolean;
+  /** Build UI contribution for this provider */
+  buildContribution: (state: import("../../state/types").PCEState) => import("../../viewmodel/types").ProviderSettingsContribution;
 }

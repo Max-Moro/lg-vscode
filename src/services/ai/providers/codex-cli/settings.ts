@@ -1,12 +1,10 @@
 /**
  * Codex CLI Provider Settings Module
- *
- * Commands:
- * - provider.codex-cli/SELECT_REASONING
  */
 
 import type { BusinessRule, BaseCommand, PCEState } from "../../../../state/types";
 import type { ProviderSettingsModule } from "../../types";
+import type { ProviderSettingsContribution } from "../../../../viewmodel/types";
 import { getAvailableCodexReasoningEfforts, getDefaultCodexReasoningEffort, type CodexReasoningEffort } from "../../../../models/CodexReasoningEffort";
 
 // ============================================
@@ -75,19 +73,31 @@ export const codexCliSettings: ProviderSettingsModule = {
     reasoning: getDefaultCodexReasoningEffort()
   },
 
-  isVisible: (state: PCEState) => state.persistent.providerId === "com.openai.codex.cli",
-
-  buildViewModel: (state: PCEState): Record<string, unknown> => {
+  buildContribution: (state: PCEState): ProviderSettingsContribution => {
+    const isVisible = state.persistent.providerId === "com.openai.codex.cli";
     const { reasoning } = getCodexSettings(state);
 
     return {
-      codexSettingsVisible: state.persistent.providerId === "com.openai.codex.cli",
-      codexReasoningEfforts: getAvailableCodexReasoningEfforts().map(r => ({
-        value: r.id,
-        label: r.label,
-        description: r.description
-      })),
-      selectedCodexReasoning: reasoning
+      providerId: "com.openai.codex.cli",
+      title: "Codex Settings",
+      visible: isVisible,
+      fields: [
+        {
+          id: "codexReasoningEffort",
+          type: "select",
+          label: "Reasoning",
+          options: getAvailableCodexReasoningEfforts().map(r => ({
+            value: r.id,
+            label: r.label,
+            description: r.description
+          })),
+          value: reasoning,
+          command: {
+            type: "provider.codex-cli/SELECT_REASONING",
+            payloadKey: "effort"
+          }
+        }
+      ]
     };
   }
 };

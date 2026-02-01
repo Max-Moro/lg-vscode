@@ -8,7 +8,8 @@ import type {
   SelectOption,
   EncoderOption,
   ModeSetViewModel,
-  TagSetViewModel
+  TagSetViewModel,
+  ProviderSettingsContribution
 } from "./types";
 import { getAvailableShells } from "../models/ShellType";
 import { getAiService } from "../bootstrap";
@@ -118,8 +119,18 @@ export function buildViewModel(state: PCEState): ViewModel {
     label: s.label
   }));
 
-  // Base ViewModel
-  let vm: ViewModel = {
+  // Collect provider settings contributions
+  let providerSettings: ProviderSettingsContribution[] = [];
+  try {
+    const aiService = getAiService();
+    providerSettings = aiService.getAllSettingsModules()
+      .map(module => module.buildContribution(state))
+      .filter(contrib => contrib.visible);
+  } catch {
+    // During bootstrap, aiService may not be available yet
+  }
+
+  return {
     providers,
     selectedProviderId: provider,
     contexts,
@@ -142,29 +153,7 @@ export function buildViewModel(state: PCEState): ViewModel {
     cliScope: p.cliScope,
     cliShells,
     selectedShell: p.cliShell,
-    // Provider-specific (will be overwritten by settings modules)
-    claudeSettingsVisible: false,
-    claudeModels: [],
-    selectedClaudeModel: "",
-    claudeMethods: [],
-    selectedClaudeMethod: "",
-    codexSettingsVisible: false,
-    codexReasoningEfforts: [],
-    selectedCodexReasoning: "",
+    providerSettings,
     taskText: p.taskText
   };
-
-  // Apply provider settings modules contributions
-  try {
-    const aiService = getAiService();
-    for (const settingsModule of aiService.getAllSettingsModules()) {
-      if (settingsModule.isVisible(state)) {
-        vm = { ...vm, ...settingsModule.buildViewModel(state) };
-      }
-    }
-  } catch {
-    // During bootstrap, aiService may not be available yet
-  }
-
-  return vm;
 }

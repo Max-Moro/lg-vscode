@@ -275,7 +275,7 @@
     const block = DOM.qs("#cli-settings-block");
     if (!block) return;
 
-    // Visibility
+    // Visibility of entire CLI block
     block.style.display = vm.cliSettingsVisible ? "flex" : "none";
     if (!vm.cliSettingsVisible) return;
 
@@ -299,60 +299,85 @@
       }
     }
 
-    // Claude settings
-    const claudeContainer = DOM.qs("#claude-settings-container");
-    if (claudeContainer) {
-      claudeContainer.style.display = vm.claudeSettingsVisible ? "flex" : "none";
+    // Dynamic provider settings
+    renderProviderSettings(vm, prev);
+  }
 
-      if (vm.claudeSettingsVisible) {
-        const modelSelect = DOM.qs("#claudeModel");
-        if (modelSelect) {
-          if (!prev || !arraysEqual(prev.claudeModels, vm.claudeModels)) {
-            LGUI.fillSelect(modelSelect, vm.claudeModels, {
-              getValue: (m) => m.value,
-              getLabel: (m) => m.label
-            });
-          }
-          if (modelSelect.value !== vm.selectedClaudeModel) {
-            modelSelect.value = vm.selectedClaudeModel;
-          }
-        }
+  function renderProviderSettings(vm, prev) {
+    const container = DOM.qs("#provider-settings-container");
+    if (!container) return;
 
-        const methodSelect = DOM.qs("#claudeIntegrationMethod");
-        if (methodSelect) {
-          if (!prev || !arraysEqual(prev.claudeMethods, vm.claudeMethods)) {
-            LGUI.fillSelect(methodSelect, vm.claudeMethods, {
-              getValue: (m) => m.value,
-              getLabel: (m) => m.label
-            });
-          }
-          if (methodSelect.value !== vm.selectedClaudeMethod) {
-            methodSelect.value = vm.selectedClaudeMethod;
+    const contributions = vm.providerSettings || [];
+    const prevContributions = prev?.providerSettings || [];
+
+    // Check if structure changed
+    const structureChanged = !providerSettingsStructureEqual(prevContributions, contributions);
+
+    if (structureChanged) {
+      // Full rebuild
+      container.innerHTML = buildProviderSettingsHtml(contributions);
+    } else {
+      // Just update values
+      for (const contrib of contributions) {
+        for (const field of contrib.fields) {
+          const el = DOM.qs(`#${field.id}`, container);
+          if (el && el.value !== field.value) {
+            el.value = field.value;
           }
         }
       }
     }
+  }
 
-    // Codex settings
-    const codexContainer = DOM.qs("#codex-settings-container");
-    if (codexContainer) {
-      codexContainer.style.display = vm.codexSettingsVisible ? "flex" : "none";
+  function providerSettingsStructureEqual(a, b) {
+    if (!a || !b || a.length !== b.length) return false;
+    return a.every((contribA, i) => {
+      const contribB = b[i];
+      if (contribA.providerId !== contribB.providerId) return false;
+      if (contribA.fields.length !== contribB.fields.length) return false;
+      return contribA.fields.every((fieldA, j) => {
+        const fieldB = contribB.fields[j];
+        return fieldA.id === fieldB.id &&
+               fieldA.type === fieldB.type &&
+               arraysEqual(fieldA.options, fieldB.options);
+      });
+    });
+  }
 
-      if (vm.codexSettingsVisible) {
-        const reasoningSelect = DOM.qs("#codexReasoningEffort");
-        if (reasoningSelect) {
-          if (!prev || !arraysEqual(prev.codexReasoningEfforts, vm.codexReasoningEfforts)) {
-            LGUI.fillSelect(reasoningSelect, vm.codexReasoningEfforts, {
-              getValue: (r) => r.value,
-              getLabel: (r) => r.label
-            });
-          }
-          if (reasoningSelect.value !== vm.selectedCodexReasoning) {
-            reasoningSelect.value = vm.selectedCodexReasoning;
-          }
-        }
-      }
+  function buildProviderSettingsHtml(contributions) {
+    if (!contributions || contributions.length === 0) {
+      return "";
     }
+
+    return contributions.map(contrib => `
+      <div class="row" data-provider-settings="${escapeHtml(contrib.providerId)}">
+        ${contrib.fields.map(field => `
+          <span class="cluster" title="${escapeHtml(field.label)}">
+            <label>${escapeHtml(field.label)}:</label>
+            ${field.type === "select" ? `
+              <select class="lg-select" id="${escapeHtml(field.id)}"
+                      data-provider-field="${escapeHtml(field.id)}"
+                      data-command-type="${escapeHtml(field.command.type)}"
+                      data-command-key="${escapeHtml(field.command.payloadKey)}">
+                ${(field.options || []).map(opt => `
+                  <option value="${escapeHtml(opt.value)}"
+                          ${opt.value === field.value ? "selected" : ""}
+                          ${opt.description ? `title="${escapeHtml(opt.description)}"` : ""}>
+                    ${escapeHtml(opt.label)}
+                  </option>
+                `).join("")}
+              </select>
+            ` : `
+              <input type="text" class="lg-input" id="${escapeHtml(field.id)}"
+                     data-provider-field="${escapeHtml(field.id)}"
+                     data-command-type="${escapeHtml(field.command.type)}"
+                     data-command-key="${escapeHtml(field.command.payloadKey)}"
+                     value="${escapeHtml(field.value)}">
+            `}
+          </span>
+        `).join("")}
+      </div>
+    `).join("");
   }
 
   function renderTask(vm, prev) {
@@ -384,7 +409,7 @@
       getValue: (item) => item.name,
       isItemCached: (item) => item.cached,
       onSelect: (value) => {
-        emitCommand({ type: "SET_ENCODER", encoder: value });
+        emitCommand({ type: "tokenization/SET_ENCODER", encoder: value });
       }
     });
 
@@ -531,12 +556,6 @@
         return { type: "tokenization/SELECT_LIB", lib: value };
       case "cliShell":
         return { type: "provider/SELECT_CLI_SHELL", shell: value };
-      case "claudeModel":
-        return { type: "provider.claude-cli/SELECT_MODEL", model: value };
-      case "claudeIntegrationMethod":
-        return { type: "provider.claude-cli/SELECT_METHOD", method: value };
-      case "codexReasoningEffort":
-        return { type: "provider.codex-cli/SELECT_REASONING", effort: value };
       default:
         // Mode select
         if (id && id.startsWith("mode-")) {
@@ -545,6 +564,16 @@
             return { type: "adaptive/SELECT_MODE", modeSetId, modeId: value };
           }
         }
+
+        // Dynamic provider settings
+        if (el.dataset.providerField) {
+          const cmdType = el.dataset.commandType;
+          const cmdKey = el.dataset.commandKey;
+          if (cmdType && cmdKey) {
+            return { type: cmdType, [cmdKey]: value };
+          }
+        }
+
         return null;
     }
   }
@@ -572,6 +601,14 @@
       case "cliScope":
         return { type: "provider/SET_CLI_SCOPE", scope: value };
       default:
+        // Dynamic provider settings (text inputs)
+        if (el.dataset.providerField) {
+          const cmdType = el.dataset.commandType;
+          const cmdKey = el.dataset.commandKey;
+          if (cmdType && cmdKey) {
+            return { type: cmdType, [cmdKey]: value };
+          }
+        }
         return null;
     }
   }

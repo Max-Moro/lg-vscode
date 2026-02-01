@@ -168,26 +168,9 @@
           <select class="lg-select" id="cliShell" data-state-key="cliShell"></select>
         </span>
       </div>
-      
-      <!-- Claude-specific settings (shown only for Claude CLI provider) -->
-      <div id="claude-settings-container" class="row" style="display: none;">
-        <span class="cluster" title="Claude model family">
-          <label>Model:</label>
-          <select class="lg-select" id="claudeModel" data-state-key="claudeModel"></select>
-        </span>
-        <span class="cluster" title="Integration method with Claude Code">
-          <label>Method:</label>
-          <select class="lg-select" id="claudeIntegrationMethod" data-state-key="claudeIntegrationMethod"></select>
-        </span>
-      </div>
 
-      <!-- Codex-specific settings (shown only for Codex CLI provider) -->
-      <div id="codex-settings-container" class="row" style="display: none;">
-        <span class="cluster" title="Reasoning depth level (affects response time and quality)">
-          <label>Reasoning:</label>
-          <select class="lg-select" id="codexReasoningEffort" data-state-key="codexReasoningEffort"></select>
-        </span>
-      </div>
+      <!-- Dynamic provider-specific settings -->
+      <div id="provider-settings-container"></div>
     </div>
 
     <script nonce="{{nonce}}" src="{{lgUiJsUri}}"></script>
