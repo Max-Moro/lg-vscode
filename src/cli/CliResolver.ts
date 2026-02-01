@@ -10,7 +10,7 @@ import * as fs from "fs";
 import * as path from "path";
 import { spawn } from "../runner/LgProcess";
 import { PipxInstaller } from "../runner/PipxInstaller";
-import { logDebug, logError, withDuration } from "../logging/log";
+import { logDebug, withDuration } from "../logging/log";
 import { CliException, CliUnavailableException } from "./CliException";
 
 export type RunSpec = { cmd: string; args: string[] };
@@ -130,26 +130,21 @@ async function runCliInternal(
   logDebug(`[CLI] ${cmdDisplay}`);
 
   return withDuration(`[CLI] ${cliArgs.join(" ")}`, async () => {
-    try {
-      const result = await spawn(spec.cmd, args, {
-        cwd,
-        timeoutMs: opts.timeoutMs ?? 120_000,
-        stdinData: opts.stdinData,
-        captureStderr: opts.captureStderr
-      });
+    const result = await spawn(spec.cmd, args, {
+      cwd,
+      timeoutMs: opts.timeoutMs ?? 120_000,
+      stdinData: opts.stdinData,
+      captureStderr: opts.captureStderr
+    });
 
-      logDebug(`[CLI] stdout bytes: ${result.stdout?.length ?? 0}`);
+    logDebug(`[CLI] stdout bytes: ${result.stdout?.length ?? 0}`);
 
-      // Useful to see stderr even at code 0 (some utilities write warnings)
-      if (result.stderr?.trim()) {
-        logDebug("[CLI] stderr (non-empty): " + result.stderr.trim().slice(0, 4000));
-      }
-
-      return result;
-    } catch (e) {
-      logError(`[CLI] ${cliArgs.join(" ")} — failed`, e);
-      throw e;
+    // Useful to see stderr even at code 0 (some utilities write warnings)
+    if (result.stderr?.trim()) {
+      logDebug("[CLI] stderr (non-empty): " + result.stderr.trim().slice(0, 4000));
     }
+
+    return result;
   });
 }
 

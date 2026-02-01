@@ -7,6 +7,45 @@ let currentLevel: LogLevel = "info";
 
 const order: Record<LogLevel, number> = { error: 0, warn: 1, info: 2, debug: 3 };
 
+/**
+ * Patterns for stack trace lines that are not useful for debugging.
+ * These are Node.js internals and our internal spawn wrapper.
+ */
+const NOISE_PATTERNS = [
+  /^\s+at\s+.*\(node:/,           // node:events, node:internal/*, node:net
+  /^\s+at\s+.*LgProcess\.js:/,    // our spawn wrapper
+  /^\s+at\s+ChildProcess\./,      // ChildProcess internal methods
+  /^\s+at\s+Socket\./,            // Socket internal methods
+  /^\s+at\s+Pipe\./,              // Pipe internal methods
+];
+
+/**
+ * Formats error for logging.
+ * - For CliExecutionException: only message (stacktrace is not useful, real error is in stderr)
+ * - For other errors: message + filtered stacktrace (no Node.js internals)
+ */
+function formatError(error: Error): string {
+  // CliExecutionException: stacktrace is just spawn noise, real error is in message
+  if (error.name === "CliExecutionException") {
+    return `${error.name}: ${error.message}`;
+  }
+
+  // Other errors: filter out noisy lines from stacktrace
+  if (!error.stack) {
+    return `${error.name}: ${error.message}`;
+  }
+
+  const lines = error.stack.split("\n");
+  const filtered = lines.filter(line => {
+    // Keep the first line (error message)
+    if (!line.startsWith("    at ")) return true;
+    // Filter out noise
+    return !NOISE_PATTERNS.some(pattern => pattern.test(line));
+  });
+
+  return filtered.join("\n");
+}
+
 function ts() {
   const d = new Date();
   const pad = (n: number, w = 2) => String(n).padStart(w, "0");
@@ -39,17 +78,12 @@ function write(level: LogLevel, msg: string, error?: unknown) {
     const ch = ensureChannel();
     ch.appendLine(`${ts()} [${level.toUpperCase()}] ${msg}`);
   }
-  // Always print stack trace, regardless of log level
+  // Always print error details, regardless of log level
   if (error !== undefined && error !== null) {
     const ch = ensureChannel();
     if (error instanceof Error) {
-      if (error.stack) {
-        ch.appendLine(error.stack);
-      } else {
-        ch.appendLine(`${error.name}: ${error.message}`);
-      }
+      ch.appendLine(formatError(error));
     } else {
-      // If not an Error, print as string
       ch.appendLine(String(error));
     }
   }
@@ -68,7 +102,8 @@ export async function withDuration<T>(label: string, fn: () => Promise<T>): Prom
     const r = await fn();
     logDebug(`${label} — done in ${Date.now() - t0} ms`);
     return r;
-  } finally {
-    // Errors not logged here — responsibility of caller.
+  } catch (e) {
+    logError(`${label} — failed after ${Date.now() - t0} ms`);
+    throw e;
   }
 }
