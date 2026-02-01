@@ -51,12 +51,12 @@ const contextsLoaded: BusinessRule = {
       return { configMutations };
     }
 
-    // Current template invalid - select first available and trigger cascade
+    // Current template invalid - trigger context/SELECT for first available
+    // Note: Do NOT mutate template here - let contextSelect do it,
+    // otherwise followUp condition will fail (template already set)
     const newTemplate = contexts[0] || "";
     return {
       configMutations,
-      mutations: newTemplate ? { template: newTemplate } : undefined,
-      // Trigger context/SELECT to load mode-sets and tag-sets for new template
       followUp: newTemplate ? [{ type: "context/SELECT", template: newTemplate }] : []
     };
   }
