@@ -67,8 +67,8 @@ src/
 
 **Паттерн доступа:**
 ```typescript
-import { getPCEStore } from "../state/store";
-const store = getPCEStore(context);
+import { getStore } from "../bootstrap";
+const store = getStore();
 ```
 
 **Основные методы:**
@@ -93,7 +93,7 @@ const store = getPCEStore(context);
 
 **Паттерн доступа:**
 ```typescript
-import { getCoordinator } from "../state/coordinator";
+import { getCoordinator } from "../bootstrap";
 const coordinator = getCoordinator();
 await coordinator.dispatch({ type: "SELECT_PROVIDER", providerId: "..." });
 ```
@@ -206,9 +206,9 @@ Git branches). Они инжектируются через `setLifecycleDepende
 
 **Паттерн доступа:**
 ```typescript
-import { getActionDispatcher } from "../actions";
-const actions = getActionDispatcher();
-await actions.sendToAI();
+import { getDispatcher } from "../bootstrap";
+const dispatcher = getDispatcher();
+await dispatcher.sendToAI();
 ```
 
 **Инициализация:** Происходит один раз в `ControlPanelView` через `initActionDispatcher(deps)`.
@@ -327,13 +327,10 @@ WebView-рендерер без собственного состояния.
 
 ### Порядок инициализации
 
-1. `ControlPanelView.constructor()`:
-   - `getPCEStore(context)` — создание Store
-   - `getCoordinator(store)` — создание Coordinator
-   - `setLifecycleDependencies()` — инжекция внешних сервисов
-   - `coordinator.setRules(ALL_RULES)` — регистрация правил
-   - `new WatcherManager(coordinator)` — создание watchers
-   - `initActionDispatcher(deps)` — создание ActionDispatcher
+1. `bootstrap(context)` в `extension.ts`:
+   - Создание всех синглтонов (store, coordinator, services)
+   - Регистрация бизнес-правил через `setLifecycleDependencies()`
+   - Возврат view components для регистрации
 
 2. `resolveWebviewView()`:
    - Подписка на store → ViewModel → render

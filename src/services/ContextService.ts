@@ -1,4 +1,4 @@
-import { cliRender, cliReport, type CliGenerationParams } from "../cli/CliClient";
+import { cliRender, cliReport } from "../cli/CliClient";
 import type { RunResult } from "../models/report";
 import { getStore } from "../bootstrap";
 import type { PCEStateStore } from "../state/store";
@@ -25,18 +25,7 @@ export class ContextService {
     }
 
     const target = `ctx:${state.template}`;
-    const ctx = state.template || "";
-    const provider = state.providerId || "";
-
-    const params: CliGenerationParams = {
-      tokenizerLib: state.tokenizerLib || "tiktoken",
-      encoder: state.encoder || "cl100k_base",
-      ctxLimit: state.ctxLimit || 128000,
-      modes: this.store.getCurrentModes(ctx, provider),
-      tags: this.store.getCurrentTags(ctx),
-      taskText: state.taskText,
-      targetBranch: state.targetBranch,
-    };
+    const params = this.store.buildCliParams({ includeProvider: true });
 
     return cliRender(target, params);
   }
@@ -52,18 +41,7 @@ export class ContextService {
     }
 
     const target = `ctx:${state.template}`;
-    const ctx = state.template || "";
-    const provider = state.providerId || "";
-
-    const params: CliGenerationParams = {
-      tokenizerLib: state.tokenizerLib || "tiktoken",
-      encoder: state.encoder || "cl100k_base",
-      ctxLimit: state.ctxLimit || 128000,
-      modes: this.store.getCurrentModes(ctx, provider),
-      tags: this.store.getCurrentTags(ctx),
-      taskText: state.taskText,
-      targetBranch: state.targetBranch,
-    };
+    const params = this.store.buildCliParams({ includeProvider: true });
 
     const result = await cliReport(target, params);
     if (!result) {

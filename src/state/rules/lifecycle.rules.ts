@@ -28,7 +28,12 @@ export const initializeBootstrap: TypedRule<"INITIALIZE"> = {
   id: "initialize-bootstrap",
   description: "On initialize, detect providers and load all catalogs",
   trigger: "INITIALIZE",
-  condition: () => true,
+  condition: () => {
+    if (!detectProviders || !getBranchNames) {
+      throw new Error("Lifecycle dependencies not set - call setLifecycleDependencies() before INITIALIZE");
+    }
+    return true;
+  },
   apply: (_state) => {
     return {
       configMutations: {

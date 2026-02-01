@@ -260,4 +260,27 @@ export class PCEStateStore {
     const mode = integrationSet.modes.find(m => m.id === selectedModeId);
     return mode?.runs?.[provider] ?? null;
   }
+
+  /**
+   * Build CLI generation parameters from current state.
+   * Used by ContextService and ListingService.
+   *
+   * @param options.includeProvider - Include providerId for context filtering (default: false)
+   */
+  public buildCliParams(options?: { includeProvider?: boolean }): import("../cli/CliClient").CliGenerationParams {
+    const p = this.state.persistent;
+    const ctx = p.template || "";
+    const provider = p.providerId || "";
+
+    return {
+      tokenizerLib: p.tokenizerLib || "tiktoken",
+      encoder: p.encoder || "cl100k_base",
+      ctxLimit: p.ctxLimit || 128000,
+      modes: this.getCurrentModes(ctx, provider),
+      tags: this.getCurrentTags(ctx),
+      taskText: p.taskText,
+      targetBranch: p.targetBranch,
+      providerId: options?.includeProvider ? provider : undefined
+    };
+  }
 }
