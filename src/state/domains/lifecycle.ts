@@ -7,8 +7,7 @@
  */
 
 import type { BusinessRule, DomainModule, BaseCommand, ProviderInfo } from "../types";
-import { cliListSections } from "../../cli/CliClient";
-import { listTokenizerLibsJson } from "../../services/CatalogService";
+import { cliListSections, cliListTokenizerLibs } from "../../cli/CliClient";
 
 // ============================================
 // External Dependencies (injected)
@@ -72,7 +71,7 @@ const initialize: BusinessRule = {
       {
         id: "load-tokenizer-libs",
         execute: async () => {
-          const libs = await listTokenizerLibsJson();
+          const libs = await cliListTokenizerLibs();
           return { type: "tokenization/LIBS_LOADED", libs };
         }
       },
@@ -111,7 +110,7 @@ const refresh: BusinessRule = {
       {
         id: "load-tokenizer-libs-refresh",
         execute: async () => {
-          const libs = await listTokenizerLibsJson();
+          const libs = await cliListTokenizerLibs();
           return { type: "tokenization/LIBS_LOADED", libs };
         }
       },

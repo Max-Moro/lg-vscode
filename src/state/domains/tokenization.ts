@@ -9,8 +9,8 @@
  * - tokenization/ENCODERS_LOADED - encoders loaded
  */
 
-import type { BusinessRule, DomainModule, BaseCommand, PCEState, EncoderEntry } from "../types";
-import { listEncodersJson } from "../../services/CatalogService";
+import type { BusinessRule, DomainModule, BaseCommand, PCEState } from "../types";
+import { cliListEncoders, type EncoderEntry } from "../../cli/CliClient";
 
 // ============================================
 // Commands
@@ -73,7 +73,7 @@ const libsLoaded: BusinessRule = {
       result.asyncOps = [{
         id: "load-encoders-initial",
         execute: async () => {
-          const encoders = await listEncodersJson(newLib);
+          const encoders = await cliListEncoders(newLib);
           return { type: "tokenization/ENCODERS_LOADED", encoders };
         }
       }];
@@ -96,7 +96,7 @@ const libSelect: BusinessRule = {
       asyncOps: [{
         id: "load-encoders",
         execute: async () => {
-          const encoders = await listEncodersJson(lib);
+          const encoders = await cliListEncoders(lib);
           return { type: "tokenization/ENCODERS_LOADED", encoders };
         }
       }]

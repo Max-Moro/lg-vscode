@@ -7,6 +7,10 @@
 import type { ModeSetsList } from "../models/mode_sets_list";
 import type { TagSetsList } from "../models/tag_sets_list";
 import { type ShellType, getDefaultShell } from "../models/ShellType";
+import type { EncoderEntry } from "../cli/CliClient";
+
+// Re-export for convenience
+export type { EncoderEntry } from "../cli/CliClient";
 
 // ============================================
 // Base Command Interface
@@ -63,11 +67,6 @@ export interface PersistentState {
 // ============================================
 // Configuration State (C) - loaded from CLI
 // ============================================
-
-export interface EncoderEntry {
-  name: string;
-  cached?: boolean;
-}
 
 export interface ConfigurationState {
   contexts: string[];

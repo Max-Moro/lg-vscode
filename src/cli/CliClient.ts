@@ -169,3 +169,37 @@ export async function cliDiag(rebuild?: boolean): Promise<DiagReport> {
   const data = JSON.parse(out);
   return data as DiagReport;
 }
+
+/**
+ * List available tokenizer libraries.
+ */
+export async function cliListTokenizerLibs(): Promise<string[]> {
+  const out = await runCli(["list", "tokenizer-libs"], { timeoutMs: 20_000 });
+  const data = JSON.parse(out);
+  return Array.isArray(data?.tokenizer_libs) ? data.tokenizer_libs : [];
+}
+
+/**
+ * Encoder entry with optional cached flag.
+ */
+export interface EncoderEntry {
+  name: string;
+  cached?: boolean;
+}
+
+/**
+ * List encoders for a specific tokenizer library.
+ * @param lib - Tokenizer library name
+ */
+export async function cliListEncoders(lib: string): Promise<EncoderEntry[]> {
+  const out = await runCli(["list", "encoders", "--lib", lib], { timeoutMs: 20_000 });
+  const data = JSON.parse(out);
+
+  if (!data || !Array.isArray(data.encoders)) {
+    return [];
+  }
+
+  return data.encoders.map((e: string | { name: string; cached?: boolean }) =>
+    typeof e === "string" ? { name: e } : e
+  );
+}
