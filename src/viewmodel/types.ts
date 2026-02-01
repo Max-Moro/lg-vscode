@@ -73,7 +73,7 @@ export interface ViewModel {
 
   // Tags panel
   tagSets: TagSetViewModel[];
-  tagsPanelVisible: boolean;
+  tagsButtonVisible: boolean;
   selectedTagsCount: number;
 
   // Target branch (visible only in review mode)

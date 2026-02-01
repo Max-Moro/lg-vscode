@@ -159,9 +159,9 @@ export function buildViewModel(state: PCEState): ViewModel {
     // Mode-sets panels
     modeSets,
 
-    // Tags panel
+    // Tags panel (button visible only when there are non-empty tag sets)
     tagSets,
-    tagsPanelVisible: false, // Controlled by UI locally
+    tagsButtonVisible: tagSets.some(ts => ts.tags.length > 0),
     selectedTagsCount,
 
     // Target branch (visible only in review mode with available branches)

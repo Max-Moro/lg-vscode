@@ -191,12 +191,16 @@
       });
     }
 
-    // Update button text with count
-    const btn = DOM.qs("#tags-toggle .btn-text");
+    // Update button visibility and text
+    const btn = DOM.qs("#tags-toggle");
     if (btn) {
-      btn.textContent = vm.selectedTagsCount > 0
-        ? `Configure Tags (${vm.selectedTagsCount})`
-        : "Configure Tags";
+      btn.style.display = vm.tagsButtonVisible ? "" : "none";
+      const btnText = DOM.qs(".btn-text", btn);
+      if (btnText) {
+        btnText.textContent = vm.selectedTagsCount > 0
+          ? `Configure Tags (${vm.selectedTagsCount})`
+          : "Configure Tags";
+      }
     }
   }
 
