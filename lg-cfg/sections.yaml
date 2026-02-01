@@ -139,3 +139,12 @@ src:
                         allow: ["/claude-cli/"]
                       - condition: "TAGSET:ai-providers:claude-code-cli"
                         allow: ["/codex-cli/"]
+
+review:
+  extensions: [".ts", ".json", ".html", ".css", ".js"]
+  filters:
+    mode: allow
+    allow:
+      - "/src/"
+      - "/media/"
+      - "/package.json"
