@@ -73,6 +73,10 @@ export class ActionDispatcher {
   async updateAiModes(): Promise<void> {
     await ToolbarActions.updateAiModes();
   }
+
+  async clearState(): Promise<void> {
+    await ToolbarActions.clearState();
+  }
 }
 
 // Re-export individual action modules for direct use if needed

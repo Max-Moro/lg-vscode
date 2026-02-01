@@ -100,6 +100,11 @@
         "command": "lg.updateAiModes",
         "title": "Update AI Modes Template",
         "icon": "$(sync)"
+      },
+      {
+        "command": "lg.clearState",
+        "title": "Reset UI to Defaults",
+        "icon": "$(clear-all)"
       }
     ],
     "views": {
@@ -158,6 +163,11 @@
           "command": "lg.updateAiModes",
           "when": "view == lg.control",
           "group": "config@3"
+        },
+        {
+          "command": "lg.clearState",
+          "when": "view == lg.control",
+          "group": "diagnostics@3"
         }
       ],
       "commandPalette": [
@@ -191,6 +201,10 @@
         },
         {
           "command": "lg.updateAiModes",
+          "when": "false"
+        },
+        {
+          "command": "lg.clearState",
           "when": "false"
         }
       ]

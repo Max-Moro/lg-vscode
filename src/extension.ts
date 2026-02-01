@@ -50,7 +50,8 @@ export function activate(context: vscode.ExtensionContext) {
     vscode.commands.registerCommand("lg.doctor", () => getDispatcher().doctor()),
     vscode.commands.registerCommand("lg.resetCache", () => getDispatcher().resetCache()),
     vscode.commands.registerCommand("lg.openSettings", () => getDispatcher().openSettings()),
-    vscode.commands.registerCommand("lg.updateAiModes", () => getDispatcher().updateAiModes())
+    vscode.commands.registerCommand("lg.updateAiModes", () => getDispatcher().updateAiModes()),
+    vscode.commands.registerCommand("lg.clearState", () => getDispatcher().clearState())
   );
 
   // 6. Quick CLI presence check

@@ -3,7 +3,7 @@
  */
 
 import * as vscode from "vscode";
-import { getCoordinator, getAiService } from "../bootstrap";
+import { getCoordinator, getAiService, getStore } from "../bootstrap";
 import { resetCache, runDoctor } from "../services/DoctorService";
 import { openConfigOrInit, runInitWizard } from "../starter/StarterConfig";
 import { EXT_ID } from "../constants";
@@ -91,4 +91,35 @@ export async function updateAiModes(): Promise<void> {
     logError(`[updateAiModes] ${errorMessage}`, e);
     vscode.window.showErrorMessage(`Failed to update AI modes template: ${errorMessage}`);
   }
+}
+
+/**
+ * Reset UI to default values.
+ * Clears all saved selections (provider, context, modes, tags, tokenization settings)
+ * and re-initializes the Control Panel with defaults.
+ */
+export async function clearState(): Promise<void> {
+  const store = getStore();
+  const coordinator = getCoordinator();
+
+  const confirmed = await vscode.window.showWarningMessage(
+    "This will reset all Control Panel settings to defaults (provider, context, modes, tags, tokenization). Continue?",
+    { modal: true },
+    "Reset"
+  );
+
+  if (confirmed !== "Reset") {
+    return;
+  }
+
+  await vscode.window.withProgress(
+    { location: vscode.ProgressLocation.Notification, title: "LG: Resetting to defaults…", cancellable: false },
+    async () => {
+      await store.clearAll();
+      await coordinator.dispatch({ type: "lifecycle/INITIALIZE" });
+      await coordinator.waitForStability();
+    }
+  );
+
+  vscode.window.showInformationMessage("Control Panel has been reset to defaults.");
 }

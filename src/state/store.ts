@@ -168,6 +168,20 @@ export class PCEStateStore {
   }
 
   /**
+   * Clear all state (for debugging/testing).
+   * Resets PCE state to defaults and clears workspaceState.
+   */
+  public async clearAll(): Promise<void> {
+    // Reset in-memory state to defaults
+    this.state = createDefaultPCEState();
+
+    // Clear persistent state from storage
+    await this.workspaceState.update(STATE_KEY, undefined);
+
+    logDebug("[PCEStateStore] All state cleared");
+  }
+
+  /**
    * Emit state change to all listeners
    */
   public emit(): void {
