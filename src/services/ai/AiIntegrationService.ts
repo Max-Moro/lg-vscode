@@ -1,5 +1,5 @@
 import * as vscode from "vscode";
-import type { ProviderModule } from "./types";
+import type { ProviderModule, ProviderSettingsModule } from "./types";
 import { logInfo, logDebug, logError } from "../../logging/log";
 
 /**
@@ -7,6 +7,7 @@ import { logInfo, logDebug, logError } from "../../logging/log";
  */
 export class AiIntegrationService {
   private providers = new Map<string, ProviderModule>();
+  private settingsModules = new Map<string, ProviderSettingsModule>();
 
   constructor() {}
 
@@ -16,6 +17,28 @@ export class AiIntegrationService {
   registerProvider(module: ProviderModule): void {
     this.providers.set(module.provider.id, module);
     logDebug(`AI Provider registered: ${module.provider.id} (priority: ${module.detector.priority})`);
+  }
+
+  /**
+   * Register a provider settings module
+   */
+  registerSettingsModule(module: ProviderSettingsModule): void {
+    this.settingsModules.set(module.providerId, module);
+    logDebug(`Provider settings registered: ${module.providerId}`);
+  }
+
+  /**
+   * Get settings module for provider
+   */
+  getSettingsModule(providerId: string): ProviderSettingsModule | undefined {
+    return this.settingsModules.get(providerId);
+  }
+
+  /**
+   * Get all registered settings modules
+   */
+  getAllSettingsModules(): ProviderSettingsModule[] {
+    return Array.from(this.settingsModules.values());
   }
 
   /**

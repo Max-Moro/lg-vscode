@@ -39,7 +39,8 @@ export class ClaudeCliProvider extends BaseCliProvider {
     const store = getStore();
     const state = store.getPersistentState();
 
-    return state.claudeIntegrationMethod || "session";
+    const claudeSettings = state.providerSettings["claude-cli"] || {};
+    return (claudeSettings.method as ClaudeIntegrationMethod) || "session";
   }
 
   protected async checkTerminalBusy(

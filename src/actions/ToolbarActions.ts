@@ -18,7 +18,7 @@ export async function refreshCatalogs(): Promise<void> {
   await vscode.window.withProgress(
     { location: vscode.ProgressLocation.Notification, title: "LG: Refreshing catalogs…", cancellable: false },
     async () => {
-      await coordinator.dispatch({ type: "REFRESH" });
+      await coordinator.dispatch({ type: "lifecycle/REFRESH" });
       await coordinator.waitForStability();
     }
   );

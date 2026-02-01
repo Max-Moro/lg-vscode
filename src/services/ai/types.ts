@@ -61,3 +61,24 @@ export interface ProviderModule {
   provider: AiProvider;
   detector: ProviderDetector;
 }
+
+/**
+ * Provider settings module interface.
+ * Allows providers to define their own commands, rules, and ViewModel contributions.
+ */
+export interface ProviderSettingsModule {
+  /** Provider ID this module belongs to */
+  providerId: string;
+
+  /** Business rules for provider-specific commands */
+  rules: import("../../state/types").BusinessRule[];
+
+  /** Default values for provider-specific persistent state */
+  stateDefaults: Record<string, unknown>;
+
+  /** Build provider-specific ViewModel properties */
+  buildViewModel: (state: import("../../state/types").PCEState) => Record<string, unknown>;
+
+  /** Check if this provider's settings should be visible */
+  isVisible: (state: import("../../state/types").PCEState) => boolean;
+}

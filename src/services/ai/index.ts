@@ -8,8 +8,13 @@ import * as claudeCli from "./providers/claude-cli";
 import * as codexCli from "./providers/codex-cli";
 import * as openai from "./providers/openai";
 
+// Settings modules
+import { claudeCliSettings } from "./providers/claude-cli/settings";
+import { codexCliSettings } from "./providers/codex-cli/settings";
+
 import { AiIntegrationService } from "./AiIntegrationService";
-import type { ProviderModule } from "./types";
+import type { ProviderModule, ProviderSettingsModule } from "./types";
+import { registerRules } from "../../state/domains";
 
 // List of all providers
 const ALL_PROVIDERS: ProviderModule[] = [
@@ -19,6 +24,12 @@ const ALL_PROVIDERS: ProviderModule[] = [
   claudeCli,
   codexCli,
   openai,
+];
+
+// List of all settings modules
+const ALL_SETTINGS_MODULES: ProviderSettingsModule[] = [
+  claudeCliSettings,
+  codexCliSettings,
 ];
 
 /**
@@ -32,8 +43,15 @@ export function createAiIntegrationService(): AiIntegrationService {
     service.registerProvider(provider);
   }
 
+  // Register settings modules
+  for (const settings of ALL_SETTINGS_MODULES) {
+    service.registerSettingsModule(settings);
+    // Register rules from settings module
+    registerRules(settings.rules);
+  }
+
   return service;
 }
 
 export { AiIntegrationService } from "./AiIntegrationService";
-export type { AiProvider, ProviderDetector, ProviderModule } from "./types";
+export type { AiProvider, ProviderDetector, ProviderModule, ProviderSettingsModule } from "./types";

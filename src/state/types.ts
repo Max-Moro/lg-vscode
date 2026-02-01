@@ -7,9 +7,15 @@
 import type { ModeSetsList } from "../models/mode_sets_list";
 import type { TagSetsList } from "../models/tag_sets_list";
 import { type ShellType, getDefaultShell } from "../models/ShellType";
-import { type ClaudeModel, getDefaultClaudeModel } from "../models/ClaudeModel";
-import { type ClaudeIntegrationMethod, getDefaultClaudeMethod } from "../models/ClaudeIntegrationMethod";
-import { type CodexReasoningEffort, getDefaultCodexReasoningEffort } from "../models/CodexReasoningEffort";
+
+// ============================================
+// Base Command Interface
+// ============================================
+
+export interface BaseCommand {
+  type: string;
+  [key: string]: unknown;
+}
 
 // ============================================
 // Persistent State (P) - saved between sessions
@@ -18,20 +24,20 @@ import { type CodexReasoningEffort, getDefaultCodexReasoningEffort } from "../mo
 export interface PersistentState {
   // Selections
   providerId: string;
-  template: string;                    // current context
-  section: string;                     // for Inspect panel
+  template: string;
+  section: string;
 
   // Context-dependent selections
   modesByContextProvider: {
     [contextName: string]: {
       [providerId: string]: {
-        [modeSetId: string]: string;   // selected modeId
+        [modeSetId: string]: string;
       };
     };
   };
   tagsByContext: {
     [contextName: string]: {
-      [tagSetId: string]: string[];    // selected tagIds
+      [tagSetId: string]: string[];
     };
   };
 
@@ -40,22 +46,22 @@ export interface PersistentState {
   encoder: string;
   ctxLimit: number;
 
-  // CLI provider settings
+  // CLI provider settings (common)
   cliScope: string;
   cliShell: ShellType;
-  claudeModel: ClaudeModel;
-  claudeIntegrationMethod: ClaudeIntegrationMethod;
-  codexReasoningEffort: CodexReasoningEffort;
 
   // Review mode
   targetBranch: string;
 
   // Task
   taskText: string;
+
+  // Provider-specific settings (extensible)
+  providerSettings: Record<string, Record<string, unknown>>;
 }
 
 // ============================================
-// Configuration State (K) - loaded from CLI
+// Configuration State (C) - loaded from CLI
 // ============================================
 
 export interface EncoderEntry {
@@ -64,20 +70,17 @@ export interface EncoderEntry {
 }
 
 export interface ConfigurationState {
-  // Available options (from CLI)
-  contexts: string[];                  // filtered by provider
+  contexts: string[];
   sections: string[];
-  modeSets: ModeSetsList;              // filtered by context + provider
-  tagSets: TagSetsList;                // filtered by context
-  branches: string[];                  // from git
-
-  // Tokenization options
+  modeSets: ModeSetsList;
+  tagSets: TagSetsList;
+  branches: string[];
   tokenizerLibs: string[];
-  encoders: EncoderEntry[];            // filtered by tokenizerLib
+  encoders: EncoderEntry[];
 }
 
 // ============================================
-// Environment State (O) - detected at startup
+// Environment State (E) - detected at startup
 // ============================================
 
 export interface ProviderInfo {
@@ -87,7 +90,6 @@ export interface ProviderInfo {
 }
 
 export interface EnvironmentState {
-  // Available AI providers (detected)
   providers: ProviderInfo[];
 }
 
@@ -99,109 +101,51 @@ export interface PCEState {
   persistent: PersistentState;
   configuration: ConfigurationState;
   environment: EnvironmentState;
-
-  // Meta
-  isStable: boolean;                   // false while async ops pending
-  pendingOps: Set<string>;             // tracking async operations
+  isStable: boolean;
+  pendingOps: Set<string>;
 }
 
 // ============================================
-// UI Meta State (separate from PCE)
+// UI Meta State
 // ============================================
 
 export interface UIMeta {
   isLoading: boolean;
-  // Future: error messages, notifications, etc.
 }
-
-// ============================================
-// Commands
-// ============================================
-
-// User intent commands
-export type UserCommand =
-  | { type: "SELECT_PROVIDER"; providerId: string }
-  | { type: "SELECT_CONTEXT"; template: string }
-  | { type: "SELECT_SECTION"; section: string }
-  | { type: "SELECT_MODE"; modeSetId: string; modeId: string }
-  | { type: "TOGGLE_TAG"; tagSetId: string; tagId: string }
-  | { type: "SET_TASK_TEXT"; text: string }
-  | { type: "SELECT_TARGET_BRANCH"; branch: string }
-  | { type: "SELECT_TOKENIZER_LIB"; lib: string }
-  | { type: "SET_ENCODER"; encoder: string }
-  | { type: "SET_CTX_LIMIT"; limit: number }
-  | { type: "SET_CLI_SCOPE"; scope: string }
-  | { type: "SELECT_CLI_SHELL"; shell: ShellType }
-  | { type: "SELECT_CLAUDE_MODEL"; model: ClaudeModel }
-  | { type: "SELECT_CLAUDE_METHOD"; method: ClaudeIntegrationMethod }
-  | { type: "SELECT_CODEX_REASONING"; effort: CodexReasoningEffort };
-
-// System commands (from CLI responses)
-export type SystemCommand =
-  | { type: "PROVIDERS_DETECTED"; providers: ProviderInfo[] }
-  | { type: "CONTEXTS_LOADED"; contexts: string[] }
-  | { type: "SECTIONS_LOADED"; sections: string[] }
-  | { type: "MODE_SETS_LOADED"; modeSets: ModeSetsList }
-  | { type: "TAG_SETS_LOADED"; tagSets: TagSetsList }
-  | { type: "ENCODERS_LOADED"; encoders: EncoderEntry[] }
-  | { type: "TOKENIZER_LIBS_LOADED"; libs: string[] }
-  | { type: "BRANCHES_LOADED"; branches: string[] };
-
-// Lifecycle commands
-export type LifecycleCommand =
-  | { type: "INITIALIZE" }
-  | { type: "REFRESH" };
-
-export type Command = UserCommand | SystemCommand | LifecycleCommand;
 
 // ============================================
 // Business Rules
 // ============================================
 
 export interface RuleResult {
-  /** State mutations to apply */
   mutations?: Partial<PersistentState>;
-
-  /** Configuration mutations to apply */
   configMutations?: Partial<ConfigurationState>;
-
-  /** Environment mutations to apply */
   envMutations?: Partial<EnvironmentState>;
-
-  /** Async operations to initiate */
   asyncOps?: AsyncOperation[];
-
-  /** Follow-up commands to dispatch */
-  followUp?: Command[];
+  followUp?: BaseCommand[];
 }
 
 export interface AsyncOperation {
   id: string;
-  execute: () => Promise<SystemCommand>;
+  execute: () => Promise<BaseCommand>;
 }
 
-/**
- * Typed business rule - trigger determines command type in callbacks
- */
-export interface BusinessRule<T extends Command["type"] = Command["type"]> {
-  /** Unique rule identifier for debugging */
+export interface BusinessRule {
   id: string;
-
-  /** Human-readable description */
   description: string;
-
-  /** Single command type that triggers this rule */
-  trigger: T;
-
-  /** Check if rule should be applied */
-  condition: (state: PCEState, cmd: Extract<Command, { type: T }>) => boolean;
-
-  /** Apply rule: returns state mutations and/or follow-up commands */
-  apply: (state: PCEState, cmd: Extract<Command, { type: T }>) => RuleResult;
+  trigger: string;
+  condition: (state: PCEState, cmd: BaseCommand) => boolean;
+  apply: (state: PCEState, cmd: BaseCommand) => RuleResult;
 }
 
-/** Helper type to create typed rule */
-export type TypedRule<T extends Command["type"]> = BusinessRule<T>;
+// ============================================
+// Domain Module Interface
+// ============================================
+
+export interface DomainModule {
+  id: string;
+  rules: BusinessRule[];
+}
 
 // ============================================
 // Default State Factories
@@ -219,11 +163,9 @@ export function createDefaultPersistentState(): PersistentState {
     ctxLimit: 128000,
     cliScope: "",
     cliShell: getDefaultShell(),
-    claudeModel: getDefaultClaudeModel(),
-    claudeIntegrationMethod: getDefaultClaudeMethod(),
-    codexReasoningEffort: getDefaultCodexReasoningEffort(),
     targetBranch: "",
-    taskText: ""
+    taskText: "",
+    providerSettings: {}
   };
 }
 

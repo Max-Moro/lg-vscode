@@ -43,11 +43,15 @@ export abstract class BaseCliProvider extends BaseAiProvider {
     const store = getStore();
     const state = store.getPersistentState();
 
+    // Get Claude model from provider settings if available
+    const claudeSettings = state.providerSettings["claude-cli"] || {};
+    const claudeModel = claudeSettings.model as string | undefined;
+
     return {
       scope: state.cliScope || "",
       shell: state.cliShell as ShellType,
       runs,
-      claudeModel: state.claudeModel
+      claudeModel
     };
   }
 

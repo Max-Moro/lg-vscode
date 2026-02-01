@@ -41,7 +41,7 @@ export class FileWatcher implements vscode.Disposable {
       }
       this.refreshTimer = setTimeout(() => {
         logDebug("[FileWatcher] lg-cfg/ changed, dispatching REFRESH");
-        void this.coordinator.dispatch({ type: "REFRESH" });
+        void this.coordinator.dispatch({ type: "lifecycle/REFRESH" });
         this.refreshTimer = undefined;
       }, this.debounceMs);
     };

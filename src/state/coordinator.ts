@@ -2,9 +2,9 @@
  * State Coordinator - Orchestrates command processing and async operations
  */
 
-import type {AsyncOperation, BusinessRule, Command, UIMeta} from "./types";
-import {PCEStateStore} from "./store";
-import {logDebug, logError} from "../logging/log";
+import type { AsyncOperation, BusinessRule, BaseCommand, UIMeta } from "./types";
+import { PCEStateStore } from "./store";
+import { logDebug, logError } from "../logging/log";
 
 type MetaListener = (meta: UIMeta) => void;
 
@@ -37,7 +37,7 @@ export class StateCoordinator {
   /**
    * Process a command through the rules engine
    */
-  public async dispatch(command: Command): Promise<void> {
+  public async dispatch(command: BaseCommand): Promise<void> {
     logDebug(`[StateCoordinator] Dispatching command: ${command.type}`);
 
     const state = this.store.getState();
@@ -45,7 +45,7 @@ export class StateCoordinator {
     // 1. Find applicable rules
     const applicableRules = this.rules.filter(rule =>
       rule.trigger === command.type &&
-      rule.condition(state, command as never)
+      rule.condition(state, command)
     );
 
     if (applicableRules.length === 0) {
@@ -57,11 +57,11 @@ export class StateCoordinator {
 
     // 2. Apply rules and collect results
     const allAsyncOps: AsyncOperation[] = [];
-    const allFollowUps: Command[] = [];
+    const allFollowUps: BaseCommand[] = [];
 
     for (const rule of applicableRules) {
       try {
-        const result = rule.apply(state, command as never);
+        const result = rule.apply(state, command);
 
         // Apply persistent mutations
         if (result.mutations && Object.keys(result.mutations).length > 0) {

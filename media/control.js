@@ -520,29 +520,29 @@
 
     switch (id) {
       case "provider":
-        return { type: "SELECT_PROVIDER", providerId: value };
+        return { type: "provider/SELECT", providerId: value };
       case "template":
-        return { type: "SELECT_CONTEXT", template: value };
+        return { type: "context/SELECT", template: value };
       case "section":
-        return { type: "SELECT_SECTION", section: value };
+        return { type: "section/SELECT", section: value };
       case "targetBranch":
-        return { type: "SELECT_TARGET_BRANCH", branch: value };
+        return { type: "adaptive/SELECT_BRANCH", branch: value };
       case "tokenizerLib":
-        return { type: "SELECT_TOKENIZER_LIB", lib: value };
+        return { type: "tokenization/SELECT_LIB", lib: value };
       case "cliShell":
-        return { type: "SELECT_CLI_SHELL", shell: value };
+        return { type: "provider/SELECT_CLI_SHELL", shell: value };
       case "claudeModel":
-        return { type: "SELECT_CLAUDE_MODEL", model: value };
+        return { type: "provider.claude-cli/SELECT_MODEL", model: value };
       case "claudeIntegrationMethod":
-        return { type: "SELECT_CLAUDE_METHOD", method: value };
+        return { type: "provider.claude-cli/SELECT_METHOD", method: value };
       case "codexReasoningEffort":
-        return { type: "SELECT_CODEX_REASONING", effort: value };
+        return { type: "provider.codex-cli/SELECT_REASONING", effort: value };
       default:
         // Mode select
         if (id && id.startsWith("mode-")) {
           const modeSetId = el.dataset.modeSet;
           if (modeSetId) {
-            return { type: "SELECT_MODE", modeSetId, modeId: value };
+            return { type: "adaptive/SELECT_MODE", modeSetId, modeId: value };
           }
         }
         return null;
@@ -553,7 +553,7 @@
     const tagSetId = el.dataset.tagSet;
     const tagId = el.dataset.tag;
     if (tagSetId && tagId) {
-      return { type: "TOGGLE_TAG", tagSetId, tagId };
+      return { type: "adaptive/TOGGLE_TAG", tagSetId, tagId };
     }
     return null;
   }
@@ -564,13 +564,13 @@
 
     switch (id) {
       case "taskText":
-        return { type: "SET_TASK_TEXT", text: value };
+        return { type: "context/SET_TASK", text: value };
       case "encoder":
-        return { type: "SET_ENCODER", encoder: value };
+        return { type: "tokenization/SET_ENCODER", encoder: value };
       case "ctxLimit":
-        return { type: "SET_CTX_LIMIT", limit: parseInt(value, 10) || 0 };
+        return { type: "tokenization/SET_CTX_LIMIT", limit: parseInt(value, 10) || 0 };
       case "cliScope":
-        return { type: "SET_CLI_SCOPE", scope: value };
+        return { type: "provider/SET_CLI_SCOPE", scope: value };
       default:
         return null;
     }

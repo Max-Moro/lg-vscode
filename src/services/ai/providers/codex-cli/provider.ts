@@ -25,7 +25,8 @@ export class CodexCliProvider extends BaseCliProvider {
     const store = getStore();
     const state = store.getPersistentState();
 
-    return (state.codexReasoningEffort as CodexReasoningEffort) || getDefaultCodexReasoningEffort();
+    const codexSettings = state.providerSettings["codex-cli"] || {};
+    return (codexSettings.reasoning as CodexReasoningEffort) || getDefaultCodexReasoningEffort();
   }
 
   protected async checkTerminalBusy(

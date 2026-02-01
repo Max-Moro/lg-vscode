@@ -15,7 +15,7 @@ import { ListingService } from "../services/ListingService";
 import { ContextService } from "../services/ContextService";
 import { GitService } from "../services/GitService";
 import { AiIntegrationService, createAiIntegrationService } from "../services/ai";
-import { ALL_RULES, setLifecycleDependencies } from "../state/rules";
+import { getAllRules, setLifecycleDependencies } from "../state/domains";
 import { VirtualDocProvider } from "../views/VirtualDocProvider";
 import { IncludedTree } from "../views/IncludedTree";
 
@@ -73,7 +73,7 @@ export function bootstrap(context: vscode.ExtensionContext): BootstrapResult {
     // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
     getBranchNames: () => _gitService!.getBranchNames()
   });
-  _coordinator.setRules(ALL_RULES);
+  _coordinator.setRules(getAllRules());
 
   // 6. Watchers
   _watchers = new WatcherManager(_coordinator);

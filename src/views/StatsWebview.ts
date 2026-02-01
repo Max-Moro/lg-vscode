@@ -70,7 +70,7 @@ export async function showStatsWebview(
         case "updateTaskText":
           if (current.scope === "context") {
             // Use coordinator to dispatch command (not direct store update!)
-            await coordinator.dispatch({ type: "SET_TASK_TEXT", text: msg.taskText || "" });
+            await coordinator.dispatch({ type: "context/SET_TASK", text: msg.taskText || "" });
           }
           break;
 

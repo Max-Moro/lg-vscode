@@ -11,9 +11,7 @@ import type {
   TagSetViewModel
 } from "./types";
 import { getAvailableShells } from "../models/ShellType";
-import { getAvailableClaudeModels } from "../models/ClaudeModel";
-import { getAvailableClaudeMethods } from "../models/ClaudeIntegrationMethod";
-import { getAvailableCodexReasoningEfforts } from "../models/CodexReasoningEffort";
+import { getAiService } from "../bootstrap";
 
 /**
  * Build ViewModel from PCE State
@@ -42,8 +40,6 @@ export function buildViewModel(state: PCEState): ViewModel {
 
   // Check provider type for visibility rules
   const isCliProvider = provider.endsWith(".cli");
-  const isClaudeCli = provider === "com.anthropic.claude.cli";
-  const isCodexCli = provider === "com.openai.codex.cli";
 
   // Build providers options
   const providers: SelectOption[] = e.providers.map(p => ({
@@ -122,79 +118,53 @@ export function buildViewModel(state: PCEState): ViewModel {
     label: s.label
   }));
 
-  // Build Claude models options (static)
-  const claudeModels: SelectOption[] = getAvailableClaudeModels().map(m => ({
-    value: m.id,
-    label: m.label,
-    description: m.description
-  }));
-
-  // Build Claude methods options (static)
-  const claudeMethods: SelectOption[] = getAvailableClaudeMethods().map(m => ({
-    value: m.id,
-    label: m.label,
-    description: m.description
-  }));
-
-  // Build Codex reasoning efforts options (static)
-  const codexReasoningEfforts: SelectOption[] = getAvailableCodexReasoningEfforts().map(r => ({
-    value: r.id,
-    label: r.label,
-    description: r.description
-  }));
-
-  return {
-    // Provider selector
+  // Base ViewModel
+  let vm: ViewModel = {
     providers,
     selectedProviderId: provider,
-
-    // Context selector
     contexts,
     selectedContextId: ctx,
-
-    // Section selector (Inspect panel)
     sections,
     selectedSectionId: p.section,
-
-    // Mode-sets panels
     modeSets,
-
-    // Tags panel (button visible only when there are non-empty tag sets)
     tagSets,
     tagsButtonVisible: tagSets.some(ts => ts.tags.length > 0),
     selectedTagsCount,
-
-    // Target branch (visible only in review mode with available branches)
     targetBranchVisible: isReviewMode && c.branches.length > 0,
     branches,
     selectedBranch: p.targetBranch,
-
-    // Tokenization settings
     tokenizerLibs,
     selectedTokenizerLib: p.tokenizerLib,
     encoders,
     selectedEncoder: p.encoder,
     ctxLimit: p.ctxLimit,
-
-    // CLI settings (visible only for CLI providers)
     cliSettingsVisible: isCliProvider,
     cliScope: p.cliScope,
     cliShells,
     selectedShell: p.cliShell,
-
-    // Claude-specific (visible only for Claude CLI)
-    claudeSettingsVisible: isClaudeCli,
-    claudeModels,
-    selectedClaudeModel: p.claudeModel,
-    claudeMethods,
-    selectedClaudeMethod: p.claudeIntegrationMethod,
-
-    // Codex-specific (visible only for Codex CLI)
-    codexSettingsVisible: isCodexCli,
-    codexReasoningEfforts,
-    selectedCodexReasoning: p.codexReasoningEffort,
-
-    // Task text
+    // Provider-specific (will be overwritten by settings modules)
+    claudeSettingsVisible: false,
+    claudeModels: [],
+    selectedClaudeModel: "",
+    claudeMethods: [],
+    selectedClaudeMethod: "",
+    codexSettingsVisible: false,
+    codexReasoningEfforts: [],
+    selectedCodexReasoning: "",
     taskText: p.taskText
   };
+
+  // Apply provider settings modules contributions
+  try {
+    const aiService = getAiService();
+    for (const settingsModule of aiService.getAllSettingsModules()) {
+      if (settingsModule.isVisible(state)) {
+        vm = { ...vm, ...settingsModule.buildViewModel(state) };
+      }
+    }
+  } catch {
+    // During bootstrap, aiService may not be available yet
+  }
+
+  return vm;
 }

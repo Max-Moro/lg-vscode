@@ -9,7 +9,7 @@
 
 import * as vscode from "vscode";
 import { getStore, getCoordinator, getDispatcher, getWatchers } from "../bootstrap";
-import type { Command, UIMeta } from "../state/types";
+import type { BaseCommand, UIMeta } from "../state/types";
 import { buildViewModel } from "../viewmodel/builder";
 import { logDebug, logError } from "../logging/log";
 
@@ -71,7 +71,7 @@ export class ControlPanelView implements vscode.WebviewViewProvider {
 
     // Start watchers and initialize
     watchers.startAll();
-    void coordinator.dispatch({ type: "INITIALIZE" });
+    void coordinator.dispatch({ type: "lifecycle/INITIALIZE" });
 
     // Send current theme
     this.postTheme(watchers.themeWatcher.getCurrentTheme());
@@ -90,7 +90,7 @@ export class ControlPanelView implements vscode.WebviewViewProvider {
 
       // Route commands to coordinator
       if (type === "command") {
-        await coordinator.dispatch(msg.command as Command);
+        await coordinator.dispatch(msg.command as BaseCommand);
         return;
       }
 
