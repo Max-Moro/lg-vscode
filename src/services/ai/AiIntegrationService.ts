@@ -19,39 +19,6 @@ export class AiIntegrationService {
   }
 
   /**
-   * Initial detection of available providers
-   * Called once when the extension is activated
-   */
-  async detectBestProvider(): Promise<string> {
-    const available: Array<{ id: string; priority: number }> = [];
-
-    for (const [id, module] of this.providers) {
-      try {
-        const isAvailable = await module.detector.detect();
-        if (isAvailable) {
-          available.push({ id, priority: module.detector.priority });
-          logDebug(`Provider ${id} is available (priority: ${module.detector.priority})`);
-        }
-      } catch (e) {
-        logError(`Failed to detect provider ${id}`, e);
-      }
-    }
-
-    if (available.length === 0) {
-      logInfo("No AI providers detected, falling back to clipboard");
-      return "clipboard";
-    }
-
-    // Sort by priority in descending order
-    available.sort((a, b) => b.priority - a.priority);
-
-    const best = available[0];
-    logInfo(`Best AI provider detected: ${best.id} (priority: ${best.priority})`);
-
-    return best.id;
-  }
-
-  /**
    * Get provider name by ID
    */
   getProviderName(id: string): string {
@@ -124,10 +91,12 @@ export class AiIntegrationService {
     for (const [providerId, module] of this.providers) {
       const supportedModes = module.provider.getSupportedModes();
       for (const { modeId, runs } of supportedModes) {
-        if (!allModes.has(modeId)) {
-          allModes.set(modeId, new Map());
+        let modeMap = allModes.get(modeId);
+        if (!modeMap) {
+          modeMap = new Map();
+          allModes.set(modeId, modeMap);
         }
-        allModes.get(modeId)!.set(providerId, runs);
+        modeMap.set(providerId, runs);
       }
     }
 

@@ -15,10 +15,6 @@
       // obtain task text from message
       if (msg.taskText !== undefined) {
         currentTaskText = msg.taskText;
-        const textarea = document.getElementById("statsTaskText");
-        if (textarea && textarea instanceof HTMLTextAreaElement) {
-          textarea.value = currentTaskText;
-        }
       }
       render(msg.payload);
     }

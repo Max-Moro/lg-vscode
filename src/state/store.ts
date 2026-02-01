@@ -261,11 +261,3 @@ export class PCEStateStore {
     return mode?.runs?.[provider] ?? null;
   }
 }
-
-/**
- * Get PCE Store instance.
- * Convenience alias for PCEStateStore.getInstance().
- */
-export function getStore(): PCEStateStore {
-  return PCEStateStore.getInstance();
-}
