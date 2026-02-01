@@ -20,15 +20,12 @@ ${review}
 
 ${src}
 
-{% endif %}{% if NOT tag:review %}
+{% endif %}
 ---
 
 ${md:media/ui/README, if:TAGSET:vscode-extension:ui-components}
 
-{% endif %}
----
-
-${md@self:/control-panel-state-architecture}
+${md@self:/control-panel-state-architecture, if:TAGSET:vscode-extension:state-viewmodel}
 {% if task AND scope:local %}
 ---
 
