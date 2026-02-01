@@ -28,17 +28,3 @@ export const ALL_RULES = [
  * Re-export lifecycle dependencies setter
  */
 export { setLifecycleDependencies };
-
-/**
- * Get rules by trigger type (for debugging/testing)
- */
-export function getRulesByTrigger(trigger: string) {
-  return ALL_RULES.filter(rule => rule.trigger === trigger);
-}
-
-/**
- * Get rule by ID (for debugging/testing)
- */
-export function getRuleById(id: string) {
-  return ALL_RULES.find(rule => rule.id === id);
-}

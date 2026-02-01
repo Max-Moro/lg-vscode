@@ -66,17 +66,6 @@ export class PCEStateStore {
   }
 
   /**
-   * Get singleton instance.
-   * @throws Error if not initialized
-   */
-  public static getInstance(): PCEStateStore {
-    if (!PCEStateStore.instance) {
-      throw new Error("PCEStateStore not initialized - call bootstrap() first");
-    }
-    return PCEStateStore.instance;
-  }
-
-  /**
    * Get current state (immutable snapshot)
    */
   public getState(): PCEState {
@@ -200,15 +189,6 @@ export class PCEStateStore {
     return () => {
       this.listeners.delete(listener);
     };
-  }
-
-  /**
-   * Reset state to defaults (for testing)
-   */
-  public async reset(): Promise<void> {
-    this.state = createDefaultPCEState();
-    await this.workspaceState.update(STATE_KEY, undefined);
-    logDebug("[PCEStateStore] State reset to defaults");
   }
 
   // ============================================
