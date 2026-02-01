@@ -49,9 +49,13 @@ const sectionsLoaded: BusinessRule = {
 
 const sectionSelect: BusinessRule = {
   id: "section/select",
-  description: "When section is selected, update persistent state",
+  description: "When section changes, update persistent state",
   trigger: "section/SELECT",
-  condition: () => true,
+  // Only trigger if section actually changed
+  condition: (state: PCEState, cmd: BaseCommand) => {
+    const { section } = cmd as SelectSectionCmd;
+    return section !== state.persistent.section;
+  },
   apply: (_state: PCEState, cmd: BaseCommand) => ({
     mutations: { section: (cmd as SelectSectionCmd).section }
   })

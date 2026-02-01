@@ -146,9 +146,16 @@ const tagSetsLoaded: BusinessRule = {
 
 const modeSelect: BusinessRule = {
   id: "adaptive/select-mode",
-  description: "When mode is selected, update persistent state",
+  description: "When mode changes, update persistent state",
   trigger: "adaptive/SELECT_MODE",
-  condition: () => true,
+  // Only trigger if mode actually changed
+  condition: (state: PCEState, cmd: BaseCommand) => {
+    const { modeSetId, modeId } = cmd as SelectModeCmd;
+    const ctx = state.persistent.template;
+    const provider = state.persistent.providerId;
+    const currentModeId = state.persistent.modesByContextProvider[ctx]?.[provider]?.[modeSetId];
+    return modeId !== currentModeId;
+  },
   apply: (state: PCEState, cmd: BaseCommand) => {
     const { modeSetId, modeId } = cmd as SelectModeCmd;
     const ctx = state.persistent.template;
@@ -227,9 +234,13 @@ const branchesLoaded: BusinessRule = {
 
 const branchSelect: BusinessRule = {
   id: "adaptive/select-branch",
-  description: "When target branch is selected, update persistent state",
+  description: "When target branch changes, update persistent state",
   trigger: "adaptive/SELECT_BRANCH",
-  condition: () => true,
+  // Only trigger if branch actually changed
+  condition: (state: PCEState, cmd: BaseCommand) => {
+    const { branch } = cmd as SelectBranchCmd;
+    return branch !== state.persistent.targetBranch;
+  },
   apply: (_state: PCEState, cmd: BaseCommand) => ({
     mutations: { targetBranch: (cmd as SelectBranchCmd).branch }
   })

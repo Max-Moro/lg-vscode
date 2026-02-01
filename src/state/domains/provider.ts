@@ -8,9 +8,9 @@
  * - provider/SELECT_CLI_SHELL - select CLI shell type
  */
 
-import type { BusinessRule, DomainModule, BaseCommand, PCEState, ProviderInfo } from "../types";
+import type { BusinessRule, DomainModule, BaseCommand, PCEState, ProviderInfo, AsyncOperation } from "../types";
 import type { ShellType } from "../../models/ShellType";
-import { cliListContexts } from "../../cli/CliClient";
+import { cliListContexts, cliListModeSets } from "../../cli/CliClient";
 
 // ============================================
 // Commands
@@ -69,21 +69,39 @@ const providersDetected: BusinessRule = {
 
 const providerSelect: BusinessRule = {
   id: "provider/select",
-  description: "When provider changes, reload contexts filtered by new provider",
+  description: "When provider changes, reload contexts and mode-sets",
   trigger: "provider/SELECT",
   condition: (state: PCEState, cmd: BaseCommand) =>
     (cmd as SelectProviderCmd).providerId !== state.persistent.providerId,
-  apply: (_state: PCEState, cmd: BaseCommand) => {
+  apply: (state: PCEState, cmd: BaseCommand) => {
     const { providerId } = cmd as SelectProviderCmd;
-    return {
-      mutations: { providerId },
-      asyncOps: [{
+    const template = state.persistent.template;
+
+    const asyncOps: AsyncOperation[] = [
+      {
         id: "load-contexts",
         execute: async () => {
           const contexts = await cliListContexts(providerId);
           return { type: "context/LOADED", contexts };
         }
-      }]
+      }
+    ];
+
+    // Mode-sets depend on both provider AND template
+    // Reload them if template exists (tags don't depend on provider, so skip them)
+    if (template) {
+      asyncOps.push({
+        id: "load-mode-sets",
+        execute: async () => {
+          const modeSets = await cliListModeSets(template, providerId);
+          return { type: "adaptive/MODE_SETS_LOADED", modeSets };
+        }
+      });
+    }
+
+    return {
+      mutations: { providerId },
+      asyncOps
     };
   }
 };

@@ -46,17 +46,17 @@ const contextsLoaded: BusinessRule = {
 
     const configMutations = { contexts };
 
+    // If current template is valid, just update config (no cascade needed)
     if (currentTemplate && contexts.includes(currentTemplate)) {
-      return {
-        configMutations,
-        followUp: [{ type: "context/SELECT", template: currentTemplate }]
-      };
+      return { configMutations };
     }
 
+    // Current template invalid - select first available and trigger cascade
     const newTemplate = contexts[0] || "";
     return {
       configMutations,
       mutations: newTemplate ? { template: newTemplate } : undefined,
+      // Trigger context/SELECT to load mode-sets and tag-sets for new template
       followUp: newTemplate ? [{ type: "context/SELECT", template: newTemplate }] : []
     };
   }
@@ -64,9 +64,13 @@ const contextsLoaded: BusinessRule = {
 
 const contextSelect: BusinessRule = {
   id: "context/select",
-  description: "When context is selected, reload mode-sets and tag-sets",
+  description: "When context changes, reload mode-sets and tag-sets",
   trigger: "context/SELECT",
-  condition: (_state: PCEState, cmd: BaseCommand) => !!(cmd as SelectContextCmd).template,
+  // Only trigger if template actually changed (not same value from UI)
+  condition: (state: PCEState, cmd: BaseCommand) => {
+    const { template } = cmd as SelectContextCmd;
+    return !!template && template !== state.persistent.template;
+  },
   apply: (state: PCEState, cmd: BaseCommand) => {
     const { template } = cmd as SelectContextCmd;
     return {
