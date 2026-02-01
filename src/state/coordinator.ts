@@ -2,15 +2,9 @@
  * State Coordinator - Orchestrates command processing and async operations
  */
 
-import * as _vscode from "vscode";
-import type {
-  Command,
-  BusinessRule,
-  AsyncOperation,
-  UIMeta
-} from "./types";
-import { PCEStateStore } from "./store";
-import { logDebug, logError } from "../logging/log";
+import type {AsyncOperation, BusinessRule, Command, UIMeta} from "./types";
+import {PCEStateStore} from "./store";
+import {logDebug, logError} from "../logging/log";
 
 type MetaListener = (meta: UIMeta) => void;
 

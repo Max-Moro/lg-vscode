@@ -1,4 +1,4 @@
-import { BaseAiProvider } from "./BaseAiProvider";
+import {BaseAiProvider} from "./BaseAiProvider";
 
 /**
  * Base class for Network-based providers
@@ -57,11 +57,10 @@ export abstract class BaseNetworkProvider extends BaseAiProvider {
     const timeout = setTimeout(() => controller.abort(), timeoutMs);
 
     try {
-      const response = await fetch(url, {
-        ...options,
-        signal: controller.signal
+      return await fetch(url, {
+          ...options,
+          signal: controller.signal
       });
-      return response;
     } finally {
       clearTimeout(timeout);
     }
