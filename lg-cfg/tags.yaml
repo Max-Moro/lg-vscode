@@ -2,30 +2,53 @@ tag-sets:
   vscode-extension:
     title: "Listing Generator extension for VS Code"
     tags:
+      # Infrastructure
       core:
-        title: "Core"
+        title: "Core Infrastructure"
+        description: "Bootstrap, extension entry, logging, constants"
+      state-viewmodel:
+        title: "State & ViewModel"
+        description: "State management subsystem and ViewModel layer"
+      cli:
+        title: "CLI Integration"
+        description: "CLI resolver, client, runner"
       ui-core:
         title: "UI Core"
+        description: "Base styles, utilities, core components"
       ui-components:
-        title: "UI Component Base"
-      cli:
-        title: "CLI executable"
-      control:
-        title: "Control Panel"
-      catalog:
-        title: "Catalog Services"
-      stats:
-        title: "Statistics Report"
-      diag:
-        title: "Self-Diagnostics"
+        title: "UI Components"
+        description: "Reusable UI component library"
+
+      # Business domains
+      context:
+        title: "Context Domain"
+        description: "Context selection, task text, context generation"
+      section:
+        title: "Section Domain"
+        description: "Section selection, listing generation, included files tree"
+      adaptive:
+        title: "Adaptive Domain"
+        description: "Mode-sets, tag-sets, target branch selection"
       send-to-ai:
-        title: "Send to AI"
+        title: "Provider Domain"
+        description: "AI providers, sending content, provider settings"
+      stats:
+        title: "Statistics Domain"
+        description: "Token statistics, tokenization settings, reports"
+      diag:
+        title: "Diagnostics Domain"
+        description: "Doctor, cache reset, self-diagnostics"
       starter:
-        title: "Starter Configuration"
-      included-tree:
-        title: "Tree View Section Preview"
+        title: "Starter Domain"
+        description: "Initial configuration wizard"
+
+      # Views (for focused UI work)
+      control:
+        title: "Control Panel View"
+        description: "Main control panel webview"
       generate:
-        title: "Generation (for viewing)"
+        title: "Generate View"
+        description: "Virtual document provider for listings"
 
   ai-providers:
     title: "AI Providers"

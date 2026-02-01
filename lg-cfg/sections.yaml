@@ -10,6 +10,7 @@ src:
       media:
         mode: allow
         when:
+          # UI Core - base styles and utilities
           - condition: >
               TAGSET:vscode-extension:ui-core OR
               TAGSET:vscode-extension:control OR
@@ -20,93 +21,138 @@ src:
               - "common.js"
               - "/ui/core/"
               - "/ui/utils/"
+          # UI Components library
           - condition: "TAGSET:vscode-extension:ui-components"
             allow: ["/ui/components/"]
+          # Control Panel view
           - condition: "TAGSET:vscode-extension:control"
-            allow: 
-              - "control*"
+            allow: ["control*"]
+          # Stats view
           - condition: "TAGSET:vscode-extension:stats"
-            allow: 
+            allow:
               - "stats*"
               - "/ui/components/grouped-table/grouped-table.js"
               - "/ui/components/textarea/textarea.js"
+          # Diagnostics view
           - condition: "TAGSET:vscode-extension:diag"
-            allow: 
+            allow:
               - "doctor*"
               - "/ui/components/textarea/textarea.js"
+
       src:
         mode: allow
         when:
+          # ==================== INFRASTRUCTURE ====================
+
+          # Core - bootstrap, extension entry, logging
           - condition: "TAGSET:vscode-extension:core"
             allow:
               - "/extension.ts"
               - "/constants.ts"
               - "/bootstrap/"
               - "/logging/"
-              - "/cli/CliClient.ts"
-              - "/services/ContextService.ts"
-              - "/services/ListingService.ts"
+              - "/webview/webviewKit.ts"
+
+          # State & ViewModel - state management subsystem
+          - condition: "TAGSET:vscode-extension:state-viewmodel"
+            allow:
               - "/state/types.ts"
               - "/state/store.ts"
               - "/state/coordinator.ts"
-              - "/state/rules/index.ts"
-              - "/state/rules/lifecycle.rules.ts"
+              - "/state/domains/index.ts"
               - "/state/watchers/"
+              - "/viewmodel/"
               - "/actions/index.ts"
-              - "/webview/webviewKit.ts"
+
+          # CLI Integration
           - condition: "TAGSET:vscode-extension:cli"
             allow: ["/cli/", "/runner/"]
+
+          # UI Components build
           - condition: "TAGSET:vscode-extension:ui-components"
             allow: ["/build-ui.ts"]
-          - condition: "TAGSET:vscode-extension:control"
+
+          # ==================== BUSINESS DOMAINS ====================
+
+          # Context Domain
+          - condition: "TAGSET:vscode-extension:context"
             allow:
-              - "/views/ControlPanelView.ts"
-              - "/viewmodel/"
-              - "/actions/ToolbarActions.ts"
-          - condition: "TAGSET:vscode-extension:catalog"
+              - "/state/domains/context.ts"
+              - "/services/ContextService.ts"
+              - "/actions/ContextActions.ts"
+
+          # Section Domain
+          - condition: "TAGSET:vscode-extension:section"
             allow:
-              - "/services/CatalogService.ts"
-              - "/services/GitService.ts"
+              - "/state/domains/section.ts"
+              - "/services/ListingService.ts"
+              - "/actions/ListingActions.ts"
+              - "/views/IncludedTree.ts"
+
+          # Adaptive Domain - modes, tags, branches
+          - condition: "TAGSET:vscode-extension:adaptive"
+            allow:
+              - "/state/domains/adaptive.ts"
               - "/models/mode_sets_list.ts"
               - "/models/tag_sets_list.ts"
-              - "/state/rules/tokenizer.rules.ts"
-              - "/state/rules/context.rules.ts"
-              - "/state/rules/adaptive.rules.ts"
+              - "/services/GitService.ts"
+
+          # Statistics Domain - stats, tokenization
           - condition: "TAGSET:vscode-extension:stats"
             allow:
+              - "/state/domains/tokenization.ts"
               - "/views/StatsWebview.ts"
               - "/models/report.ts"
-              - "/actions/ListingActions.ts"
-              - "/actions/ContextActions.ts"
+              - "/services/CatalogService.ts"
+
+          # Provider Domain - AI providers
+          - condition: "TAGSET:vscode-extension:send-to-ai"
+            allow:
+              - "/state/domains/provider.ts"
+              - "/state/domains/lifecycle.ts"
+              - "/services/ai/"
+              - "/models/ShellType.ts"
+              - "/actions/AiActions.ts"
+
+          # Diagnostics Domain
           - condition: "TAGSET:vscode-extension:diag"
             allow:
               - "/services/DoctorService.ts"
               - "/views/DoctorWebview.ts"
               - "/models/diag_report.ts"
-          - condition: "TAGSET:vscode-extension:send-to-ai"
-            allow:
-              - "/services/ai/"
-              - "/models/ShellType.ts"
-              - "/state/rules/provider.rules.ts"
-              - "/state/rules/cli-settings.rules.ts"
-              - "/actions/AiActions.ts"
+
+          # Starter Domain
           - condition: "TAGSET:vscode-extension:starter"
             allow: ["/starter/StarterConfig.ts"]
-          - condition: "TAGSET:vscode-extension:included-tree"
-            allow: ["/views/IncludedTree.ts"]
+
+          # ==================== VIEWS ====================
+
+          # Control Panel View
+          - condition: "TAGSET:vscode-extension:control"
+            allow:
+              - "/views/ControlPanelView.ts"
+              - "/viewmodel/"
+              - "/actions/ToolbarActions.ts"
+
+          # Generate View
           - condition: "TAGSET:vscode-extension:generate"
             allow:
               - "/views/VirtualDocProvider.ts"
               - "/views/virtualBus.ts"
+
+          # ==================== PROVIDER-SPECIFIC ====================
+
+          # Claude CLI provider with settings
           - condition: "TAGSET:vscode-extension:send-to-ai AND TAGSET:ai-providers:claude-code-cli"
             allow:
               - "/models/ClaudeIntegrationMethod.ts"
               - "/models/ClaudeModel.ts"
-              - "/models/ShellType.ts"
+
+          # Codex CLI provider with settings
           - condition: "TAGSET:vscode-extension:send-to-ai AND TAGSET:ai-providers:codex-cli"
             allow:
               - "/models/CodexReasoningEffort.ts"
-              - "/models/ShellType.ts"
+
         children:
           services:
             mode: block
@@ -137,7 +183,7 @@ src:
                         allow: ["/cursor/"]
                       - condition: "TAGSET:ai-providers:claude-code-cli"
                         allow: ["/claude-cli/"]
-                      - condition: "TAGSET:ai-providers:claude-code-cli"
+                      - condition: "TAGSET:ai-providers:codex-cli"
                         allow: ["/codex-cli/"]
 
 review:
