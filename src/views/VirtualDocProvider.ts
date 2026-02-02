@@ -7,10 +7,15 @@ import * as os from "os";
 import * as path from "path";
 import * as fs from "fs";
 
-export class VirtualDocProvider implements vscode.TextDocumentContentProvider {
+export class VirtualDocProvider implements vscode.TextDocumentContentProvider, vscode.Disposable {
   private cache = new Map<string, string>();
   private emitter = new vscode.EventEmitter<vscode.Uri>();
   readonly onDidChange = this.emitter.event;
+
+  dispose(): void {
+    this.emitter.dispose();
+    this.cache.clear();
+  }
 
   provideTextDocumentContent(uri: vscode.Uri): string {
     return this.cache.get(uri.toString()) ?? "Empty";

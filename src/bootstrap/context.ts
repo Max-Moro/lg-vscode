@@ -28,3 +28,10 @@ export function getContext(): vscode.ExtensionContext {
   return _context;
 }
 
+/**
+ * Clear extension context. Called during shutdown.
+ */
+export function clearContext(): void {
+  _context = undefined;
+}
+

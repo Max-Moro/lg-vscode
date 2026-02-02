@@ -4,7 +4,7 @@
  * All initialization delegated to bootstrap().
  */
 import * as vscode from "vscode";
-import { bootstrap, getDispatcher } from "./bootstrap";
+import { bootstrap, getDispatcher, shutdown } from "./bootstrap";
 import { setVirtualProvider } from "./views/virtualBus";
 import { ControlPanelView } from "./views/ControlPanelView";
 import { locateCliOrOfferInstall } from "./cli/CliResolver";
@@ -60,4 +60,6 @@ export function activate(context: vscode.ExtensionContext) {
   });
 }
 
-export function deactivate() {}
+export function deactivate() {
+  shutdown();
+}

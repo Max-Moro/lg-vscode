@@ -5,7 +5,7 @@
  * After that, use getXXX() functions to access singletons.
  */
 import * as vscode from "vscode";
-import { setContext, getContext } from "./context";
+import { setContext, getContext, clearContext } from "./context";
 import { initLogging, logDebug, logInfo } from "../logging/log";
 import { PCEStateStore } from "../state/store";
 import { StateCoordinator } from "../state/coordinator";
@@ -161,6 +161,46 @@ export function getIncludedTree(): IncludedTree {
   assertBootstrapped("IncludedTree");
   // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
   return _includedTree!;
+}
+
+/**
+ * Shutdown all singletons and release resources.
+ * Must be called in extension.ts deactivate().
+ *
+ * Safe to call multiple times or when not bootstrapped.
+ */
+export function shutdown(): void {
+  if (!_bootstrapped) {
+    return;
+  }
+
+  logInfo("Shutdown started");
+
+  // Dispose watchers (file system, theme subscriptions)
+  _watchers?.dispose();
+
+  // Dispose view components
+  _vdocs?.dispose();
+  // Note: _includedTree is a TreeDataProvider, VS Code manages its lifecycle
+
+  // Reset all singletons
+  _store = undefined;
+  _coordinator = undefined;
+  _dispatcher = undefined;
+  _watchers = undefined;
+  _aiService = undefined;
+  _gitService = undefined;
+  _listingService = undefined;
+  _contextService = undefined;
+  _vdocs = undefined;
+  _includedTree = undefined;
+
+  // Clear extension context
+  clearContext();
+
+  _bootstrapped = false;
+
+  logDebug("Shutdown completed");
 }
 
 // Re-export context utilities
