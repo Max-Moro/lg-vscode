@@ -49,9 +49,10 @@ export function buildViewModel(state: PCEState): ViewModel {
   }));
 
   // Build contexts options
+  // Strip non-informative "/_" suffix from display labels (CLI uses full path)
   const contexts: SelectOption[] = c.contexts.map(name => ({
     value: name,
-    label: name
+    label: name.endsWith("/_") ? name.slice(0, -2) : name
   }));
 
   // Build sections options
