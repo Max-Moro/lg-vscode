@@ -1,14 +1,8 @@
 /**
  * Provider Domain - provider selection and common CLI settings
- *
- * Commands:
- * - provider/SELECT - select AI provider
- * - provider/DETECTED - providers detected at startup
- * - provider/SET_CLI_SCOPE - set CLI scope path
- * - provider/SELECT_CLI_SHELL - select CLI shell type
  */
 
-import type { BusinessRule, DomainModule, BaseCommand, PCEState, ProviderInfo, AsyncOperation } from "../types";
+import { command, rule, type PCEState, type ProviderInfo, type BaseCommand } from "../types";
 import type { ShellType } from "../../models/ShellType";
 import { cliListContexts, cliListModeSets } from "../../cli/CliClient";
 
@@ -16,43 +10,20 @@ import { cliListContexts, cliListModeSets } from "../../cli/CliClient";
 // Commands
 // ============================================
 
-export interface SelectProviderCmd extends BaseCommand {
-  type: "provider/SELECT";
-  providerId: string;
-}
-
-export interface ProvidersDetectedCmd extends BaseCommand {
-  type: "provider/DETECTED";
-  providers: ProviderInfo[];
-}
-
-export interface SetCliScopeCmd extends BaseCommand {
-  type: "provider/SET_CLI_SCOPE";
-  scope: string;
-}
-
-export interface SelectCliShellCmd extends BaseCommand {
-  type: "provider/SELECT_CLI_SHELL";
-  shell: ShellType;
-}
-
-export type ProviderCommand =
-  | SelectProviderCmd
-  | ProvidersDetectedCmd
-  | SetCliScopeCmd
-  | SelectCliShellCmd;
+export const SelectProvider = command("provider/SELECT").payload<{ providerId: string }>();
+export const ProvidersDetected = command("provider/DETECTED").payload<{ providers: ProviderInfo[] }>();
+export const SetCliScope = command("provider/SET_CLI_SCOPE").payload<{ scope: string }>();
+export const SelectCliShell = command("provider/SELECT_CLI_SHELL").payload<{ shell: ShellType }>();
 
 // ============================================
 // Rules
 // ============================================
 
-const providersDetected: BusinessRule = {
-  id: "provider/detected",
-  description: "When providers detected, store in environment and select best available",
-  trigger: "provider/DETECTED",
+/** When providers detected, store in environment and select best available */
+rule(ProvidersDetected, {
   condition: () => true,
-  apply: (state: PCEState, cmd: BaseCommand) => {
-    const { providers } = cmd as ProvidersDetectedCmd;
+  apply: (state: PCEState, cmd) => {
+    const { providers } = cmd;
     const savedProvider = state.persistent.providerId;
 
     const savedExists = providers.some((p: ProviderInfo) => p.id === savedProvider);
@@ -62,27 +33,25 @@ const providersDetected: BusinessRule = {
 
     return {
       envMutations: { providers },
-      followUp: [{ type: "provider/SELECT", providerId: effectiveProvider }]
+      followUp: [SelectProvider.create({ providerId: effectiveProvider })]
     };
   }
-};
+});
 
-const providerSelect: BusinessRule = {
-  id: "provider/select",
-  description: "When provider changes, reload contexts and mode-sets",
-  trigger: "provider/SELECT",
-  condition: (state: PCEState, cmd: BaseCommand) =>
-    (cmd as SelectProviderCmd).providerId !== state.persistent.providerId,
-  apply: (state: PCEState, cmd: BaseCommand) => {
-    const { providerId } = cmd as SelectProviderCmd;
+/** When provider changes, reload contexts and mode-sets */
+rule(SelectProvider, {
+  condition: (state: PCEState, cmd) =>
+    cmd.providerId !== state.persistent.providerId,
+  apply: (state: PCEState, cmd) => {
+    const { providerId } = cmd;
     const template = state.persistent.template;
 
-    const asyncOps: AsyncOperation[] = [
+    const asyncOps: Array<{ id: string; execute: () => Promise<BaseCommand> }> = [
       {
         id: "load-contexts",
         execute: async () => {
           const contexts = await cliListContexts(providerId);
-          return { type: "context/LOADED", contexts };
+          return { type: "context/LOADED", contexts } as BaseCommand;
         }
       }
     ];
@@ -94,7 +63,7 @@ const providerSelect: BusinessRule = {
         id: "load-mode-sets",
         execute: async () => {
           const modeSets = await cliListModeSets(template, providerId);
-          return { type: "adaptive/MODE_SETS_LOADED", modeSets };
+          return { type: "adaptive/MODE_SETS_LOADED", modeSets } as BaseCommand;
         }
       });
     }
@@ -104,33 +73,20 @@ const providerSelect: BusinessRule = {
       asyncOps
     };
   }
-};
+});
 
-const cliScopeSet: BusinessRule = {
-  id: "provider/set-cli-scope",
-  description: "When CLI scope is set, update persistent state",
-  trigger: "provider/SET_CLI_SCOPE",
+/** When CLI scope is set, update persistent state */
+rule(SetCliScope, {
   condition: () => true,
-  apply: (_state: PCEState, cmd: BaseCommand) => ({
-    mutations: { cliScope: (cmd as SetCliScopeCmd).scope }
+  apply: (_state: PCEState, cmd) => ({
+    mutations: { cliScope: cmd.scope }
   })
-};
+});
 
-const cliShellSelect: BusinessRule = {
-  id: "provider/select-cli-shell",
-  description: "When CLI shell is selected, update persistent state",
-  trigger: "provider/SELECT_CLI_SHELL",
+/** When CLI shell is selected, update persistent state */
+rule(SelectCliShell, {
   condition: () => true,
-  apply: (_state: PCEState, cmd: BaseCommand) => ({
-    mutations: { cliShell: (cmd as SelectCliShellCmd).shell }
+  apply: (_state: PCEState, cmd) => ({
+    mutations: { cliShell: cmd.shell }
   })
-};
-
-// ============================================
-// Domain Module Export
-// ============================================
-
-export const providerDomain: DomainModule = {
-  id: "provider",
-  rules: [providersDetected, providerSelect, cliScopeSet, cliShellSelect]
-};
+});

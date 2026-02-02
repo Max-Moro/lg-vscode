@@ -7,6 +7,7 @@ import * as path from "path";
 import type { StateCoordinator } from "../coordinator";
 import { effectiveWorkspaceRoot } from "../../cli/CliResolver";
 import { logDebug } from "../../logging/log";
+import { Refresh } from "../domains/lifecycle";
 
 /**
  * Watches lg-cfg/ directory and dispatches REFRESH on changes
@@ -41,7 +42,7 @@ export class FileWatcher implements vscode.Disposable {
       }
       this.refreshTimer = setTimeout(() => {
         logDebug("[FileWatcher] lg-cfg/ changed, dispatching REFRESH");
-        void this.coordinator.dispatch({ type: "lifecycle/REFRESH" });
+        void this.coordinator.dispatch(Refresh.create());
         this.refreshTimer = undefined;
       }, this.debounceMs);
     };

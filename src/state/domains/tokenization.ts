@@ -1,96 +1,62 @@
 /**
  * Tokenization Domain - tokenizer settings
- *
- * Commands:
- * - tokenization/SELECT_LIB - select tokenizer library
- * - tokenization/SET_ENCODER - set encoder name
- * - tokenization/SET_CTX_LIMIT - set context limit
- * - tokenization/LIBS_LOADED - tokenizer libraries loaded
- * - tokenization/ENCODERS_LOADED - encoders loaded
  */
 
-import type { BusinessRule, DomainModule, BaseCommand, PCEState } from "../types";
+import { command, rule, type PCEState } from "../types";
 import { cliListEncoders, type EncoderEntry } from "../../cli/CliClient";
 
 // ============================================
 // Commands
 // ============================================
 
-export interface SelectLibCmd extends BaseCommand {
-  type: "tokenization/SELECT_LIB";
-  lib: string;
-}
-
-export interface SetEncoderCmd extends BaseCommand {
-  type: "tokenization/SET_ENCODER";
-  encoder: string;
-}
-
-export interface SetCtxLimitCmd extends BaseCommand {
-  type: "tokenization/SET_CTX_LIMIT";
-  limit: number;
-}
-
-export interface LibsLoadedCmd extends BaseCommand {
-  type: "tokenization/LIBS_LOADED";
-  libs: string[];
-}
-
-export interface EncodersLoadedCmd extends BaseCommand {
-  type: "tokenization/ENCODERS_LOADED";
-  encoders: EncoderEntry[];
-}
-
-export type TokenizationCommand =
-  | SelectLibCmd
-  | SetEncoderCmd
-  | SetCtxLimitCmd
-  | LibsLoadedCmd
-  | EncodersLoadedCmd;
+export const SelectLib = command("tokenization/SELECT_LIB").payload<{ lib: string }>();
+export const SetEncoder = command("tokenization/SET_ENCODER").payload<{ encoder: string }>();
+export const SetCtxLimit = command("tokenization/SET_CTX_LIMIT").payload<{ limit: number }>();
+export const LibsLoaded = command("tokenization/LIBS_LOADED").payload<{ libs: string[] }>();
+export const EncodersLoaded = command("tokenization/ENCODERS_LOADED").payload<{ encoders: EncoderEntry[] }>();
 
 // ============================================
 // Rules
 // ============================================
 
-const libsLoaded: BusinessRule = {
-  id: "tokenization/libs-loaded",
-  description: "When tokenizer libs are loaded, store them and validate selection",
-  trigger: "tokenization/LIBS_LOADED",
+/** When tokenizer libs are loaded, store them and validate selection */
+rule(LibsLoaded, {
   condition: () => true,
-  apply: (state: PCEState, cmd: BaseCommand) => {
-    const { libs } = cmd as LibsLoadedCmd;
+  apply: (state: PCEState, cmd) => {
+    const { libs } = cmd;
     const currentLib = state.persistent.tokenizerLib;
 
     const isValid = currentLib && libs.includes(currentLib);
     const newLib = isValid ? currentLib : (libs[0] || "tiktoken");
 
-    const result: ReturnType<BusinessRule["apply"]> = {
+    const result = {
       configMutations: { tokenizerLibs: libs }
     };
 
     if (!isValid || state.configuration.encoders.length === 0) {
-      result.mutations = { tokenizerLib: newLib };
-      result.asyncOps = [{
-        id: "load-encoders-initial",
-        execute: async () => {
-          const encoders = await cliListEncoders(newLib);
-          return { type: "tokenization/ENCODERS_LOADED", encoders };
-        }
-      }];
+      return {
+        ...result,
+        mutations: { tokenizerLib: newLib },
+        asyncOps: [{
+          id: "load-encoders-initial",
+          execute: async () => {
+            const encoders = await cliListEncoders(newLib);
+            return { type: "tokenization/ENCODERS_LOADED", encoders };
+          }
+        }]
+      };
     }
 
     return result;
   }
-};
+});
 
-const libSelect: BusinessRule = {
-  id: "tokenization/select-lib",
-  description: "When tokenizer lib changes, reload encoders list",
-  trigger: "tokenization/SELECT_LIB",
-  condition: (state: PCEState, cmd: BaseCommand) =>
-    (cmd as SelectLibCmd).lib !== state.persistent.tokenizerLib,
-  apply: (_state: PCEState, cmd: BaseCommand) => {
-    const { lib } = cmd as SelectLibCmd;
+/** When tokenizer lib changes, reload encoders list */
+rule(SelectLib, {
+  condition: (state: PCEState, cmd) =>
+    cmd.lib !== state.persistent.tokenizerLib,
+  apply: (_state: PCEState, cmd) => {
+    const { lib } = cmd;
     return {
       mutations: { tokenizerLib: lib },
       asyncOps: [{
@@ -102,35 +68,29 @@ const libSelect: BusinessRule = {
       }]
     };
   }
-};
+});
 
-const encodersLoaded: BusinessRule = {
-  id: "tokenization/encoders-loaded",
-  description: "When encoders are loaded, store them",
-  trigger: "tokenization/ENCODERS_LOADED",
+/** When encoders are loaded, store them */
+rule(EncodersLoaded, {
   condition: () => true,
-  apply: (_state: PCEState, cmd: BaseCommand) => ({
-    configMutations: { encoders: (cmd as EncodersLoadedCmd).encoders }
+  apply: (_state: PCEState, cmd) => ({
+    configMutations: { encoders: cmd.encoders }
   })
-};
+});
 
-const encoderSet: BusinessRule = {
-  id: "tokenization/set-encoder",
-  description: "When encoder is set, update persistent state",
-  trigger: "tokenization/SET_ENCODER",
+/** When encoder is set, update persistent state */
+rule(SetEncoder, {
   condition: () => true,
-  apply: (_state: PCEState, cmd: BaseCommand) => ({
-    mutations: { encoder: (cmd as SetEncoderCmd).encoder }
+  apply: (_state: PCEState, cmd) => ({
+    mutations: { encoder: cmd.encoder }
   })
-};
+});
 
-const ctxLimitSet: BusinessRule = {
-  id: "tokenization/set-ctx-limit",
-  description: "When context limit is set, update persistent state",
-  trigger: "tokenization/SET_CTX_LIMIT",
+/** When context limit is set, update persistent state */
+rule(SetCtxLimit, {
   condition: () => true,
-  apply: (_state: PCEState, cmd: BaseCommand) => {
-    let limit = (cmd as SetCtxLimitCmd).limit;
+  apply: (_state: PCEState, cmd) => {
+    let limit = cmd.limit;
     if (isNaN(limit) || limit < 1000) {
       limit = 1000;
     } else if (limit > 2000000) {
@@ -138,13 +98,4 @@ const ctxLimitSet: BusinessRule = {
     }
     return { mutations: { ctxLimit: limit } };
   }
-};
-
-// ============================================
-// Domain Module Export
-// ============================================
-
-export const tokenizationDomain: DomainModule = {
-  id: "tokenization",
-  rules: [libsLoaded, libSelect, encodersLoaded, encoderSet, ctxLimitSet]
-};
+});

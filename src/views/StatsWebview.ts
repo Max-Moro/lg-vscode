@@ -5,6 +5,7 @@ import * as vscode from "vscode";
 import type {RunResult} from "../models/report";
 import {buildHtml, getExtensionUri, lgUiUri, mediaUri} from "../webview/webviewKit";
 import {getStore, getCoordinator, getDispatcher} from "../bootstrap";
+import { SetTask } from "../state/domains/context";
 
 export async function showStatsWebview(
   data: RunResult,
@@ -70,7 +71,7 @@ export async function showStatsWebview(
         case "updateTaskText":
           if (current.scope === "context") {
             // Use coordinator to dispatch command (not direct store update!)
-            await coordinator.dispatch({ type: "context/SET_TASK", text: msg.taskText || "" });
+            await coordinator.dispatch(SetTask.create({ text: msg.taskText || "" }));
           }
           break;
 

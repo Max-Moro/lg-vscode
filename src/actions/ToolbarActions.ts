@@ -8,6 +8,7 @@ import { resetCache, runDoctor } from "../services/DoctorService";
 import { openConfigOrInit, runInitWizard } from "../starter/StarterConfig";
 import { EXT_ID } from "../constants";
 import { logError } from "../logging/log";
+import { Refresh, Initialize } from "../state/domains/lifecycle";
 
 /**
  * Refresh catalogs
@@ -18,7 +19,7 @@ export async function refreshCatalogs(): Promise<void> {
   await vscode.window.withProgress(
     { location: vscode.ProgressLocation.Notification, title: "LG: Refreshing catalogs…", cancellable: false },
     async () => {
-      await coordinator.dispatch({ type: "lifecycle/REFRESH" });
+      await coordinator.dispatch(Refresh.create());
       await coordinator.waitForStability();
     }
   );
@@ -116,7 +117,7 @@ export async function clearState(): Promise<void> {
     { location: vscode.ProgressLocation.Notification, title: "LG: Resetting to defaults…", cancellable: false },
     async () => {
       await store.clearAll();
-      await coordinator.dispatch({ type: "lifecycle/INITIALIZE" });
+      await coordinator.dispatch(Initialize.create());
       await coordinator.waitForStability();
     }
   );

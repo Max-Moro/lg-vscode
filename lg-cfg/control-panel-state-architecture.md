@@ -126,38 +126,36 @@ await coordinator.dispatch({ type: "provider/SELECT", providerId: "..." });
 ### 2.3. Domain Modules (`src/state/domains/`)
 
 Каждый домен — самодостаточный модуль, содержащий:
-- Типы команд домена
-- Бизнес-правила для этих команд
-- Экспорт `DomainModule`
+- Команды домена (через фабрику `command()`)
+- Бизнес-правила (через фабрику `rule()` с авто-регистрацией)
 
 **Структура доменного модуля:**
 ```typescript
 // src/state/domains/context.ts
+import { command, rule, type PCEState } from "../types";
 
-// Команды домена
-export interface SelectContextCmd extends BaseCommand {
-  type: "context/SELECT";
-  template: string;
-}
+// Команды — строка типа указывается ОДИН раз
+export const SelectContext = command("context/SELECT").payload<{ template: string }>();
+export const SetTask = command("context/SET_TASK").payload<{ text: string }>();
+export const ContextsLoaded = command("context/LOADED").payload<{ contexts: string[] }>();
 
-// Правила
-const contextSelect: BusinessRule = {
-  id: "context/select",
-  description: "When context is selected, reload mode-sets and tag-sets",
-  trigger: "context/SELECT",
-  condition: (_state, cmd) => !!cmd.template,
+// Правила — авто-регистрация при импорте модуля
+/** When context changes, reload mode-sets and tag-sets */
+rule(SelectContext, {
+  condition: (state, cmd) => cmd.template !== state.persistent.template,
   apply: (state, cmd) => ({
     mutations: { template: cmd.template },
     asyncOps: [...]
   })
-};
-
-// Экспорт модуля
-export const contextDomain: DomainModule = {
-  id: "context",
-  rules: [contextSelect, ...]
-};
+});
 ```
+
+**Ключевые особенности:**
+- `command("type").payload<T>()` — определяет команду, строка типа указывается один раз
+- `command("type").noPayload()` — для команд без payload
+- `rule(cmd, config)` — определяет правило и автоматически регистрирует его
+- `cmd.create(payload)` — создаёт типизированный экземпляр команды для followUp/asyncOps
+- Типизация в `condition`/`apply` выводится автоматически, без ручных кастов
 
 **Доступные домены:**
 
@@ -171,15 +169,16 @@ export const contextDomain: DomainModule = {
 | lifecycle | `lifecycle.ts` | `lifecycle/INITIALIZE`, `lifecycle/REFRESH` |
 
 **Регистрация доменов** (`src/state/domains/index.ts`):
-```typescript
-export function getAllRules(): BusinessRule[] {
-  const builtinRules = BUILTIN_DOMAINS.flatMap(d => d.rules);
-  return [...builtinRules, ...additionalRules];
-}
 
-export function registerRules(rules: BusinessRule[]): void {
-  additionalRules.push(...rules);
-}
+Правила регистрируются автоматически при импорте доменных модулей:
+```typescript
+// Импорты для side-effect регистрации правил
+import "./context";
+import "./section";
+import "./adaptive";
+// ...
+
+export { getAllRules } from "../types";
 ```
 
 ### 2.4. Provider Settings Modules
@@ -189,18 +188,25 @@ export function registerRules(rules: BusinessRule[]): void {
 **Структура модуля настроек:**
 ```typescript
 // src/services/ai/providers/claude-cli/settings.ts
+import { command, rule, type PCEState } from "../../../../state/types";
 
+// Команды провайдера
+export const SelectClaudeModel = command("provider.claude-cli/SELECT_MODEL").payload<{ model: ClaudeModel }>();
+
+// Правила (авто-регистрация)
+rule(SelectClaudeModel, {
+  condition: () => true,
+  apply: (state, cmd) => ({
+    mutations: { providerSettings: updateClaudeSettings(state, { model: cmd.model }) }
+  })
+});
+
+// Экспорт модуля
 export const claudeCliSettings: ProviderSettingsModule = {
   providerId: "com.anthropic.claude.cli",
 
-  // Правила для команд этого провайдера
-  rules: [selectModel, selectMethod],
-
   // Дефолты для providerSettings
-  stateDefaults: {
-    model: "sonnet",
-    method: "continue"
-  },
+  stateDefaults: { model: "sonnet", method: "continue" },
 
   // UI-вклад (динамические поля)
   buildContribution: (state) => ({
@@ -423,13 +429,13 @@ provider/DETECTED → provider/SELECT
 
 1. `bootstrap(context)` в `extension.ts`:
    - Создание синглтонов (store, coordinator, services)
-   - Регистрация правил от доменов: `coordinator.setRules(getAllRules())`
-   - Регистрация правил от провайдеров: `registerRules(settings.rules)`
+   - Импорт доменных модулей (side-effect регистрация правил)
+   - `coordinator.setRules(getAllRules())`
 
 2. `resolveWebviewView()`:
    - Подписка на store → ViewModel → render
    - `watcherManager.startAll()`
-   - `coordinator.dispatch({ type: "lifecycle/INITIALIZE" })`
+   - `coordinator.dispatch(Initialize.create())`
 
 3. Каскад async-операций загружает все данные
 
@@ -440,43 +446,58 @@ provider/DETECTED → provider/SELECT
 ### Добавление нового домена
 
 1. Создать файл `src/state/domains/<domain>.ts`
-2. Определить команды с namespace `<domain>/ACTION`
-3. Реализовать правила
-4. Экспортировать `DomainModule`
-5. Добавить в `BUILTIN_DOMAINS` в `src/state/domains/index.ts`
+2. Определить команды через `command()`
+3. Определить правила через `rule()` (авто-регистрация)
+4. Добавить импорт в `src/state/domains/index.ts`
 
 ```typescript
 // src/state/domains/newdomain.ts
-export interface MyCmd extends BaseCommand {
-  type: "newdomain/MY_ACTION";
-  payload: string;
-}
+import { command, rule, type PCEState } from "../types";
 
-const myRule: BusinessRule = {
-  id: "newdomain/my-action",
-  trigger: "newdomain/MY_ACTION",
+// Команды
+export const MyAction = command("newdomain/MY_ACTION").payload<{ value: string }>();
+
+// Правила
+/** Handle my action */
+rule(MyAction, {
   condition: () => true,
-  apply: (state, cmd) => ({ mutations: { ... } })
-};
+  apply: (state, cmd) => ({
+    mutations: { myField: cmd.value }
+  })
+});
+```
 
-export const newDomain: DomainModule = {
-  id: "newdomain",
-  rules: [myRule]
-};
+```typescript
+// src/state/domains/index.ts
+import "./newdomain";  // добавить импорт для регистрации
 ```
 
 ### Добавление нового AI-провайдера с настройками
 
 1. Создать `src/services/ai/providers/<provider>/settings.ts`
-2. Реализовать `ProviderSettingsModule`
-3. Зарегистрировать в `src/services/ai/index.ts`
+2. Определить команды и правила через `command()` и `rule()`
+3. Реализовать `ProviderSettingsModule`
+4. Зарегистрировать в `src/services/ai/index.ts`
 
 ```typescript
 // src/services/ai/providers/myprovider/settings.ts
+import { command, rule, type PCEState } from "../../../../state/types";
+
+// Команды
+export const SetOption = command("provider.myprovider/SET_OPTION").payload<{ value: string }>();
+
+// Правила (авто-регистрация)
+rule(SetOption, {
+  condition: () => true,
+  apply: (state, cmd) => ({
+    mutations: { providerSettings: { ...state.persistent.providerSettings, myprovider: { option: cmd.value } } }
+  })
+});
+
+// Экспорт модуля
 export const myProviderSettings: ProviderSettingsModule = {
   providerId: "com.example.myprovider",
-  rules: [...],
-  stateDefaults: { option1: "default" },
+  stateDefaults: { option: "default" },
   buildContribution: (state) => ({
     providerId: "com.example.myprovider",
     title: "My Provider Settings",
@@ -493,7 +514,9 @@ export const myProviderSettings: ProviderSettingsModule = {
     ]
   })
 };
+```
 
+```typescript
 // src/services/ai/index.ts
 import { myProviderSettings } from "./providers/myprovider/settings";
 ALL_SETTINGS_MODULES.push(myProviderSettings);

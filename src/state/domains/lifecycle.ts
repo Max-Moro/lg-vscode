@@ -15,7 +15,7 @@
  * - tag-sets — if template exists
  */
 
-import type { BusinessRule, DomainModule, BaseCommand, PCEState, ProviderInfo, AsyncOperation } from "../types";
+import { command, rule, type PCEState, type ProviderInfo, type AsyncOperation } from "../types";
 import { cliListSections, cliListTokenizerLibs, cliListContexts, cliListModeSets, cliListTagSets } from "../../cli/CliClient";
 
 // ============================================
@@ -37,15 +37,8 @@ export function setLifecycleDependencies(deps: {
 // Commands
 // ============================================
 
-export interface InitializeCmd extends BaseCommand {
-  type: "lifecycle/INITIALIZE";
-}
-
-export interface RefreshCmd extends BaseCommand {
-  type: "lifecycle/REFRESH";
-}
-
-export type LifecycleCommand = InitializeCmd | RefreshCmd;
+export const Initialize = command("lifecycle/INITIALIZE").noPayload();
+export const Refresh = command("lifecycle/REFRESH").noPayload();
 
 // ============================================
 // Shared Catalog Loading
@@ -137,10 +130,8 @@ function buildCatalogOps(state: PCEState, includeProviderDetection: boolean): As
 // Rules
 // ============================================
 
-const initialize: BusinessRule = {
-  id: "lifecycle/initialize",
-  description: "On initialize, detect providers and load all available catalogs",
-  trigger: "lifecycle/INITIALIZE",
+/** On initialize, detect providers and load all available catalogs */
+rule(Initialize, {
   condition: () => {
     if (!detectProviders || !getBranchNames) {
       throw new Error("Lifecycle dependencies not set - call setLifecycleDependencies() before INITIALIZE");
@@ -150,23 +141,12 @@ const initialize: BusinessRule = {
   apply: (state: PCEState) => ({
     asyncOps: buildCatalogOps(state, true)
   })
-};
+});
 
-const refresh: BusinessRule = {
-  id: "lifecycle/refresh",
-  description: "On refresh, reload all available catalogs (no provider detection)",
-  trigger: "lifecycle/REFRESH",
+/** On refresh, reload all available catalogs (no provider detection) */
+rule(Refresh, {
   condition: () => true,
   apply: (state: PCEState) => ({
     asyncOps: buildCatalogOps(state, false)
   })
-};
-
-// ============================================
-// Domain Module Export
-// ============================================
-
-export const lifecycleDomain: DomainModule = {
-  id: "lifecycle",
-  rules: [initialize, refresh]
-};
+});

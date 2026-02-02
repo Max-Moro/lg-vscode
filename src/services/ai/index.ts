@@ -13,7 +13,6 @@ import { codexCliSettings } from "./providers/codex-cli/settings";
 
 import { AiIntegrationService } from "./AiIntegrationService";
 import type { ProviderModule, ProviderSettingsModule } from "./types";
-import { registerRules } from "../../state/domains";
 
 // List of all providers
 const ALL_PROVIDERS: ProviderModule[] = [
@@ -44,8 +43,6 @@ export function createAiIntegrationService(): AiIntegrationService {
   // Register settings modules
   for (const settings of ALL_SETTINGS_MODULES) {
     service.registerSettingsModule(settings);
-    // Register rules from settings module
-    registerRules(settings.rules);
   }
 
   return service;

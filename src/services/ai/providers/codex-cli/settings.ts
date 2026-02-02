@@ -2,7 +2,7 @@
  * Codex CLI Provider Settings Module
  */
 
-import type { BusinessRule, BaseCommand, PCEState } from "../../../../state/types";
+import { command, rule, type PCEState } from "../../../../state/types";
 import type { ProviderSettingsModule } from "../../types";
 import type { ProviderSettingsContribution } from "../../../../viewmodel/types";
 import { getAvailableCodexReasoningEfforts, getDefaultCodexReasoningEffort, type CodexReasoningEffort } from "../../../../models/CodexReasoningEffort";
@@ -11,12 +11,7 @@ import { getAvailableCodexReasoningEfforts, getDefaultCodexReasoningEffort, type
 // Commands
 // ============================================
 
-export interface SelectCodexReasoningCmd extends BaseCommand {
-  type: "provider.codex-cli/SELECT_REASONING";
-  effort: CodexReasoningEffort;
-}
-
-export type CodexCliCommand = SelectCodexReasoningCmd;
+export const SelectCodexReasoning = command("provider.codex-cli/SELECT_REASONING").payload<{ effort: CodexReasoningEffort }>();
 
 // ============================================
 // State Helpers
@@ -46,19 +41,17 @@ function updateCodexSettings(
 // Rules
 // ============================================
 
-const selectReasoning: BusinessRule = {
-  id: "provider.codex-cli/select-reasoning",
-  description: "When Codex reasoning effort is selected, update provider settings",
-  trigger: "provider.codex-cli/SELECT_REASONING",
+/** When Codex reasoning effort is selected, update provider settings */
+rule(SelectCodexReasoning, {
   condition: () => true,
-  apply: (state: PCEState, cmd: BaseCommand) => ({
+  apply: (state: PCEState, cmd) => ({
     mutations: {
       providerSettings: updateCodexSettings(state, {
-        reasoning: (cmd as SelectCodexReasoningCmd).effort
+        reasoning: cmd.effort
       })
     }
   })
-};
+});
 
 // ============================================
 // Settings Module Export
@@ -66,8 +59,6 @@ const selectReasoning: BusinessRule = {
 
 export const codexCliSettings: ProviderSettingsModule = {
   providerId: "com.openai.codex.cli",
-
-  rules: [selectReasoning],
 
   stateDefaults: {
     reasoning: getDefaultCodexReasoningEffort()

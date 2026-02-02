@@ -2,7 +2,7 @@
  * Claude CLI Provider Settings Module
  */
 
-import type { BusinessRule, BaseCommand, PCEState } from "../../../../state/types";
+import { command, rule, type PCEState } from "../../../../state/types";
 import type { ProviderSettingsModule } from "../../types";
 import type { ProviderSettingsContribution } from "../../../../viewmodel/types";
 import { getAvailableClaudeModels, getDefaultClaudeModel, type ClaudeModel } from "../../../../models/ClaudeModel";
@@ -12,17 +12,8 @@ import { getAvailableClaudeMethods, getDefaultClaudeMethod, type ClaudeIntegrati
 // Commands
 // ============================================
 
-export interface SelectClaudeModelCmd extends BaseCommand {
-  type: "provider.claude-cli/SELECT_MODEL";
-  model: ClaudeModel;
-}
-
-export interface SelectClaudeMethodCmd extends BaseCommand {
-  type: "provider.claude-cli/SELECT_METHOD";
-  method: ClaudeIntegrationMethod;
-}
-
-export type ClaudeCliCommand = SelectClaudeModelCmd | SelectClaudeMethodCmd;
+export const SelectClaudeModel = command("provider.claude-cli/SELECT_MODEL").payload<{ model: ClaudeModel }>();
+export const SelectClaudeMethod = command("provider.claude-cli/SELECT_METHOD").payload<{ method: ClaudeIntegrationMethod }>();
 
 // ============================================
 // State Helpers
@@ -53,33 +44,29 @@ function updateClaudeSettings(
 // Rules
 // ============================================
 
-const selectModel: BusinessRule = {
-  id: "provider.claude-cli/select-model",
-  description: "When Claude model is selected, update provider settings",
-  trigger: "provider.claude-cli/SELECT_MODEL",
+/** When Claude model is selected, update provider settings */
+rule(SelectClaudeModel, {
   condition: () => true,
-  apply: (state: PCEState, cmd: BaseCommand) => ({
+  apply: (state: PCEState, cmd) => ({
     mutations: {
       providerSettings: updateClaudeSettings(state, {
-        model: (cmd as SelectClaudeModelCmd).model
+        model: cmd.model
       })
     }
   })
-};
+});
 
-const selectMethod: BusinessRule = {
-  id: "provider.claude-cli/select-method",
-  description: "When Claude integration method is selected, update provider settings",
-  trigger: "provider.claude-cli/SELECT_METHOD",
+/** When Claude integration method is selected, update provider settings */
+rule(SelectClaudeMethod, {
   condition: () => true,
-  apply: (state: PCEState, cmd: BaseCommand) => ({
+  apply: (state: PCEState, cmd) => ({
     mutations: {
       providerSettings: updateClaudeSettings(state, {
-        method: (cmd as SelectClaudeMethodCmd).method
+        method: cmd.method
       })
     }
   })
-};
+});
 
 // ============================================
 // Settings Module Export
@@ -87,8 +74,6 @@ const selectMethod: BusinessRule = {
 
 export const claudeCliSettings: ProviderSettingsModule = {
   providerId: "com.anthropic.claude.cli",
-
-  rules: [selectModel, selectMethod],
 
   stateDefaults: {
     model: getDefaultClaudeModel(),

@@ -113,6 +113,104 @@ export interface UIMeta {
 }
 
 // ============================================
+// Command/Rule System
+// ============================================
+
+/**
+ * Command definition created by command() factory
+ */
+export interface CommandDef<TType extends string, TPayload> {
+  readonly type: TType;
+  create(payload: TPayload): { type: TType } & TPayload;
+}
+
+/**
+ * Command definition without payload
+ */
+export interface CommandDefNoPayload<TType extends string> {
+  readonly type: TType;
+  create(): { type: TType };
+}
+
+/**
+ * Extract command type from definition
+ */
+export type CommandOf<TDef> =
+  TDef extends CommandDef<infer T, infer P> ? { type: T } & P :
+  TDef extends CommandDefNoPayload<infer T> ? { type: T } :
+  never;
+
+/**
+ * Any command definition
+ */
+export type AnyCommandDef = CommandDef<string, unknown> | CommandDefNoPayload<string>;
+
+// ============================================
+// Global Registries
+// ============================================
+
+const ruleRegistry: BusinessRule[] = [];
+let ruleCounter = 0;
+
+/**
+ * Define a command with payload.
+ * The type string is specified once here and used everywhere.
+ *
+ * @example
+ * export const SelectContext = command("context/SELECT").payload<{ template: string }>();
+ *
+ * // Create command instance (typed)
+ * SelectContext.create({ template: "my-template" })
+ *
+ * // Extract type if needed
+ * type SelectContextCmd = CommandOf<typeof SelectContext>;
+ */
+export function command<TType extends string>(type: TType) {
+  return {
+    payload: <TPayload>(): CommandDef<TType, TPayload> => ({
+      type,
+      create: (data: TPayload) => ({ type, ...data }) as { type: TType } & TPayload,
+    }),
+    noPayload: (): CommandDefNoPayload<TType> => ({
+      type,
+      create: () => ({ type }) as { type: TType },
+    }),
+  };
+}
+
+/**
+ * Define a rule for a command. Auto-registers in global registry.
+ *
+ * @example
+ * // Rule auto-registers when module is imported
+ * rule(SelectContext, {
+ *   condition: (state, cmd) => cmd.template !== state.persistent.template,
+ *   apply: (state, cmd) => ({ mutations: { template: cmd.template } })
+ * });
+ */
+export function rule<TDef extends AnyCommandDef>(
+  cmd: TDef,
+  config: {
+    condition: (state: PCEState, cmd: CommandOf<TDef>) => boolean;
+    apply: (state: PCEState, cmd: CommandOf<TDef>) => RuleResult;
+  }
+): void {
+  ruleRegistry.push({
+    id: `${cmd.type}#${++ruleCounter}`,
+    trigger: cmd.type,
+    condition: config.condition as (state: PCEState, cmd: BaseCommand) => boolean,
+    apply: config.apply as (state: PCEState, cmd: BaseCommand) => RuleResult,
+  });
+}
+
+/**
+ * Get all registered rules. Call after all domain modules are imported.
+ */
+export function getAllRules(): BusinessRule[] {
+  return ruleRegistry;
+}
+
+// ============================================
 // Business Rules
 // ============================================
 
@@ -131,19 +229,9 @@ export interface AsyncOperation {
 
 export interface BusinessRule {
   id: string;
-  description: string;
   trigger: string;
   condition: (state: PCEState, cmd: BaseCommand) => boolean;
   apply: (state: PCEState, cmd: BaseCommand) => RuleResult;
-}
-
-// ============================================
-// Domain Module Interface
-// ============================================
-
-export interface DomainModule {
-  id: string;
-  rules: BusinessRule[];
 }
 
 // ============================================

@@ -12,6 +12,7 @@ import { getStore, getCoordinator, getDispatcher, getWatchers } from "../bootstr
 import type { BaseCommand, UIMeta } from "../state/types";
 import { buildViewModel } from "../viewmodel/builder";
 import { logDebug, logError } from "../logging/log";
+import { Initialize } from "../state/domains/lifecycle";
 
 export class ControlPanelView implements vscode.WebviewViewProvider {
   private view?: vscode.WebviewView;
@@ -71,7 +72,7 @@ export class ControlPanelView implements vscode.WebviewViewProvider {
 
     // Start watchers and initialize
     watchers.startAll();
-    void coordinator.dispatch({ type: "lifecycle/INITIALIZE" });
+    void coordinator.dispatch(Initialize.create());
 
     // Send current theme
     this.postTheme(watchers.themeWatcher.getCurrentTheme());

@@ -64,14 +64,12 @@ export interface ProviderModule {
 
 /**
  * Provider settings module interface.
- * Allows providers to define their own commands, rules, and UI contributions.
+ * Allows providers to define their own UI contributions.
+ * Rules are registered automatically via rule() calls in the module.
  */
 export interface ProviderSettingsModule {
   /** Provider ID this module belongs to */
   providerId: string;
-
-  /** Business rules for provider-specific commands */
-  rules: import("../../state/types").BusinessRule[];
 
   /** Default values for provider-specific persistent state */
   stateDefaults: Record<string, unknown>;

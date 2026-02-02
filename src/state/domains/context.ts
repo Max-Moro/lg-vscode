@@ -1,78 +1,50 @@
 /**
  * Context Domain - context selection and task text
- *
- * Commands:
- * - context/SELECT - select context template
- * - context/SET_TASK - set task text
- * - context/LOADED - contexts list loaded from CLI
  */
 
-import type { BusinessRule, DomainModule, BaseCommand, PCEState } from "../types";
+import { command, rule, type PCEState } from "../types";
 import { cliListModeSets, cliListTagSets } from "../../cli/CliClient";
 
 // ============================================
 // Commands
 // ============================================
 
-export interface SelectContextCmd extends BaseCommand {
-  type: "context/SELECT";
-  template: string;
-}
-
-export interface SetTaskCmd extends BaseCommand {
-  type: "context/SET_TASK";
-  text: string;
-}
-
-export interface ContextsLoadedCmd extends BaseCommand {
-  type: "context/LOADED";
-  contexts: string[];
-}
-
-export type ContextCommand = SelectContextCmd | SetTaskCmd | ContextsLoadedCmd;
+export const SelectContext = command("context/SELECT").payload<{ template: string }>();
+export const SetTask = command("context/SET_TASK").payload<{ text: string }>();
+export const ContextsLoaded = command("context/LOADED").payload<{ contexts: string[] }>();
 
 // ============================================
 // Rules
 // ============================================
 
-const contextsLoaded: BusinessRule = {
-  id: "context/loaded",
-  description: "When contexts are loaded, validate current template selection",
-  trigger: "context/LOADED",
+/** When contexts are loaded, validate current template selection */
+rule(ContextsLoaded, {
   condition: () => true,
-  apply: (state: PCEState, cmd: BaseCommand) => {
-    const { contexts } = cmd as ContextsLoadedCmd;
+  apply: (state: PCEState, cmd) => {
+    const { contexts } = cmd;
     const currentTemplate = state.persistent.template;
 
     const configMutations = { contexts };
 
-    // If current template is valid, just update config (no cascade needed)
     if (currentTemplate && contexts.includes(currentTemplate)) {
       return { configMutations };
     }
 
-    // Current template invalid - trigger context/SELECT for first available
-    // Note: Do NOT mutate template here - let contextSelect do it,
-    // otherwise followUp condition will fail (template already set)
     const newTemplate = contexts[0] || "";
     return {
       configMutations,
-      followUp: newTemplate ? [{ type: "context/SELECT", template: newTemplate }] : []
+      followUp: newTemplate ? [SelectContext.create({ template: newTemplate })] : []
     };
   }
-};
+});
 
-const contextSelect: BusinessRule = {
-  id: "context/select",
-  description: "When context changes, reload mode-sets and tag-sets",
-  trigger: "context/SELECT",
-  // Only trigger if template actually changed (not same value from UI)
-  condition: (state: PCEState, cmd: BaseCommand) => {
-    const { template } = cmd as SelectContextCmd;
-    return !!template && template !== state.persistent.template;
+/** When context changes, reload mode-sets and tag-sets */
+rule(SelectContext, {
+  condition: (state: PCEState, cmd) => {
+    return !!cmd.template && cmd.template !== state.persistent.template;
   },
-  apply: (state: PCEState, cmd: BaseCommand) => {
-    const { template } = cmd as SelectContextCmd;
+  apply: (state: PCEState, cmd) => {
+    const { template } = cmd;
     return {
       mutations: { template },
       asyncOps: [
@@ -93,23 +65,12 @@ const contextSelect: BusinessRule = {
       ]
     };
   }
-};
+});
 
-const taskTextSet: BusinessRule = {
-  id: "context/set-task",
-  description: "When task text is set, update persistent state",
-  trigger: "context/SET_TASK",
+/** When task text is set, update persistent state */
+rule(SetTask, {
   condition: () => true,
-  apply: (_state: PCEState, cmd: BaseCommand) => ({
-    mutations: { taskText: (cmd as SetTaskCmd).text }
+  apply: (_state: PCEState, cmd) => ({
+    mutations: { taskText: cmd.text }
   })
-};
-
-// ============================================
-// Domain Module Export
-// ============================================
-
-export const contextDomain: DomainModule = {
-  id: "context",
-  rules: [contextsLoaded, contextSelect, taskTextSet]
-};
+});

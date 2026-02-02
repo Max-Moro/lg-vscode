@@ -1,40 +1,25 @@
 /**
  * Section Domain - section selection for inspection
- *
- * Commands:
- * - section/SELECT - select section
- * - section/LOADED - sections list loaded from CLI
  */
 
-import type { BusinessRule, DomainModule, BaseCommand, PCEState } from "../types";
+import { command, rule, type PCEState } from "../types";
 
 // ============================================
 // Commands
 // ============================================
 
-export interface SelectSectionCmd extends BaseCommand {
-  type: "section/SELECT";
-  section: string;
-}
-
-export interface SectionsLoadedCmd extends BaseCommand {
-  type: "section/LOADED";
-  sections: string[];
-}
-
-export type SectionCommand = SelectSectionCmd | SectionsLoadedCmd;
+export const SelectSection = command("section/SELECT").payload<{ section: string }>();
+export const SectionsLoaded = command("section/LOADED").payload<{ sections: string[] }>();
 
 // ============================================
 // Rules
 // ============================================
 
-const sectionsLoaded: BusinessRule = {
-  id: "section/loaded",
-  description: "When sections are loaded, store them and validate selection",
-  trigger: "section/LOADED",
+/** When sections are loaded, store them and validate selection */
+rule(SectionsLoaded, {
   condition: () => true,
-  apply: (state: PCEState, cmd: BaseCommand) => {
-    const { sections } = cmd as SectionsLoadedCmd;
+  apply: (state: PCEState, cmd) => {
+    const { sections } = cmd;
     const currentSection = state.persistent.section;
 
     const isValid = currentSection && sections.includes(currentSection);
@@ -45,27 +30,14 @@ const sectionsLoaded: BusinessRule = {
       mutations: currentSection !== newSection ? { section: newSection } : undefined
     };
   }
-};
+});
 
-const sectionSelect: BusinessRule = {
-  id: "section/select",
-  description: "When section changes, update persistent state",
-  trigger: "section/SELECT",
-  // Only trigger if section actually changed
-  condition: (state: PCEState, cmd: BaseCommand) => {
-    const { section } = cmd as SelectSectionCmd;
-    return section !== state.persistent.section;
+/** When section changes, update persistent state */
+rule(SelectSection, {
+  condition: (state: PCEState, cmd) => {
+    return cmd.section !== state.persistent.section;
   },
-  apply: (_state: PCEState, cmd: BaseCommand) => ({
-    mutations: { section: (cmd as SelectSectionCmd).section }
+  apply: (_state: PCEState, cmd) => ({
+    mutations: { section: cmd.section }
   })
-};
-
-// ============================================
-// Domain Module Export
-// ============================================
-
-export const sectionDomain: DomainModule = {
-  id: "section",
-  rules: [sectionsLoaded, sectionSelect]
-};
+});

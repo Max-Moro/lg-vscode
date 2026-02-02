@@ -1,16 +1,8 @@
 /**
  * Adaptive Domain - modes, tags, and target branch (review mode)
- *
- * Commands:
- * - adaptive/SELECT_MODE - select mode in mode-set
- * - adaptive/TOGGLE_TAG - toggle tag selection
- * - adaptive/SELECT_BRANCH - select target branch
- * - adaptive/MODE_SETS_LOADED - mode-sets loaded from CLI
- * - adaptive/TAG_SETS_LOADED - tag-sets loaded from CLI
- * - adaptive/BRANCHES_LOADED - branches loaded from git
  */
 
-import type { BusinessRule, DomainModule, BaseCommand, PCEState } from "../types";
+import { command, rule, type PCEState } from "../types";
 import type { ModeSetsList } from "../../models/mode_sets_list";
 import type { TagSetsList } from "../../models/tag_sets_list";
 
@@ -18,57 +10,22 @@ import type { TagSetsList } from "../../models/tag_sets_list";
 // Commands
 // ============================================
 
-export interface SelectModeCmd extends BaseCommand {
-  type: "adaptive/SELECT_MODE";
-  modeSetId: string;
-  modeId: string;
-}
-
-export interface ToggleTagCmd extends BaseCommand {
-  type: "adaptive/TOGGLE_TAG";
-  tagSetId: string;
-  tagId: string;
-}
-
-export interface SelectBranchCmd extends BaseCommand {
-  type: "adaptive/SELECT_BRANCH";
-  branch: string;
-}
-
-export interface ModeSetsLoadedCmd extends BaseCommand {
-  type: "adaptive/MODE_SETS_LOADED";
-  modeSets: ModeSetsList;
-}
-
-export interface TagSetsLoadedCmd extends BaseCommand {
-  type: "adaptive/TAG_SETS_LOADED";
-  tagSets: TagSetsList;
-}
-
-export interface BranchesLoadedCmd extends BaseCommand {
-  type: "adaptive/BRANCHES_LOADED";
-  branches: string[];
-}
-
-export type AdaptiveCommand =
-  | SelectModeCmd
-  | ToggleTagCmd
-  | SelectBranchCmd
-  | ModeSetsLoadedCmd
-  | TagSetsLoadedCmd
-  | BranchesLoadedCmd;
+export const SelectMode = command("adaptive/SELECT_MODE").payload<{ modeSetId: string; modeId: string }>();
+export const ToggleTag = command("adaptive/TOGGLE_TAG").payload<{ tagSetId: string; tagId: string }>();
+export const SelectBranch = command("adaptive/SELECT_BRANCH").payload<{ branch: string }>();
+export const ModeSetsLoaded = command("adaptive/MODE_SETS_LOADED").payload<{ modeSets: ModeSetsList }>();
+export const TagSetsLoaded = command("adaptive/TAG_SETS_LOADED").payload<{ tagSets: TagSetsList }>();
+export const BranchesLoaded = command("adaptive/BRANCHES_LOADED").payload<{ branches: string[] }>();
 
 // ============================================
 // Rules
 // ============================================
 
-const modeSetsLoaded: BusinessRule = {
-  id: "adaptive/mode-sets-loaded",
-  description: "When mode-sets are loaded, ensure all mode-sets have valid selection",
-  trigger: "adaptive/MODE_SETS_LOADED",
+/** When mode-sets are loaded, ensure all mode-sets have valid selection */
+rule(ModeSetsLoaded, {
   condition: () => true,
-  apply: (state: PCEState, cmd: BaseCommand) => {
-    const { modeSets } = cmd as ModeSetsLoadedCmd;
+  apply: (state: PCEState, cmd) => {
+    const { modeSets } = cmd;
     const ctx = state.persistent.template;
     const provider = state.persistent.providerId;
     const savedModes = state.persistent.modesByContextProvider[ctx]?.[provider] || {};
@@ -102,15 +59,13 @@ const modeSetsLoaded: BusinessRule = {
       }
     };
   }
-};
+});
 
-const tagSetsLoaded: BusinessRule = {
-  id: "adaptive/tag-sets-loaded",
-  description: "When tag-sets are loaded, remove invalid saved tags",
-  trigger: "adaptive/TAG_SETS_LOADED",
+/** When tag-sets are loaded, remove invalid saved tags */
+rule(TagSetsLoaded, {
   condition: () => true,
-  apply: (state: PCEState, cmd: BaseCommand) => {
-    const { tagSets } = cmd as TagSetsLoadedCmd;
+  apply: (state: PCEState, cmd) => {
+    const { tagSets } = cmd;
     const ctx = state.persistent.template;
     const savedTags = state.persistent.tagsByContext[ctx] || {};
 
@@ -142,22 +97,19 @@ const tagSetsLoaded: BusinessRule = {
       } : undefined
     };
   }
-};
+});
 
-const modeSelect: BusinessRule = {
-  id: "adaptive/select-mode",
-  description: "When mode changes, update persistent state",
-  trigger: "adaptive/SELECT_MODE",
-  // Only trigger if mode actually changed
-  condition: (state: PCEState, cmd: BaseCommand) => {
-    const { modeSetId, modeId } = cmd as SelectModeCmd;
+/** When mode changes, update persistent state */
+rule(SelectMode, {
+  condition: (state: PCEState, cmd) => {
+    const { modeSetId, modeId } = cmd;
     const ctx = state.persistent.template;
     const provider = state.persistent.providerId;
     const currentModeId = state.persistent.modesByContextProvider[ctx]?.[provider]?.[modeSetId];
     return modeId !== currentModeId;
   },
-  apply: (state: PCEState, cmd: BaseCommand) => {
-    const { modeSetId, modeId } = cmd as SelectModeCmd;
+  apply: (state: PCEState, cmd) => {
+    const { modeSetId, modeId } = cmd;
     const ctx = state.persistent.template;
     const provider = state.persistent.providerId;
 
@@ -176,15 +128,13 @@ const modeSelect: BusinessRule = {
       }
     };
   }
-};
+});
 
-const tagToggle: BusinessRule = {
-  id: "adaptive/toggle-tag",
-  description: "When tag is toggled, update persistent state",
-  trigger: "adaptive/TOGGLE_TAG",
+/** When tag is toggled, update persistent state */
+rule(ToggleTag, {
   condition: () => true,
-  apply: (state: PCEState, cmd: BaseCommand) => {
-    const { tagSetId, tagId } = cmd as ToggleTagCmd;
+  apply: (state: PCEState, cmd) => {
+    const { tagSetId, tagId } = cmd;
     const ctx = state.persistent.template;
     const currentTags = state.persistent.tagsByContext[ctx] || {};
     const tagsInSet = currentTags[tagSetId] || [];
@@ -210,15 +160,13 @@ const tagToggle: BusinessRule = {
       }
     };
   }
-};
+});
 
-const branchesLoaded: BusinessRule = {
-  id: "adaptive/branches-loaded",
-  description: "When branches are loaded, validate target branch selection",
-  trigger: "adaptive/BRANCHES_LOADED",
+/** When branches are loaded, validate target branch selection */
+rule(BranchesLoaded, {
   condition: () => true,
-  apply: (state: PCEState, cmd: BaseCommand) => {
-    const { branches } = cmd as BranchesLoadedCmd;
+  apply: (state: PCEState, cmd) => {
+    const { branches } = cmd;
     const currentBranch = state.persistent.targetBranch;
 
     const branchSet = new Set(branches);
@@ -230,27 +178,15 @@ const branchesLoaded: BusinessRule = {
       mutations: newBranch !== currentBranch ? { targetBranch: newBranch } : undefined
     };
   }
-};
+});
 
-const branchSelect: BusinessRule = {
-  id: "adaptive/select-branch",
-  description: "When target branch changes, update persistent state",
-  trigger: "adaptive/SELECT_BRANCH",
-  // Only trigger if branch actually changed
-  condition: (state: PCEState, cmd: BaseCommand) => {
-    const { branch } = cmd as SelectBranchCmd;
+/** When target branch changes, update persistent state */
+rule(SelectBranch, {
+  condition: (state: PCEState, cmd) => {
+    const { branch } = cmd;
     return branch !== state.persistent.targetBranch;
   },
-  apply: (_state: PCEState, cmd: BaseCommand) => ({
-    mutations: { targetBranch: (cmd as SelectBranchCmd).branch }
+  apply: (_state: PCEState, cmd) => ({
+    mutations: { targetBranch: cmd.branch }
   })
-};
-
-// ============================================
-// Domain Module Export
-// ============================================
-
-export const adaptiveDomain: DomainModule = {
-  id: "adaptive",
-  rules: [modeSetsLoaded, tagSetsLoaded, modeSelect, tagToggle, branchesLoaded, branchSelect]
-};
+});
