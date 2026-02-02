@@ -39,7 +39,14 @@ rule(ModeSetsLoaded, {
       if (savedModeId && modeExists) {
         actualizedModes[modeSet.id] = savedModeId;
       } else {
-        const defaultMode = modeSet.modes[0];
+        // For ai-interaction mode-set, prefer "agent" mode as default
+        let defaultMode = modeSet.modes[0];
+        if (modeSet.id === "ai-interaction") {
+          const agentMode = modeSet.modes.find(m => m.id === "agent");
+          if (agentMode) {
+            defaultMode = agentMode;
+          }
+        }
         if (defaultMode) {
           actualizedModes[modeSet.id] = defaultMode.id;
         }
