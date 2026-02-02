@@ -10,6 +10,5 @@ import "./provider";
 import "./tokenization";
 import "./lifecycle";
 
-// Re-export getAllRules and lifecycle dependencies setter
+// Re-export getAllRules
 export { getAllRules } from "../types";
-export { setLifecycleDependencies } from "./lifecycle";

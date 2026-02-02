@@ -73,7 +73,6 @@ export interface ConfigurationState {
   sections: string[];
   modeSets: ModeSetsList;
   tagSets: TagSetsList;
-  branches: string[];
   tokenizerLibs: string[];
   encoders: EncoderEntry[];
 }
@@ -90,6 +89,7 @@ export interface ProviderInfo {
 
 export interface EnvironmentState {
   providers: ProviderInfo[];
+  branches: string[];
 }
 
 // ============================================
@@ -262,7 +262,6 @@ export function createDefaultConfigurationState(): ConfigurationState {
     sections: [],
     modeSets: { "mode-sets": [] },
     tagSets: { "tag-sets": [] },
-    branches: [],
     tokenizerLibs: [],
     encoders: []
   };
@@ -270,7 +269,8 @@ export function createDefaultConfigurationState(): ConfigurationState {
 
 export function createDefaultEnvironmentState(): EnvironmentState {
   return {
-    providers: []
+    providers: [],
+    branches: []
   };
 }
 

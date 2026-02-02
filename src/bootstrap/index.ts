@@ -15,7 +15,7 @@ import { ListingService } from "../services/ListingService";
 import { ContextService } from "../services/ContextService";
 import { GitService } from "../services/GitService";
 import { AiIntegrationService, createAiIntegrationService } from "../services/ai";
-import { getAllRules, setLifecycleDependencies } from "../state/domains";
+import { getAllRules } from "../state/domains";
 import { VirtualDocProvider } from "../views/VirtualDocProvider";
 import { IncludedTree } from "../views/IncludedTree";
 
@@ -65,14 +65,6 @@ export function bootstrap(context: vscode.ExtensionContext): BootstrapResult {
   // 4. State management
   _store = PCEStateStore.createInstance(context.workspaceState);
   _coordinator = new StateCoordinator(_store);
-
-  // 5. Lifecycle dependencies for rules
-  setLifecycleDependencies({
-    // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-    detectProviders: () => _aiService!.detectAvailableProviders(),
-    // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-    getBranchNames: () => _gitService!.getBranchNames()
-  });
   _coordinator.setRules(getAllRules());
 
   // 6. Watchers

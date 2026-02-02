@@ -2,8 +2,9 @@
  * Context Domain - context selection and task text
  */
 
-import { command, rule, type PCEState } from "../types";
+import { command, rule, type PCEState, type AsyncOperation } from "../types";
 import { cliListModeSets, cliListTagSets } from "../../cli/CliClient";
+import { getGitService } from "../../bootstrap";
 
 // ============================================
 // Commands
@@ -45,24 +46,40 @@ rule(SelectContext, {
   },
   apply: (state: PCEState, cmd) => {
     const { template } = cmd;
+    const asyncOps: AsyncOperation[] = [
+      {
+        id: "load-mode-sets",
+        execute: async () => {
+          const modeSets = await cliListModeSets(template, state.persistent.providerId);
+          return { type: "adaptive/MODE_SETS_LOADED", modeSets };
+        }
+      },
+      {
+        id: "load-tag-sets",
+        execute: async () => {
+          const tagSets = await cliListTagSets(template);
+          return { type: "adaptive/TAG_SETS_LOADED", tagSets };
+        }
+      }
+    ];
+
+    // Load branches if review mode is active for the new context
+    const newModes = state.persistent.modesByContextProvider[template]?.[state.persistent.providerId] || {};
+    const isReviewActive = Object.values(newModes).includes("review");
+    if (isReviewActive) {
+      asyncOps.push({
+        id: "load-branches",
+        execute: async () => {
+          const gitService = getGitService();
+          const branches = await gitService.getBranchNames();
+          return { type: "adaptive/BRANCHES_LOADED", branches };
+        }
+      });
+    }
+
     return {
       mutations: { template },
-      asyncOps: [
-        {
-          id: "load-mode-sets",
-          execute: async () => {
-            const modeSets = await cliListModeSets(template, state.persistent.providerId);
-            return { type: "adaptive/MODE_SETS_LOADED", modeSets };
-          }
-        },
-        {
-          id: "load-tag-sets",
-          execute: async () => {
-            const tagSets = await cliListTagSets(template);
-            return { type: "adaptive/TAG_SETS_LOADED", tagSets };
-          }
-        }
-      ]
+      asyncOps
     };
   }
 });

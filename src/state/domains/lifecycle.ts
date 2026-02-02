@@ -9,29 +9,15 @@
  * The only difference: INITIALIZE includes provider detection, REFRESH does not.
  *
  * Catalogs are loaded if their dependencies exist in persistent state:
- * - tokenizer-libs, sections, branches — always (no dependencies)
+ * - tokenizer-libs, sections — always (no dependencies)
  * - contexts — if providerId exists
  * - mode-sets — if providerId AND template exist
  * - tag-sets — if template exists
  */
 
-import { command, rule, type PCEState, type ProviderInfo, type AsyncOperation } from "../types";
+import { command, rule, type PCEState, type AsyncOperation } from "../types";
 import { cliListSections, cliListTokenizerLibs, cliListContexts, cliListModeSets, cliListTagSets } from "../../cli/CliClient";
-
-// ============================================
-// External Dependencies (injected)
-// ============================================
-
-let detectProviders: () => Promise<ProviderInfo[]>;
-let getBranchNames: () => Promise<string[]>;
-
-export function setLifecycleDependencies(deps: {
-  detectProviders: () => Promise<ProviderInfo[]>;
-  getBranchNames: () => Promise<string[]>;
-}): void {
-  detectProviders = deps.detectProviders;
-  getBranchNames = deps.getBranchNames;
-}
+import { getAiService } from "../../bootstrap";
 
 // ============================================
 // Commands
@@ -59,7 +45,8 @@ function buildCatalogOps(state: PCEState, includeProviderDetection: boolean): As
     ops.push({
       id: "detect-providers",
       execute: async () => {
-        const providers = await detectProviders();
+        const aiService = getAiService();
+        const providers = await aiService.detectAvailableProviders();
         return { type: "provider/DETECTED", providers };
       }
     });
@@ -79,13 +66,6 @@ function buildCatalogOps(state: PCEState, includeProviderDetection: boolean): As
       execute: async () => {
         const sections = await cliListSections();
         return { type: "section/LOADED", sections };
-      }
-    },
-    {
-      id: "load-branches",
-      execute: async () => {
-        const branches = await getBranchNames();
-        return { type: "adaptive/BRANCHES_LOADED", branches };
       }
     }
   );
@@ -132,12 +112,7 @@ function buildCatalogOps(state: PCEState, includeProviderDetection: boolean): As
 
 /** On initialize, detect providers and load all available catalogs */
 rule(Initialize, {
-  condition: () => {
-    if (!detectProviders || !getBranchNames) {
-      throw new Error("Lifecycle dependencies not set - call setLifecycleDependencies() before INITIALIZE");
-    }
-    return true;
-  },
+  condition: () => true,
   apply: (state: PCEState) => ({
     asyncOps: buildCatalogOps(state, true)
   })

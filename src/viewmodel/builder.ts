@@ -95,8 +95,8 @@ export function buildViewModel(state: PCEState): ViewModel {
   const selectedTagsCount = Object.values(currentTags)
     .reduce((sum, tags) => sum + tags.length, 0);
 
-  // Build branches options
-  const branches: SelectOption[] = c.branches.map(b => ({
+  // Build branches options (from environment, loaded lazily on review mode)
+  const branches: SelectOption[] = e.branches.map(b => ({
     value: b,
     label: b
   }));
@@ -142,7 +142,7 @@ export function buildViewModel(state: PCEState): ViewModel {
     tagSets,
     tagsButtonVisible: tagSets.some(ts => ts.tags.length > 0),
     selectedTagsCount,
-    targetBranchVisible: isReviewMode && c.branches.length > 0,
+    targetBranchVisible: isReviewMode && e.branches.length > 0,
     branches,
     selectedBranch: p.targetBranch,
     tokenizerLibs,

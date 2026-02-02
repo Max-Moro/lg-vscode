@@ -2,9 +2,10 @@
  * Adaptive Domain - modes, tags, and target branch (review mode)
  */
 
-import { command, rule, type PCEState } from "../types";
+import { command, rule, type PCEState, type RuleResult } from "../types";
 import type { ModeSetsList } from "../../models/mode_sets_list";
 import type { TagSetsList } from "../../models/tag_sets_list";
+import { getGitService } from "../../bootstrap";
 
 // ============================================
 // Commands
@@ -106,7 +107,7 @@ rule(TagSetsLoaded, {
   }
 });
 
-/** When mode changes, update persistent state */
+/** When mode changes, update persistent state and load branches if entering review mode */
 rule(SelectMode, {
   condition: (state: PCEState, cmd) => {
     const { modeSetId, modeId } = cmd;
@@ -120,7 +121,7 @@ rule(SelectMode, {
     const ctx = state.persistent.template;
     const provider = state.persistent.providerId;
 
-    return {
+    const result: RuleResult = {
       mutations: {
         modesByContextProvider: {
           ...state.persistent.modesByContextProvider,
@@ -134,6 +135,20 @@ rule(SelectMode, {
         }
       }
     };
+
+    // Load branches when switching to review mode
+    if (modeId === "review") {
+      result.asyncOps = [{
+        id: "load-branches",
+        execute: async () => {
+          const gitService = getGitService();
+          const branches = await gitService.getBranchNames();
+          return { type: "adaptive/BRANCHES_LOADED", branches };
+        }
+      }];
+    }
+
+    return result;
   }
 });
 
@@ -181,7 +196,7 @@ rule(BranchesLoaded, {
     const newBranch = candidates.find(b => b && branchSet.has(b)) || branches[0] || "";
 
     return {
-      configMutations: { branches },
+      envMutations: { branches },
       mutations: newBranch !== currentBranch ? { targetBranch: newBranch } : undefined
     };
   }
