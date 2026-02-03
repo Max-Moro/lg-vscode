@@ -84,6 +84,7 @@ src:
             allow:
               - "/state/domains/section.ts"
               - "/views/IncludedTree.ts"
+              - "/models/sections_list.ts"
 
           # Adaptive Domain - modes, tags, branches
           - condition: "TAGSET:vscode-extension:adaptive"

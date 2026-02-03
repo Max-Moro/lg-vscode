@@ -3,13 +3,14 @@
  */
 
 import { command, rule, type PCEState } from "../types";
+import type { SectionInfo } from "../../models/sections_list";
 
 // ============================================
 // Commands
 // ============================================
 
 export const SelectSection = command("section/SELECT").payload<{ section: string }>();
-export const SectionsLoaded = command("section/LOADED").payload<{ sections: string[] }>();
+export const SectionsLoaded = command("section/LOADED").payload<{ sections: SectionInfo[] }>();
 
 // ============================================
 // Rules
@@ -22,8 +23,10 @@ rule(SectionsLoaded, {
     const { sections } = cmd;
     const currentSection = state.persistent.section;
 
-    const isValid = currentSection && sections.includes(currentSection);
-    const newSection = isValid ? currentSection : (sections[0] || "");
+    // Validate against section names
+    const sectionNames = sections.map(s => s.name);
+    const isValid = currentSection && sectionNames.includes(currentSection);
+    const newSection = isValid ? currentSection : (sectionNames[0] || "");
 
     return {
       configMutations: { sections },

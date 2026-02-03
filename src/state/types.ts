@@ -8,6 +8,7 @@ import type { ModeSetsList } from "../models/mode_sets_list";
 import type { TagSetsList } from "../models/tag_sets_list";
 import { type ShellType, getDefaultShell } from "../models/ShellType";
 import type { EncoderEntry } from "../cli/CliClient";
+import type { SectionInfo } from "../models/sections_list";
 
 // Re-export for convenience
 export type { EncoderEntry } from "../cli/CliClient";
@@ -70,7 +71,7 @@ export interface PersistentState {
 
 export interface ConfigurationState {
   contexts: string[];
-  sections: string[];
+  sections: SectionInfo[];
   modeSets: ModeSetsList;
   tagSets: TagSetsList;
   tokenizerLibs: string[];

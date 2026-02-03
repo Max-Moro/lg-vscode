@@ -55,10 +55,10 @@ export function buildViewModel(state: PCEState): ViewModel {
     label: name.endsWith("/_") ? name.slice(0, -2) : name
   }));
 
-  // Build sections options
-  const sections: SelectOption[] = c.sections.map(name => ({
-    value: name,
-    label: name
+  // Build sections options (extract names from SectionInfo)
+  const sections: SelectOption[] = c.sections.map(sec => ({
+    value: sec.name,
+    label: sec.name
   }));
 
   // Build mode-sets view models

@@ -3,6 +3,7 @@ import type { RunResult } from "../models/report";
 import type { DiagReport } from "../models/diag_report";
 import type { ModeSetsList } from "../models/mode_sets_list";
 import type { TagSetsList } from "../models/tag_sets_list";
+import type { SectionsList, SectionInfo } from "../models/sections_list";
 import { CliException } from "./CliException";
 import { logDebug } from "../logging/log";
 
@@ -86,12 +87,12 @@ export async function cliReport(target: string, params: CliGenerationParams): Pr
 }
 
 /**
- * List sections from CLI.
+ * List sections from CLI with their compatible mode-sets and tag-sets.
  */
-export async function cliListSections(): Promise<string[]> {
+export async function cliListSections(): Promise<SectionInfo[]> {
   try {
     const out = await runCli(["list", "sections"], { timeoutMs: 20_000 });
-    const data = JSON.parse(out);
+    const data = JSON.parse(out) as SectionsList;
     return data?.sections ?? [];
   } catch (e) {
     if (e instanceof CliException && e.silent) {

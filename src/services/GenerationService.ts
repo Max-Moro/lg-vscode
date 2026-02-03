@@ -14,8 +14,20 @@ export class GenerationService {
    */
   async generate(target: string): Promise<string> {
     const store = getStore();
+    const state = store.getState();
     const isContext = target.startsWith("ctx:");
-    const params = buildCliParams(store.getPersistentState(), { includeProvider: isContext });
+
+    // For sections, find section info and pass it for filtering
+    let sectionInfo;
+    if (!isContext) {
+      const sectionName = target.replace("sec:", "");
+      sectionInfo = state.configuration.sections.find(s => s.name === sectionName);
+    }
+
+    const params = buildCliParams(
+      state.persistent,
+      { includeProvider: isContext, sectionInfo }
+    );
 
     return cliRender(target, params);
   }
