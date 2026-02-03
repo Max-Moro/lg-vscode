@@ -22,10 +22,10 @@ tag-sets:
       # Business domains
       context:
         title: "Context Domain"
-        description: "Context selection, task text, context generation"
+        description: "Context selection state, task text"
       section:
         title: "Section Domain"
-        description: "Section selection, listing generation, included files tree"
+        description: "Section selection state, included files tree"
       adaptive:
         title: "Adaptive Domain"
         description: "Mode-sets, tag-sets, target branch selection"
@@ -33,8 +33,11 @@ tag-sets:
         title: "Provider Domain"
         description: "AI providers, sending content, provider settings"
       stats:
-        title: "Statistics Domain"
-        description: "Token statistics, tokenization settings, reports"
+        title: "Stats Domain"
+        description: "Statistics service, actions, tokenization, reports webview"
+      generate:
+        title: "Generate Domain"
+        description: "Generation service, actions, virtual document provider"
       diag:
         title: "Diagnostics Domain"
         description: "Doctor, cache reset, self-diagnostics"
@@ -46,9 +49,6 @@ tag-sets:
       control:
         title: "Control Panel View"
         description: "Main control panel webview"
-      generate:
-        title: "Generate View"
-        description: "Virtual document provider for listings"
 
   ai-providers:
     title: "AI Providers"

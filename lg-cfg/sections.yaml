@@ -74,19 +74,15 @@ src:
 
           # ==================== BUSINESS DOMAINS ====================
 
-          # Context Domain
+          # Context Domain (state only)
           - condition: "TAGSET:vscode-extension:context"
             allow:
               - "/state/domains/context.ts"
-              - "/services/ContextService.ts"
-              - "/actions/ContextActions.ts"
 
-          # Section Domain
+          # Section Domain (state + included tree)
           - condition: "TAGSET:vscode-extension:section"
             allow:
               - "/state/domains/section.ts"
-              - "/services/ListingService.ts"
-              - "/actions/ListingActions.ts"
               - "/views/IncludedTree.ts"
 
           # Adaptive Domain - modes, tags, branches
@@ -97,12 +93,22 @@ src:
               - "/models/tag_sets_list.ts"
               - "/services/GitService.ts"
 
-          # Statistics Domain - stats, tokenization
+          # Stats Domain - statistics, tokenization
           - condition: "TAGSET:vscode-extension:stats"
             allow:
               - "/state/domains/tokenization.ts"
+              - "/services/StatsService.ts"
+              - "/actions/StatsActions.ts"
               - "/views/StatsWebview.ts"
               - "/models/report.ts"
+
+          # Generate Domain - content generation
+          - condition: "TAGSET:vscode-extension:generate"
+            allow:
+              - "/services/GenerationService.ts"
+              - "/actions/GenerationActions.ts"
+              - "/views/VirtualDocProvider.ts"
+              - "/views/virtualBus.ts"
 
           # Provider Domain - AI providers
           - condition: "TAGSET:vscode-extension:send-to-ai"
@@ -132,12 +138,6 @@ src:
               - "/views/ControlPanelView.ts"
               - "/viewmodel/"
               - "/actions/ToolbarActions.ts"
-
-          # Generate View
-          - condition: "TAGSET:vscode-extension:generate"
-            allow:
-              - "/views/VirtualDocProvider.ts"
-              - "/views/virtualBus.ts"
 
           # ==================== PROVIDER-SPECIFIC ====================
 

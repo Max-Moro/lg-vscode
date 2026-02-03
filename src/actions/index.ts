@@ -4,8 +4,8 @@
  * Actions use getters from bootstrap directly, no deps injection needed.
  */
 
-import * as ListingActions from "./ListingActions";
-import * as ContextActions from "./ContextActions";
+import * as GenerationActions from "./GenerationActions";
+import * as StatsActions from "./StatsActions";
 import * as AiActions from "./AiActions";
 import * as ToolbarActions from "./ToolbarActions";
 
@@ -14,28 +14,28 @@ import * as ToolbarActions from "./ToolbarActions";
  * Thin facade - delegates to action modules.
  */
 export class ActionDispatcher {
-  // ==================== Listing Actions ====================
+  // ==================== Generation Actions ====================
 
   async generateListing(): Promise<void> {
-    await ListingActions.generateListing();
+    await GenerationActions.generateListing();
   }
-
-  async showIncluded(): Promise<void> {
-    await ListingActions.showIncluded();
-  }
-
-  async showSectionStats(): Promise<void> {
-    await ListingActions.showSectionStats();
-  }
-
-  // ==================== Context Actions ====================
 
   async generateContext(): Promise<void> {
-    await ContextActions.generateContext();
+    await GenerationActions.generateContext();
+  }
+
+  // ==================== Stats Actions ====================
+
+  async showSectionStats(): Promise<void> {
+    await StatsActions.showSectionStats();
   }
 
   async showContextStats(): Promise<void> {
-    await ContextActions.showContextStats();
+    await StatsActions.showContextStats();
+  }
+
+  async showIncluded(): Promise<void> {
+    await StatsActions.showIncluded();
   }
 
   // ==================== AI Actions ====================
@@ -80,4 +80,4 @@ export class ActionDispatcher {
 }
 
 // Re-export individual action modules for direct use if needed
-export { ListingActions, ContextActions, AiActions, ToolbarActions };
+export { GenerationActions, StatsActions, AiActions, ToolbarActions };

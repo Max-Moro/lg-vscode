@@ -3,14 +3,14 @@
  */
 
 import * as vscode from "vscode";
-import { getStore, getContextService, getAiService } from "../bootstrap";
+import { getStore, getGenerationService, getAiService } from "../bootstrap";
 
 /**
  * Send context to AI provider
  */
 export async function sendToAI(): Promise<void> {
   const store = getStore();
-  const contextService = getContextService();
+  const generationService = getGenerationService();
   const aiService = getAiService();
 
   const state = store.getPersistentState();
@@ -38,8 +38,9 @@ export async function sendToAI(): Promise<void> {
       return;
     }
 
+    const target = `ctx:${template}`;
     await aiService.generateAndSend(
-      () => contextService.generateContext(),
+      () => generationService.generate(target),
       providerId,
       runs ?? "",
       `Generating context '${template}'...`

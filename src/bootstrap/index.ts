@@ -11,11 +11,11 @@ import { PCEStateStore } from "../state/store";
 import { StateCoordinator } from "../state/coordinator";
 import { ActionDispatcher } from "../actions";
 import { WatcherManager } from "../state/watchers";
-import { ListingService } from "../services/ListingService";
-import { ContextService } from "../services/ContextService";
+import { StatsService } from "../services/StatsService";
+import { GenerationService } from "../services/GenerationService";
 import { GitService } from "../services/GitService";
 import { AiIntegrationService, createAiIntegrationService } from "../services/ai";
-import { getAllRules } from "../state/domains";
+import { getAllRules } from "../state/types";
 import { VirtualDocProvider } from "../views/VirtualDocProvider";
 import { IncludedTree } from "../views/IncludedTree";
 
@@ -26,8 +26,8 @@ let _dispatcher: ActionDispatcher | undefined;
 let _watchers: WatcherManager | undefined;
 let _aiService: AiIntegrationService | undefined;
 let _gitService: GitService | undefined;
-let _listingService: ListingService | undefined;
-let _contextService: ContextService | undefined;
+let _statsService: StatsService | undefined;
+let _generationService: GenerationService | undefined;
 let _vdocs: VirtualDocProvider | undefined;
 let _includedTree: IncludedTree | undefined;
 let _bootstrapped = false;
@@ -75,8 +75,8 @@ export function bootstrap(context: vscode.ExtensionContext): BootstrapResult {
   _includedTree = new IncludedTree(getContext().workspaceState);
 
   // 8. Services (use getStore() internally)
-  _listingService = new ListingService();
-  _contextService = new ContextService();
+  _statsService = new StatsService();
+  _generationService = new GenerationService();
 
   // 9. Action dispatcher (no deps needed - actions use getters directly)
   _dispatcher = new ActionDispatcher();
@@ -131,16 +131,16 @@ export function getGitService(): GitService {
   return _gitService!;
 }
 
-export function getListingService(): ListingService {
-  assertBootstrapped("ListingService");
+export function getStatsService(): StatsService {
+  assertBootstrapped("StatsService");
   // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-  return _listingService!;
+  return _statsService!;
 }
 
-export function getContextService(): ContextService {
-  assertBootstrapped("ContextService");
+export function getGenerationService(): GenerationService {
+  assertBootstrapped("GenerationService");
   // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-  return _contextService!;
+  return _generationService!;
 }
 
 export function getVdocs(): VirtualDocProvider {
@@ -182,8 +182,8 @@ export function shutdown(): void {
   _watchers = undefined;
   _aiService = undefined;
   _gitService = undefined;
-  _listingService = undefined;
-  _contextService = undefined;
+  _statsService = undefined;
+  _generationService = undefined;
   _vdocs = undefined;
   _includedTree = undefined;
 
