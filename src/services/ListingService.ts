@@ -1,4 +1,5 @@
 import { cliRender, cliReport } from "../cli/CliClient";
+import { buildCliParams } from "../cli/ParamsBuilder";
 import { getStore } from "../bootstrap";
 import type { PCEStateStore } from "../state/store";
 
@@ -23,7 +24,7 @@ export class ListingService {
       throw new Error("No section selected");
     }
     const target = `sec:${state.section}`;
-    const params = this.store.buildCliParams();
+    const params = buildCliParams(this.store.getPersistentState());
 
     return cliRender(target, params);
   }
@@ -38,7 +39,7 @@ export class ListingService {
       throw new Error("No section selected");
     }
     const target = `sec:${state.section}`;
-    const params = this.store.buildCliParams();
+    const params = buildCliParams(this.store.getPersistentState());
 
     const result = await cliReport(target, params);
     if (!result) {
@@ -57,7 +58,7 @@ export class ListingService {
       throw new Error("No section selected");
     }
     const target = `sec:${state.section}`;
-    const params = this.store.buildCliParams();
+    const params = buildCliParams(this.store.getPersistentState());
 
     const data = await cliReport(target, params);
     if (!data) {

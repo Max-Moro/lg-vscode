@@ -1,4 +1,5 @@
 import { cliRender, cliReport } from "../cli/CliClient";
+import { buildCliParams } from "../cli/ParamsBuilder";
 import type { RunResult } from "../models/report";
 import { getStore } from "../bootstrap";
 import type { PCEStateStore } from "../state/store";
@@ -25,7 +26,7 @@ export class ContextService {
     }
 
     const target = `ctx:${state.template}`;
-    const params = this.store.buildCliParams({ includeProvider: true });
+    const params = buildCliParams(this.store.getPersistentState(), { includeProvider: true });
 
     return cliRender(target, params);
   }
@@ -41,7 +42,7 @@ export class ContextService {
     }
 
     const target = `ctx:${state.template}`;
-    const params = this.store.buildCliParams({ includeProvider: true });
+    const params = buildCliParams(this.store.getPersistentState(), { includeProvider: true });
 
     const result = await cliReport(target, params);
     if (!result) {
