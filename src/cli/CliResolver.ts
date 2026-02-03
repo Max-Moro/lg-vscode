@@ -8,8 +8,8 @@
 import * as vscode from "vscode";
 import * as fs from "fs";
 import * as path from "path";
-import { spawn } from "../runner/LgProcess";
-import { PipxInstaller } from "../runner/PipxInstaller";
+import { spawn } from "./LgProcess";
+import { PipxInstaller } from "./PipxInstaller";
 import { logDebug, withDuration } from "../logging/log";
 import { CliException, CliUnavailableException } from "./CliException";
 
