@@ -3,7 +3,7 @@
  */
 
 import { command, rule, type PCEState, type AsyncOperation } from "../types";
-import { cliListModeSets, cliListTagSets } from "../../cli/CliClient";
+import { cliListModeSets, cliListTagSets, cliListSections } from "../../cli/CliClient";
 import { getGitService } from "../../bootstrap";
 
 // ============================================
@@ -39,7 +39,7 @@ rule(ContextsLoaded, {
   }
 });
 
-/** When context changes, reload mode-sets and tag-sets */
+/** When context changes, reload sections, mode-sets and tag-sets */
 rule(SelectContext, {
   condition: (state: PCEState, cmd) => {
     return !!cmd.template && cmd.template !== state.persistent.template;
@@ -47,6 +47,13 @@ rule(SelectContext, {
   apply: (state: PCEState, cmd) => {
     const { template } = cmd;
     const asyncOps: AsyncOperation[] = [
+      {
+        id: "load-sections",
+        execute: async () => {
+          const sections = await cliListSections(template);
+          return { type: "section/LOADED", sections };
+        }
+      },
       {
         id: "load-mode-sets",
         execute: async () => {

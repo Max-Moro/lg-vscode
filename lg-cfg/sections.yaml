@@ -60,6 +60,7 @@ src:
               - "/state/store.ts"
               - "/state/coordinator.ts"
               - "/state/domains/index.ts"
+              - "/state/domains/lifecycle.ts"
               - "/state/watchers/"
               - "/viewmodel/"
               - "/actions/index.ts"
@@ -115,7 +116,6 @@ src:
           - condition: "TAGSET:vscode-extension:send-to-ai"
             allow:
               - "/state/domains/provider.ts"
-              - "/state/domains/lifecycle.ts"
               - "/services/ai/"
               - "/models/ShellType.ts"
               - "/actions/AiActions.ts"

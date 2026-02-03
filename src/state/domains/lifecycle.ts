@@ -52,23 +52,25 @@ function buildCatalogOps(state: PCEState, includeProviderDetection: boolean): As
     });
   }
 
-  // Independent catalogs (always load)
-  ops.push(
-    {
-      id: "load-tokenizer-libs",
-      execute: async () => {
-        const libs = await cliListTokenizerLibs();
-        return { type: "tokenization/LIBS_LOADED", libs };
-      }
-    },
-    {
+  // Tokenizer libs (always load, no dependencies)
+  ops.push({
+    id: "load-tokenizer-libs",
+    execute: async () => {
+      const libs = await cliListTokenizerLibs();
+      return { type: "tokenization/LIBS_LOADED", libs };
+    }
+  });
+
+  // Sections depend on template (context) - filter by it if available
+  if (template) {
+    ops.push({
       id: "load-sections",
       execute: async () => {
-        const sections = await cliListSections();
+        const sections = await cliListSections(template);
         return { type: "section/LOADED", sections };
       }
-    }
-  );
+    });
+  }
 
   // Contexts depend on provider
   if (providerId) {

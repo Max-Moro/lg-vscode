@@ -88,10 +88,15 @@ export async function cliReport(target: string, params: CliGenerationParams): Pr
 
 /**
  * List sections from CLI with their compatible mode-sets and tag-sets.
+ * @param context - Optional context name to filter sections
  */
-export async function cliListSections(): Promise<SectionInfo[]> {
+export async function cliListSections(context?: string): Promise<SectionInfo[]> {
   try {
-    const out = await runCli(["list", "sections"], { timeoutMs: 20_000 });
+    const args = ["list", "sections"];
+    if (context && context.trim()) {
+      args.push("--context", context.trim());
+    }
+    const out = await runCli(args, { timeoutMs: 20_000 });
     const data = JSON.parse(out) as SectionsList;
     return data?.sections ?? [];
   } catch (e) {
