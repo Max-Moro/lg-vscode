@@ -25,7 +25,7 @@ ${src}
 
 ${md:media/ui/README, if:TAGSET:vscode-extension:ui-components}
 
-${md@self:/control-panel-state-architecture, if:TAGSET:vscode-extension:state-viewmodel}
+${md@self:/control-panel-state-architecture, if:(TAGSET:vscode-extension:state-viewmodel OR TAGSET:vscode-extension:state-engine)}
 {% if task AND scope:local %}
 ---
 

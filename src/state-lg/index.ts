@@ -32,6 +32,3 @@ export { rule } from "./rule";
 
 // Re-export command from engine for domain use
 export { command } from "../state-engine";
-
-// Watchers
-export { WatcherManager, FileWatcher, ThemeWatcher } from "./watchers";

@@ -12,8 +12,6 @@ Control Panel в VS Code Extension. Документ предназначен д
 
 ```
 User Action → Renderer → Command → Coordinator → Rules → Store → ViewModel → Render
-                                        ↑
-                              Watchers (FileWatcher, ThemeWatcher)
 ```
 
 ### Ключевые принципы
@@ -40,18 +38,14 @@ src/
 │   ├── store.ts              # PCEStateStore, LGRuleResult
 │   ├── coordinator.ts        # createLGCoordinator(), LGStateCoordinator
 │   ├── rule.ts               # rule() — фабрика правил для LG
-│   ├── domains/              # Доменные модули (бизнес-правила)
-│   │   ├── index.ts          # Side-effect импорты для регистрации
-│   │   ├── context.ts        # context/* команды
-│   │   ├── section.ts        # section/* команды
-│   │   ├── adaptive.ts       # adaptive/* команды
-│   │   ├── provider.ts       # provider/* команды
-│   │   ├── tokenization.ts   # tokenization/* команды
-│   │   └── lifecycle.ts      # lifecycle/* команды
-│   └── watchers/             # Слушатели внешних событий
-│       ├── index.ts          # WatcherManager
-│       ├── FileWatcher.ts
-│       └── ThemeWatcher.ts
+│   └── domains/              # Доменные модули (бизнес-правила)
+│       ├── index.ts          # Side-effect импорты для регистрации
+│       ├── context.ts        # context/* команды
+│       ├── section.ts        # section/* команды
+│       ├── adaptive.ts       # adaptive/* команды
+│       ├── provider.ts       # provider/* команды
+│       ├── tokenization.ts   # tokenization/* команды
+│       └── lifecycle.ts      # lifecycle/* команды
 │
 ├── services/ai/providers/    # AI Provider Layer
 │   ├── claude-cli/
@@ -65,7 +59,7 @@ src/
 │   └── builder.ts            # Чистая функция buildViewModel()
 │
 ├── actions/                  # Actions Layer
-│   ├── index.ts              # ActionDispatcher
+│   ├── index.ts              # Re-exports
 │   ├── GenerationActions.ts
 │   ├── StatsActions.ts
 │   ├── AiActions.ts
@@ -297,16 +291,6 @@ rule(SelectClaudeModel, {
 });
 ```
 
-### 3.7. Watchers (`watchers/`)
-
-Слушатели внешних событий, диспатчащие команды в Coordinator.
-
-**FileWatcher** — следит за изменениями в `lg-cfg/`:
-- Debounce 300ms для группировки событий
-- Диспатчит `lifecycle/REFRESH` при изменениях
-
-**ThemeWatcher** — следит за сменой темы VS Code
-
 ---
 
 ## 4. ViewModel Layer
@@ -325,21 +309,17 @@ rule(SelectClaudeModel, {
 
 ## 5. Actions Layer
 
-### 5.1. ActionDispatcher (`src/actions/index.ts`)
-
-Синглтон, маршрутизирующий бизнес-операции к соответствующим модулям.
-
-```typescript
-import { getDispatcher } from "../bootstrap";
-await getDispatcher().sendToAI();
-```
-
-### 5.2. Action Modules
+Статические модули со статическими методами для выполнения бизнес-операций:
 
 - **GenerationActions:** `generateListing()`, `generateContext()`
 - **StatsActions:** `showSectionStats()`, `showContextStats()`, `showIncluded()`
 - **AiActions:** `sendToAI()`
 - **ToolbarActions:** `refreshCatalogs()`, `doctor()`, `resetCache()`, `updateAiModes()`
+
+```typescript
+import { AiActions } from "../actions";
+await AiActions.sendToAI();
+```
 
 ---
 
@@ -347,7 +327,7 @@ await getDispatcher().sendToAI();
 
 Views отвечают только за:
 1. Жизненный цикл WebView
-2. Маршрутизацию сообщений к Coordinator/ActionDispatcher
+2. Маршрутизацию сообщений к Coordinator и Action-модулям
 3. Подписку на Store и передачу ViewModel в рендерер
 
 ---
@@ -393,7 +373,6 @@ provider/DETECTED → provider/SELECT
 
 2. `resolveWebviewView()`:
    - Подписка на store → ViewModel → render
-   - `watcherManager.startAll()`
    - `coordinator.dispatch(Initialize.create())`
 
 3. Каскад async-операций загружает все данные
@@ -458,9 +437,3 @@ export const myProviderSettings: ProviderSettingsModule = {
   buildContribution: (state) => ({ ... })
 };
 ```
-
-### Добавление нового Watcher
-
-1. Создать класс в `src/state-lg/watchers/`
-2. Добавить в `WatcherManager`
-3. Вызывать `coordinator.dispatch()` при событиях

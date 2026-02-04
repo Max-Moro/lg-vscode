@@ -7,8 +7,9 @@
 import * as vscode from "vscode";
 import { setContext, getContext, clearContext } from "./context";
 import { initLogging, logDebug, logInfo } from "../logging/log";
-import { PCEStateStore, createLGCoordinator, WatcherManager } from "../state-lg";
+import { PCEStateStore, createLGCoordinator } from "../state-lg";
 import type { LGStateCoordinator } from "../state-lg";
+import { FileWatcher } from "../watchers/FileWatcher";
 import { StatsService } from "../services/StatsService";
 import { GenerationService } from "../services/GenerationService";
 import { GitService } from "../services/GitService";
@@ -19,7 +20,7 @@ import { IncludedTree } from "../views/IncludedTree";
 // Singleton registry
 let _store: PCEStateStore | undefined;
 let _coordinator: LGStateCoordinator | undefined;
-let _watchers: WatcherManager | undefined;
+let _fileWatcher: FileWatcher | undefined;
 let _aiService: AiIntegrationService | undefined;
 let _gitService: GitService | undefined;
 let _statsService: StatsService | undefined;
@@ -62,8 +63,8 @@ export function bootstrap(context: vscode.ExtensionContext): BootstrapResult {
   _store = PCEStateStore.createInstance(context.workspaceState);
   _coordinator = createLGCoordinator(_store);
 
-  // 6. Watchers
-  _watchers = new WatcherManager(_coordinator);
+  // 5. File watcher
+  _fileWatcher = new FileWatcher(_coordinator);
 
   // 7. View components
   _vdocs = new VirtualDocProvider();
@@ -99,10 +100,10 @@ export function getCoordinator(): LGStateCoordinator {
   return _coordinator!;
 }
 
-export function getWatchers(): WatcherManager {
-  assertBootstrapped("WatcherManager");
+export function getFileWatcher(): FileWatcher {
+  assertBootstrapped("FileWatcher");
   // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-  return _watchers!;
+  return _fileWatcher!;
 }
 
 export function getAiService(): AiIntegrationService {
@@ -154,8 +155,8 @@ export function shutdown(): void {
 
   logInfo("Shutdown started");
 
-  // Dispose watchers (file system, theme subscriptions)
-  _watchers?.dispose();
+  // Dispose file watcher
+  _fileWatcher?.dispose();
 
   // Dispose view components
   _vdocs?.dispose();
@@ -164,7 +165,7 @@ export function shutdown(): void {
   // Reset all singletons
   _store = undefined;
   _coordinator = undefined;
-  _watchers = undefined;
+  _fileWatcher = undefined;
   _aiService = undefined;
   _gitService = undefined;
   _statsService = undefined;

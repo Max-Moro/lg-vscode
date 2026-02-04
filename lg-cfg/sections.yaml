@@ -68,7 +68,7 @@ src:
               - "/state-lg/index.ts"
               - "/state-lg/domains/index.ts"
               - "/state-lg/domains/lifecycle.ts"
-              - "/state-lg/watchers/"
+              - "/watchers/"
               - "/viewmodel/"
 
           # CLI Integration

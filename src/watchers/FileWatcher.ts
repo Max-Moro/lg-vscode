@@ -9,10 +9,10 @@ import * as vscode from "vscode";
 import * as path from "path";
 import * as fs from "fs";
 import * as crypto from "crypto";
-import type { LGStateCoordinator } from "../coordinator";
-import { effectiveWorkspaceRoot } from "../../cli/CliResolver";
-import { logDebug } from "../../logging/log";
-import { Refresh } from "../domains/lifecycle";
+import type { LGStateCoordinator } from "../state-lg";
+import { effectiveWorkspaceRoot } from "../cli/CliResolver";
+import { logDebug } from "../logging/log";
+import { Refresh } from "../state-lg/domains/lifecycle";
 
 /**
  * Watches lg-cfg/ directory and dispatches REFRESH on real changes.

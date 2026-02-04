@@ -8,7 +8,7 @@
  */
 
 import * as vscode from "vscode";
-import { getStore, getCoordinator, getWatchers } from "../bootstrap";
+import { getStore, getCoordinator, getFileWatcher } from "../bootstrap";
 import { GenerationActions, StatsActions, AiActions } from "../actions";
 import type { BaseCommand, UIMeta } from "../state-engine";
 import { buildViewModel } from "../viewmodel/builder";
@@ -30,7 +30,6 @@ export class ControlPanelView implements vscode.WebviewViewProvider {
 
     const store = getStore();
     const coordinator = getCoordinator();
-    const watchers = getWatchers();
 
     // Subscribe to store → render ViewModel
     this.unsubscribeStore = store.subscribe((state) => {
@@ -42,20 +41,21 @@ export class ControlPanelView implements vscode.WebviewViewProvider {
       this.postMeta(meta);
     });
 
-    // Subscribe to theme changes
-    this.unsubscribeTheme = watchers.themeWatcher.subscribe((kind) => {
-      this.postTheme(kind);
+    // Subscribe to theme changes (via VS Code API directly)
+    const themeDisposable = vscode.window.onDidChangeActiveColorTheme((theme) => {
+      this.postTheme(theme.kind);
     });
+    this.unsubscribeTheme = () => themeDisposable.dispose();
 
     // Handle WebView messages
     view.webview.onDidReceiveMessage((msg) => this.handleMessage(msg));
 
-    // Start watchers and initialize
-    watchers.startAll();
+    // Start file watcher and initialize
+    getFileWatcher().start();
     void coordinator.dispatch(Initialize.create());
 
     // Send current theme
-    this.postTheme(watchers.themeWatcher.getCurrentTheme());
+    this.postTheme(vscode.window.activeColorTheme.kind);
 
     // Cleanup on dispose
     view.onDidDispose(() => this.dispose());
