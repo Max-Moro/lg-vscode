@@ -70,17 +70,36 @@ rule(SelectLib, {
   }
 });
 
-/** When encoders are loaded, store them */
+/** When encoders are loaded, store them and validate current selection */
 rule(EncodersLoaded, {
   condition: () => true,
-  apply: (_state: PCEState, cmd) => ({
-    configMutations: { encoders: cmd.encoders }
-  })
+  apply: (state: PCEState, cmd) => {
+    const { encoders } = cmd;
+    const currentEncoder = state.persistent.encoder;
+
+    const configMutations = { encoders };
+
+    // Check if current encoder exists in new list
+    const encoderNames = encoders.map(e => e.name);
+    const isValid = currentEncoder && encoderNames.includes(currentEncoder);
+
+    if (isValid) {
+      return { configMutations };
+    }
+
+    // Delegate to SetEncoder if current is invalid
+    const newEncoder = encoderNames[0] || "";
+    return {
+      configMutations,
+      followUp: newEncoder ? [SetEncoder.create({ encoder: newEncoder })] : []
+    };
+  }
 });
 
 /** When encoder is set, update persistent state */
 rule(SetEncoder, {
-  condition: () => true,
+  condition: (state: PCEState, cmd) =>
+    cmd.encoder !== state.persistent.encoder,
   apply: (_state: PCEState, cmd) => ({
     mutations: { encoder: cmd.encoder }
   })
