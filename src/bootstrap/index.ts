@@ -15,7 +15,8 @@ import { StatsService } from "../services/StatsService";
 import { GenerationService } from "../services/GenerationService";
 import { GitService } from "../services/GitService";
 import { AiIntegrationService, createAiIntegrationService } from "../services/ai";
-import { getAllRules } from "../state/types";
+// noinspection ES6PreferShortImport — import via domains/index.ts triggers side-effect rule registration
+import { getAllRules } from "../state/domains";
 import { VirtualDocProvider } from "../views/VirtualDocProvider";
 import { IncludedTree } from "../views/IncludedTree";
 
