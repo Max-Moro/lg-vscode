@@ -16,25 +16,28 @@ import type {
 } from "./types";
 
 /**
- * Rule Registry - manages business rules for a specific state type.
+ * Rule Registry - manages business rules for a specific state and result type.
  *
  * Each application creates its own registry instance.
  * Rules are registered via the rule() function bound to this registry.
+ *
+ * @typeParam TState - Application state type
+ * @typeParam TResult - Rule result type (must extend RuleResult)
  */
-export class RuleRegistry<TState> {
-  private rules: BusinessRule<TState>[] = [];
+export class RuleRegistry<TState, TResult extends RuleResult = RuleResult> {
+  private rules: BusinessRule<TState, TResult>[] = [];
 
   /**
    * Register a rule. Called by rule() factory.
    */
-  register(rule: BusinessRule<TState>): void {
+  register(rule: BusinessRule<TState, TResult>): void {
     this.rules.push(rule);
   }
 
   /**
    * Get all registered rules.
    */
-  getAll(): BusinessRule<TState>[] {
+  getAll(): BusinessRule<TState, TResult>[] {
     return this.rules;
   }
 
@@ -70,7 +73,7 @@ export function command<TType extends string>(type: TType) {
  * Create a rule factory bound to a specific registry.
  *
  * @example
- * const registry = new RuleRegistry<MyState>();
+ * const registry = new RuleRegistry<MyState, MyRuleResult>();
  * const rule = createRuleFactory(registry);
  *
  * rule(SelectContext, {
@@ -78,18 +81,20 @@ export function command<TType extends string>(type: TType) {
  *   apply: (state, cmd) => ({ mutations: { ... } })
  * });
  */
-export function createRuleFactory<TState>(registry: RuleRegistry<TState>) {
+export function createRuleFactory<TState, TResult extends RuleResult = RuleResult>(
+  registry: RuleRegistry<TState, TResult>
+) {
   return function rule<TDef extends AnyCommandDef>(
     cmd: TDef,
     config: {
       condition: (state: TState, cmd: CommandOf<TDef>) => boolean;
-      apply: (state: TState, cmd: CommandOf<TDef>) => RuleResult<TState>;
+      apply: (state: TState, cmd: CommandOf<TDef>) => TResult;
     }
   ): void {
     registry.register({
       trigger: cmd.type,
       condition: config.condition as (state: TState, cmd: BaseCommand) => boolean,
-      apply: config.apply as (state: TState, cmd: BaseCommand) => RuleResult<TState>,
+      apply: config.apply as (state: TState, cmd: BaseCommand) => TResult,
     });
   };
 }

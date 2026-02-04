@@ -8,6 +8,7 @@
 import type {
   BaseCommand,
   BusinessRule,
+  RuleResult,
   AsyncOperation,
   UIMeta,
   MetaListener,
@@ -38,16 +39,19 @@ export const nullLogger: CoordinatorLogger = {
  * - Manage async operations
  * - Track state stability
  * - Emit state changes when stable
+ *
+ * @typeParam TState - Application state type
+ * @typeParam TResult - Rule result type (must extend RuleResult)
  */
-export class StateCoordinator<TState> {
-  private rules: BusinessRule<TState>[] = [];
+export class StateCoordinator<TState, TResult extends RuleResult = RuleResult> {
+  private rules: BusinessRule<TState, TResult>[] = [];
   private metaListeners: Set<MetaListener> = new Set();
   private pendingPromises: Promise<void>[] = [];
   private pendingOps = 0;
   private logger: CoordinatorLogger;
 
   constructor(
-    private readonly store: StateStore<TState>,
+    private readonly store: StateStore<TState, TResult>,
     logger?: CoordinatorLogger
   ) {
     this.logger = logger ?? nullLogger;
@@ -56,7 +60,7 @@ export class StateCoordinator<TState> {
   /**
    * Set business rules for this coordinator.
    */
-  setRules(rules: BusinessRule<TState>[]): void {
+  setRules(rules: BusinessRule<TState, TResult>[]): void {
     this.rules = rules;
     this.logger.debug(`Registered ${rules.length} business rules`);
   }
@@ -97,10 +101,8 @@ export class StateCoordinator<TState> {
       try {
         const result = rule.apply(state, command);
 
-        // Apply mutations via store
-        if (result.mutations || result.asyncOps || result.followUp) {
-          await this.store.applyMutations(result);
-        }
+        // Apply mutations via store (store handles empty results gracefully)
+        await this.store.applyMutations(result);
 
         // Collect async ops
         if (result.asyncOps) {

@@ -1,17 +1,16 @@
 /**
  * LG Extension Rule Factory
  *
- * Provides rule() function for defining LG business rules.
+ * Uses createRuleFactory from state-engine with LG-specific types.
  */
 
-import type { CommandOf, AnyCommandDef, BaseCommand, BusinessRule, RuleResult } from "../state-engine";
+import { createRuleFactory, RuleRegistry } from "../state-engine";
+import type { BusinessRule } from "../state-engine";
 import type { PCEState } from "./types";
 import type { LGRuleResult } from "./store";
 
-// Global registry for LG rules (module-level)
-// Note: LGRuleResult extends RuleResult<PCEState> with additional mutation types
-// The store's applyMutations() handles the conversion
-const lgRuleRegistry: BusinessRule<PCEState>[] = [];
+// Registry for LG rules (module-level singleton)
+const lgRuleRegistry = new RuleRegistry<PCEState, LGRuleResult>();
 
 /**
  * Define a business rule for LG Extension.
@@ -27,24 +26,11 @@ const lgRuleRegistry: BusinessRule<PCEState>[] = [];
  *   })
  * });
  */
-export function rule<TDef extends AnyCommandDef>(
-  cmd: TDef,
-  config: {
-    condition: (state: PCEState, cmd: CommandOf<TDef>) => boolean;
-    apply: (state: PCEState, cmd: CommandOf<TDef>) => LGRuleResult;
-  }
-): void {
-  lgRuleRegistry.push({
-    trigger: cmd.type,
-    condition: config.condition as (state: PCEState, cmd: BaseCommand) => boolean,
-    // LGRuleResult is compatible with RuleResult<PCEState> - store handles additional fields
-    apply: config.apply as unknown as (state: PCEState, cmd: BaseCommand) => RuleResult<PCEState>,
-  });
-}
+export const rule = createRuleFactory(lgRuleRegistry);
 
 /**
  * Get all registered LG rules.
  */
-export function getAllRules(): BusinessRule<PCEState>[] {
-  return lgRuleRegistry;
+export function getAllRules(): BusinessRule<PCEState, LGRuleResult>[] {
+  return lgRuleRegistry.getAll();
 }

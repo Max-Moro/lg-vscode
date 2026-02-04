@@ -19,19 +19,6 @@ export interface BaseCommand {
 // ============================================
 
 /**
- * Result of applying a business rule.
- * Generic over state type to allow any state structure.
- */
-export interface RuleResult<TState> {
-  /** Partial state mutations to apply */
-  mutations?: Partial<TState>;
-  /** Async operations to execute */
-  asyncOps?: AsyncOperation[];
-  /** Follow-up commands to dispatch after mutations */
-  followUp?: BaseCommand[];
-}
-
-/**
  * Async operation that produces a command when complete.
  */
 export interface AsyncOperation {
@@ -39,16 +26,32 @@ export interface AsyncOperation {
 }
 
 /**
- * Business rule definition.
- * Generic over state type for type-safe condition and apply functions.
+ * Base result of applying a business rule.
+ * Contains only coordination fields - mutations are application-specific.
+ *
+ * Applications extend this interface to add their own mutation types.
  */
-export interface BusinessRule<TState = unknown> {
+export interface RuleResult {
+  /** Async operations to execute */
+  asyncOps?: AsyncOperation[];
+  /** Follow-up commands to dispatch after mutations */
+  followUp?: BaseCommand[];
+}
+
+/**
+ * Business rule definition.
+ * Generic over state type and result type for flexibility.
+ *
+ * @typeParam TState - Application state type
+ * @typeParam TResult - Rule result type (must extend RuleResult)
+ */
+export interface BusinessRule<TState = unknown, TResult extends RuleResult = RuleResult> {
   /** Command type that triggers this rule */
   trigger: string;
   /** Condition to check before applying */
   condition: (state: TState, cmd: BaseCommand) => boolean;
   /** Apply rule and return mutations/effects */
-  apply: (state: TState, cmd: BaseCommand) => RuleResult<TState>;
+  apply: (state: TState, cmd: BaseCommand) => TResult;
 }
 
 // ============================================
@@ -110,13 +113,16 @@ export type StateListener<TState> = (state: TState) => void;
  *
  * Only responsible for storing and updating business state.
  * Coordination (stability, pending ops) is handled by StateCoordinator.
+ *
+ * @typeParam TState - Application state type
+ * @typeParam TResult - Rule result type (for applyMutations)
  */
-export interface StateStore<TState> {
+export interface StateStore<TState, TResult extends RuleResult = RuleResult> {
   /** Get current state */
   getState(): TState;
 
-  /** Apply mutations from rule result */
-  applyMutations(result: RuleResult<TState>): Promise<void>;
+  /** Apply mutations from rule result (implementation handles specific mutation types) */
+  applyMutations(result: TResult): Promise<void>;
 
   /** Emit state change to subscribers */
   emit(): void;

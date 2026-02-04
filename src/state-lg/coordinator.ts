@@ -7,7 +7,7 @@
 
 import { StateCoordinator, type CoordinatorLogger } from "../state-engine";
 import type { PCEState } from "./types";
-import { PCEStateStore } from "./store";
+import { PCEStateStore, type LGRuleResult } from "./store";
 import { logDebug, logError } from "../logging/log";
 
 // Import domains for side-effect rule registration
@@ -25,14 +25,14 @@ const lgLogger: CoordinatorLogger = {
 /**
  * Type alias for LG's coordinator instance.
  */
-export type LGStateCoordinator = StateCoordinator<PCEState>;
+export type LGStateCoordinator = StateCoordinator<PCEState, LGRuleResult>;
 
 /**
  * Create a StateCoordinator configured for LG Extension.
  * Automatically registers all domain rules.
  */
 export function createLGCoordinator(store: PCEStateStore): LGStateCoordinator {
-  const coordinator = new StateCoordinator<PCEState>(store, lgLogger);
+  const coordinator = new StateCoordinator<PCEState, LGRuleResult>(store, lgLogger);
   coordinator.setRules(getAllRules());
   return coordinator;
 }

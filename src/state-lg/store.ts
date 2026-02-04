@@ -8,7 +8,7 @@
  */
 
 import * as vscode from "vscode";
-import type { StateStore, RuleResult, StateListener, AsyncOperation, BaseCommand } from "../state-engine";
+import type { StateStore, RuleResult, StateListener } from "../state-engine";
 import type {
   PCEState,
   PersistentState,
@@ -24,28 +24,24 @@ import { logDebug } from "../logging/log";
 const STATE_KEY = "lg.control.pceState";
 
 /**
- * Extended rule result for LG with separate mutation types for persistent, config, and environment.
- * Still includes asyncOps and followUp from the base RuleResult.
+ * Extended rule result for LG with separate mutation types.
+ * Inherits asyncOps and followUp from base RuleResult.
  */
-export interface LGRuleResult {
-  /** Mutations to persistent state only */
+export interface LGRuleResult extends RuleResult {
+  /** Mutations to persistent state */
   mutations?: Partial<PersistentState>;
   /** Mutations to configuration state */
   configMutations?: Partial<ConfigurationState>;
   /** Mutations to environment state */
   envMutations?: Partial<EnvironmentState>;
-  /** Async operations to execute */
-  asyncOps?: AsyncOperation[];
-  /** Follow-up commands to dispatch */
-  followUp?: BaseCommand[];
 }
 
 /**
  * PCE State Store - single source of truth for Control Panel state.
  *
- * Implements StateStore<PCEState> for use with StateCoordinator.
+ * Implements StateStore for use with StateCoordinator.
  */
-export class PCEStateStore implements StateStore<PCEState> {
+export class PCEStateStore implements StateStore<PCEState, LGRuleResult> {
   private static instance: PCEStateStore | undefined;
 
   private state: PCEState;
@@ -89,22 +85,18 @@ export class PCEStateStore implements StateStore<PCEState> {
 
   /**
    * Apply mutations from rule result.
-   * Handles LG-specific mutation structure (mutations, configMutations, envMutations).
    */
-  async applyMutations(result: RuleResult<PCEState>): Promise<void> {
-    // Cast to LGRuleResult to access LG-specific fields
-    const lgResult = result as unknown as LGRuleResult;
-
-    if (lgResult.mutations && Object.keys(lgResult.mutations).length > 0) {
-      await this.updatePersistent(lgResult.mutations);
+  async applyMutations(result: LGRuleResult): Promise<void> {
+    if (result.mutations && Object.keys(result.mutations).length > 0) {
+      await this.updatePersistent(result.mutations);
     }
 
-    if (lgResult.configMutations && Object.keys(lgResult.configMutations).length > 0) {
-      this.updateConfiguration(lgResult.configMutations);
+    if (result.configMutations && Object.keys(result.configMutations).length > 0) {
+      this.updateConfiguration(result.configMutations);
     }
 
-    if (lgResult.envMutations && Object.keys(lgResult.envMutations).length > 0) {
-      this.updateEnvironment(lgResult.envMutations);
+    if (result.envMutations && Object.keys(result.envMutations).length > 0) {
+      this.updateEnvironment(result.envMutations);
     }
   }
 
