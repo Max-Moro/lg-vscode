@@ -39,6 +39,9 @@ export function buildCliParams(
     tags = filterTagsForSection(tags, options.sectionInfo);
   }
 
+  // targetBranch is only relevant in review mode
+  const isReviewMode = Object.values(modes).includes("review");
+
   return {
     tokenizerLib: state.tokenizerLib,
     encoder: state.encoder,
@@ -46,7 +49,7 @@ export function buildCliParams(
     modes,
     tags,
     taskText: state.taskText,
-    targetBranch: state.targetBranch,
+    targetBranch: isReviewMode ? state.targetBranch : undefined,
     providerId: options?.includeProvider ? provider : undefined
   };
 }
