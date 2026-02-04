@@ -8,6 +8,7 @@ import type { ModeSetsList } from "../models/mode_sets_list";
 import type { TagSetsList } from "../models/tag_sets_list";
 import type { SectionInfo } from "../models/sections_list";
 import { type ShellType, getDefaultShell } from "../models/ShellType";
+import { DEFAULT_TOKENIZER_LIB, DEFAULT_ENCODER } from "./domains/tokenization";
 
 // Re-export engine types for convenience
 export type { BaseCommand, RuleResult, AsyncOperation } from "../state-engine";
@@ -104,8 +105,8 @@ export function createDefaultPersistentState(): PersistentState {
     section: "",
     modesByContextProvider: {},
     tagsByContext: {},
-    tokenizerLib: "tiktoken",
-    encoder: "cl100k_base",
+    tokenizerLib: DEFAULT_TOKENIZER_LIB,
+    encoder: DEFAULT_ENCODER,
     ctxLimit: 128000,
     cliScope: "",
     cliShell: getDefaultShell(),

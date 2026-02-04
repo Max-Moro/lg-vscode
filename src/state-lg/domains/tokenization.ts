@@ -18,6 +18,41 @@ export const LibsLoaded = command("tokenization/LIBS_LOADED").payload<{ libs: st
 export const EncodersLoaded = command("tokenization/ENCODERS_LOADED").payload<{ encoders: EncoderEntry[] }>();
 
 // ============================================
+// Tokenization Defaults
+// ============================================
+
+/** Default tokenizer library */
+export const DEFAULT_TOKENIZER_LIB = "tiktoken";
+
+/** Default encoder (for tiktoken) */
+export const DEFAULT_ENCODER = "o200k_base";
+
+/**
+ * Preferred encoder for each tokenizer library.
+ * Modern encoders optimized for code and multilingual content.
+ *
+ * - tiktoken: o200k_base — OpenAI tokenizer for GPT-4o, o1, o3, GPT-5
+ * - tokenizers: mistralai/Mistral-7B-v0.1 — Tekken-based, 30% more efficient for code
+ * - sentencepiece: google/mt5-base — excellent multilingual support
+ */
+const PREFERRED_ENCODER: Record<string, string> = {
+  tiktoken: "o200k_base",
+  tokenizers: "mistralai/Mistral-7B-v0.1",
+  sentencepiece: "google/mt5-base"
+};
+
+/**
+ * Get preferred encoder for library, fallback to first available.
+ */
+function selectBestEncoder(lib: string, availableEncoders: string[]): string {
+  const preferred = PREFERRED_ENCODER[lib];
+  if (preferred && availableEncoders.includes(preferred)) {
+    return preferred;
+  }
+  return availableEncoders[0] || "";
+}
+
+// ============================================
 // Rules
 // ============================================
 
@@ -76,6 +111,7 @@ rule(EncodersLoaded, {
   apply: (state: PCEState, cmd) => {
     const { encoders } = cmd;
     const currentEncoder = state.persistent.encoder;
+    const currentLib = state.persistent.tokenizerLib;
 
     const configMutations = { encoders };
 
@@ -87,8 +123,8 @@ rule(EncodersLoaded, {
       return { configMutations };
     }
 
-    // Delegate to SetEncoder if current is invalid
-    const newEncoder = encoderNames[0] || "";
+    // Select best encoder for current library
+    const newEncoder = selectBestEncoder(currentLib, encoderNames);
     return {
       configMutations,
       followUp: newEncoder ? [SetEncoder.create({ encoder: newEncoder })] : []
