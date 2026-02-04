@@ -2,7 +2,9 @@
  * Tokenization Domain - tokenizer settings
  */
 
-import { command, rule, type PCEState } from "../types";
+import { command } from "../../state-engine";
+import { rule } from "../rule";
+import type { PCEState } from "../types";
 import { cliListEncoders, type EncoderEntry } from "../../cli/CliClient";
 
 // ============================================

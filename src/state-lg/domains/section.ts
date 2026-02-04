@@ -2,7 +2,9 @@
  * Section Domain - section selection for inspection
  */
 
-import { command, rule, type PCEState } from "../types";
+import { command } from "../../state-engine";
+import { rule } from "../rule";
+import type { PCEState } from "../types";
 import type { SectionInfo } from "../../models/sections_list";
 
 // ============================================

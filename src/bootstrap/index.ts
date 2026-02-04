@@ -7,22 +7,19 @@
 import * as vscode from "vscode";
 import { setContext, getContext, clearContext } from "./context";
 import { initLogging, logDebug, logInfo } from "../logging/log";
-import { PCEStateStore } from "../state/store";
-import { StateCoordinator } from "../state/coordinator";
+import { PCEStateStore, createLGCoordinator, WatcherManager } from "../state-lg";
+import type { LGStateCoordinator } from "../state-lg";
 import { ActionDispatcher } from "../actions";
-import { WatcherManager } from "../state/watchers";
 import { StatsService } from "../services/StatsService";
 import { GenerationService } from "../services/GenerationService";
 import { GitService } from "../services/GitService";
 import { AiIntegrationService, createAiIntegrationService } from "../services/ai";
-// noinspection ES6PreferShortImport — import via domains/index.ts triggers side-effect rule registration
-import { getAllRules } from "../state/domains";
 import { VirtualDocProvider } from "../views/VirtualDocProvider";
 import { IncludedTree } from "../views/IncludedTree";
 
 // Singleton registry
 let _store: PCEStateStore | undefined;
-let _coordinator: StateCoordinator | undefined;
+let _coordinator: LGStateCoordinator | undefined;
 let _dispatcher: ActionDispatcher | undefined;
 let _watchers: WatcherManager | undefined;
 let _aiService: AiIntegrationService | undefined;
@@ -63,10 +60,9 @@ export function bootstrap(context: vscode.ExtensionContext): BootstrapResult {
   _aiService = createAiIntegrationService();
   _gitService = new GitService();
 
-  // 4. State management
+  // 4. State management (coordinator auto-registers domain rules)
   _store = PCEStateStore.createInstance(context.workspaceState);
-  _coordinator = new StateCoordinator(_store);
-  _coordinator.setRules(getAllRules());
+  _coordinator = createLGCoordinator(_store);
 
   // 6. Watchers
   _watchers = new WatcherManager(_coordinator);
@@ -102,8 +98,8 @@ export function getStore(): PCEStateStore {
   return _store!;
 }
 
-export function getCoordinator(): StateCoordinator {
-  assertBootstrapped("StateCoordinator");
+export function getCoordinator(): LGStateCoordinator {
+  assertBootstrapped("LGStateCoordinator");
   // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
   return _coordinator!;
 }

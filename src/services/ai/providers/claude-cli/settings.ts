@@ -2,7 +2,9 @@
  * Claude CLI Provider Settings Module
  */
 
-import { command, rule, type PCEState } from "../../../../state/types";
+import { command } from "../../../../state-engine";
+import { rule } from "../../../../state-lg/rule";
+import type { PCEState } from "../../../../state-lg";
 import type { ProviderSettingsModule } from "../../types";
 import type { ProviderSettingsContribution } from "../../../../viewmodel/types";
 import { getAvailableClaudeModels, getDefaultClaudeModel, type ClaudeModel } from "../../../../models/ClaudeModel";

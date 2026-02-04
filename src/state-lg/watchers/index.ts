@@ -3,7 +3,7 @@
  */
 
 import * as vscode from "vscode";
-import type { StateCoordinator } from "../coordinator";
+import type { LGStateCoordinator } from "../coordinator";
 import { FileWatcher } from "./FileWatcher";
 import { ThemeWatcher } from "./ThemeWatcher";
 import { logDebug } from "../../logging/log";
@@ -15,7 +15,7 @@ export class WatcherManager implements vscode.Disposable {
   public readonly fileWatcher: FileWatcher;
   public readonly themeWatcher: ThemeWatcher;
 
-  constructor(coordinator: StateCoordinator) {
+  constructor(coordinator: LGStateCoordinator) {
     this.fileWatcher = new FileWatcher(coordinator);
     this.themeWatcher = new ThemeWatcher();
     logDebug("[WatcherManager] Created");

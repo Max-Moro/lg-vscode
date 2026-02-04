@@ -9,10 +9,10 @@
 
 import * as vscode from "vscode";
 import { getStore, getCoordinator, getDispatcher, getWatchers } from "../bootstrap";
-import type { BaseCommand, UIMeta } from "../state/types";
+import type { BaseCommand, UIMeta } from "../state-engine";
 import { buildViewModel } from "../viewmodel/builder";
 import { logDebug, logError } from "../logging/log";
-import { Initialize } from "../state/domains/lifecycle";
+import { Initialize } from "../state-lg/domains/lifecycle";
 
 export class ControlPanelView implements vscode.WebviewViewProvider {
   private view?: vscode.WebviewView;

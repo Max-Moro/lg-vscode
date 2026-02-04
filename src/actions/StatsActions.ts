@@ -5,7 +5,7 @@
 import * as vscode from "vscode";
 import { getStore, getStatsService, getIncludedTree } from "../bootstrap";
 import { showStatsWebview } from "../views/StatsWebview";
-import type { PersistentState } from "../state/types";
+import type { PersistentState } from "../state-lg";
 
 type TargetType = "section" | "context";
 

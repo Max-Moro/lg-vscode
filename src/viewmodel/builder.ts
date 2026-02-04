@@ -2,7 +2,7 @@
  * ViewModel Builder - Pure function transforming PCE State to ViewModel
  */
 
-import type { PCEState } from "../state/types";
+import type { PCEState } from "../state-lg";
 import type {
   ViewModel,
   SelectOption,

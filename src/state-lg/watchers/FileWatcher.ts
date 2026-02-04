@@ -9,7 +9,7 @@ import * as vscode from "vscode";
 import * as path from "path";
 import * as fs from "fs";
 import * as crypto from "crypto";
-import type { StateCoordinator } from "../coordinator";
+import type { LGStateCoordinator } from "../coordinator";
 import { effectiveWorkspaceRoot } from "../../cli/CliResolver";
 import { logDebug } from "../../logging/log";
 import { Refresh } from "../domains/lifecycle";
@@ -30,7 +30,7 @@ export class FileWatcher implements vscode.Disposable {
   private pendingChanges = new Set<string>();
 
   constructor(
-    private readonly coordinator: StateCoordinator
+    private readonly coordinator: LGStateCoordinator
   ) {}
 
   /**

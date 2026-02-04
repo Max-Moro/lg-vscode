@@ -2,7 +2,10 @@
  * Adaptive Domain - modes, tags, and target branch (review mode)
  */
 
-import { command, rule, type PCEState, type RuleResult } from "../types";
+import { command } from "../../state-engine";
+import { rule } from "../rule";
+import type { PCEState } from "../types";
+import type { LGRuleResult } from "../store";
 import type { ModeSetsList } from "../../models/mode_sets_list";
 import type { TagSetsList } from "../../models/tag_sets_list";
 import { getGitService } from "../../bootstrap";
@@ -121,7 +124,7 @@ rule(SelectMode, {
     const ctx = state.persistent.template;
     const provider = state.persistent.providerId;
 
-    const result: RuleResult = {
+    const result: LGRuleResult = {
       mutations: {
         modesByContextProvider: {
           ...state.persistent.modesByContextProvider,

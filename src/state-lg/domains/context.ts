@@ -2,7 +2,9 @@
  * Context Domain - context selection and task text
  */
 
-import { command, rule, type PCEState, type AsyncOperation } from "../types";
+import { command, type AsyncOperation } from "../../state-engine";
+import { rule } from "../rule";
+import type { PCEState } from "../types";
 import { cliListModeSets, cliListTagSets, cliListSections } from "../../cli/CliClient";
 import { getGitService } from "../../bootstrap";
 

@@ -15,7 +15,9 @@
  * - tag-sets — if template exists
  */
 
-import { command, rule, type PCEState, type AsyncOperation } from "../types";
+import { command, type AsyncOperation } from "../../state-engine";
+import { rule } from "../rule";
+import type { PCEState } from "../types";
 import { cliListSections, cliListTokenizerLibs, cliListContexts, cliListModeSets, cliListTagSets } from "../../cli/CliClient";
 import { getAiService } from "../../bootstrap";
 

@@ -4,7 +4,7 @@
 
 import * as vscode from "vscode";
 import { getStore, getGenerationService, getVdocs } from "../bootstrap";
-import type { PersistentState } from "../state/types";
+import type { PersistentState } from "../state-lg";
 
 type TargetType = "section" | "context";
 

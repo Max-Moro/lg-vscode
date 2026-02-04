@@ -5,7 +5,7 @@ import * as vscode from "vscode";
 import type {RunResult} from "../models/report";
 import {buildHtml, getExtensionUri, lgUiUri, mediaUri} from "../webview/webviewKit";
 import {getStore, getCoordinator, getDispatcher} from "../bootstrap";
-import { SetTask } from "../state/domains/context";
+import { SetTask } from "../state-lg/domains/context";
 
 export async function showStatsWebview(
   data: RunResult,

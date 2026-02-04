@@ -6,7 +6,7 @@
  */
 
 import type { CliGenerationParams } from "./CliClient";
-import type { PersistentState } from "../state/types";
+import type { PersistentState } from "../state-lg";
 import type { SectionInfo } from "../models/sections_list";
 
 export interface BuildCliParamsOptions {

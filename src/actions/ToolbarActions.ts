@@ -8,7 +8,7 @@ import { resetCache, runDoctor } from "../services/DoctorService";
 import { runInitWizard } from "../starter/StarterConfig";
 import { EXT_ID } from "../constants";
 import { logError } from "../logging/log";
-import { Refresh, Initialize } from "../state/domains/lifecycle";
+import { Refresh, Initialize } from "../state-lg/domains/lifecycle";
 
 /**
  * Refresh catalogs
