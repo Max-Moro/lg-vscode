@@ -6,9 +6,12 @@ tag-sets:
       core:
         title: "Core Infrastructure"
         description: "Bootstrap, extension entry, logging, constants"
-      state-viewmodel:
-        title: "State & ViewModel"
-        description: "State management subsystem and ViewModel layer"
+      state-engine:
+        title: "State Engine"
+        description: "Universal state coordination engine (state-engine/)"
+      state-lg:
+        title: "State LG & ViewModel"
+        description: "LG-specific state management and ViewModel layer (state-lg/)"
       cli:
         title: "CLI Integration"
         description: "CLI resolver, client, runner"

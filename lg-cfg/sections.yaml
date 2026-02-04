@@ -53,15 +53,22 @@ src:
               - "/logging/"
               - "/webview/webviewKit.ts"
 
-          # State & ViewModel - state management subsystem
-          - condition: "TAGSET:vscode-extension:state-viewmodel"
+          # State Engine - universal coordination engine
+          - condition: "TAGSET:vscode-extension:state-engine"
             allow:
-              - "/state/types.ts"
-              - "/state/store.ts"
-              - "/state/coordinator.ts"
-              - "/state/domains/index.ts"
-              - "/state/domains/lifecycle.ts"
-              - "/state/watchers/"
+              - "/state-engine/"
+
+          # State LG - LG-specific state management
+          - condition: "TAGSET:vscode-extension:state-lg"
+            allow:
+              - "/state-lg/types.ts"
+              - "/state-lg/store.ts"
+              - "/state-lg/coordinator.ts"
+              - "/state-lg/rule.ts"
+              - "/state-lg/index.ts"
+              - "/state-lg/domains/index.ts"
+              - "/state-lg/domains/lifecycle.ts"
+              - "/state-lg/watchers/"
               - "/viewmodel/"
               - "/actions/index.ts"
 
@@ -78,19 +85,19 @@ src:
           # Context Domain (state only)
           - condition: "TAGSET:vscode-extension:context"
             allow:
-              - "/state/domains/context.ts"
+              - "/state-lg/domains/context.ts"
 
           # Section Domain (state + included tree)
           - condition: "TAGSET:vscode-extension:section"
             allow:
-              - "/state/domains/section.ts"
+              - "/state-lg/domains/section.ts"
               - "/views/IncludedTree.ts"
               - "/models/sections_list.ts"
 
           # Adaptive Domain - modes, tags, branches
           - condition: "TAGSET:vscode-extension:adaptive"
             allow:
-              - "/state/domains/adaptive.ts"
+              - "/state-lg/domains/adaptive.ts"
               - "/models/mode_sets_list.ts"
               - "/models/tag_sets_list.ts"
               - "/services/GitService.ts"
@@ -98,7 +105,7 @@ src:
           # Stats Domain - statistics, tokenization
           - condition: "TAGSET:vscode-extension:stats"
             allow:
-              - "/state/domains/tokenization.ts"
+              - "/state-lg/domains/tokenization.ts"
               - "/services/StatsService.ts"
               - "/actions/StatsActions.ts"
               - "/views/StatsWebview.ts"
@@ -115,7 +122,7 @@ src:
           # Provider Domain - AI providers
           - condition: "TAGSET:vscode-extension:send-to-ai"
             allow:
-              - "/state/domains/provider.ts"
+              - "/state-lg/domains/provider.ts"
               - "/services/ai/"
               - "/models/ShellType.ts"
               - "/actions/AiActions.ts"
