@@ -38,7 +38,6 @@ rule(LibsLoaded, {
         ...result,
         mutations: { tokenizerLib: newLib },
         asyncOps: [{
-          id: "load-encoders-initial",
           execute: async () => {
             const encoders = await cliListEncoders(newLib);
             return { type: "tokenization/ENCODERS_LOADED", encoders };
@@ -60,7 +59,6 @@ rule(SelectLib, {
     return {
       mutations: { tokenizerLib: lib },
       asyncOps: [{
-        id: "load-encoders",
         execute: async () => {
           const encoders = await cliListEncoders(lib);
           return { type: "tokenization/ENCODERS_LOADED", encoders };

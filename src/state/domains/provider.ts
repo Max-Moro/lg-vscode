@@ -46,9 +46,8 @@ rule(SelectProvider, {
     const { providerId } = cmd;
     const template = state.persistent.template;
 
-    const asyncOps: Array<{ id: string; execute: () => Promise<BaseCommand> }> = [
+    const asyncOps: Array<{ execute: () => Promise<BaseCommand> }> = [
       {
-        id: "load-contexts",
         execute: async () => {
           const contexts = await cliListContexts(providerId);
           return { type: "context/LOADED", contexts } as BaseCommand;
@@ -60,7 +59,6 @@ rule(SelectProvider, {
     // Reload them if template exists (tags don't depend on provider, so skip them)
     if (template) {
       asyncOps.push({
-        id: "load-mode-sets",
         execute: async () => {
           const modeSets = await cliListModeSets(template, providerId);
           return { type: "adaptive/MODE_SETS_LOADED", modeSets } as BaseCommand;

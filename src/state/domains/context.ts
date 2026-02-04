@@ -48,21 +48,18 @@ rule(SelectContext, {
     const { template } = cmd;
     const asyncOps: AsyncOperation[] = [
       {
-        id: "load-sections",
         execute: async () => {
           const sections = await cliListSections(template);
           return { type: "section/LOADED", sections };
         }
       },
       {
-        id: "load-mode-sets",
         execute: async () => {
           const modeSets = await cliListModeSets(template, state.persistent.providerId);
           return { type: "adaptive/MODE_SETS_LOADED", modeSets };
         }
       },
       {
-        id: "load-tag-sets",
         execute: async () => {
           const tagSets = await cliListTagSets(template);
           return { type: "adaptive/TAG_SETS_LOADED", tagSets };
@@ -75,7 +72,6 @@ rule(SelectContext, {
     const isReviewActive = Object.values(newModes).includes("review");
     if (isReviewActive) {
       asyncOps.push({
-        id: "load-branches",
         execute: async () => {
           const gitService = getGitService();
           const branches = await gitService.getBranchNames();

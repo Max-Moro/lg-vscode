@@ -102,7 +102,7 @@ export interface PCEState {
   configuration: ConfigurationState;
   environment: EnvironmentState;
   isStable: boolean;
-  pendingOps: Set<string>;
+  pendingOps: number;
 }
 
 // ============================================
@@ -151,7 +151,6 @@ export type AnyCommandDef = CommandDef<string, unknown> | CommandDefNoPayload<st
 // ============================================
 
 const ruleRegistry: BusinessRule[] = [];
-let ruleCounter = 0;
 
 /**
  * Define a command with payload.
@@ -197,7 +196,6 @@ export function rule<TDef extends AnyCommandDef>(
   }
 ): void {
   ruleRegistry.push({
-    id: `${cmd.type}#${++ruleCounter}`,
     trigger: cmd.type,
     condition: config.condition as (state: PCEState, cmd: BaseCommand) => boolean,
     apply: config.apply as (state: PCEState, cmd: BaseCommand) => RuleResult,
@@ -224,12 +222,10 @@ export interface RuleResult {
 }
 
 export interface AsyncOperation {
-  id: string;
   execute: () => Promise<BaseCommand>;
 }
 
 export interface BusinessRule {
-  id: string;
   trigger: string;
   condition: (state: PCEState, cmd: BaseCommand) => boolean;
   apply: (state: PCEState, cmd: BaseCommand) => RuleResult;
@@ -281,6 +277,6 @@ export function createDefaultPCEState(): PCEState {
     configuration: createDefaultConfigurationState(),
     environment: createDefaultEnvironmentState(),
     isStable: false,
-    pendingOps: new Set()
+    pendingOps: 0
   };
 }

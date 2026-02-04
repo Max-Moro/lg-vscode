@@ -43,7 +43,6 @@ function buildCatalogOps(state: PCEState, includeProviderDetection: boolean): As
   // Provider detection (INITIALIZE only)
   if (includeProviderDetection) {
     ops.push({
-      id: "detect-providers",
       execute: async () => {
         const aiService = getAiService();
         const providers = await aiService.detectAvailableProviders();
@@ -54,7 +53,6 @@ function buildCatalogOps(state: PCEState, includeProviderDetection: boolean): As
 
   // Tokenizer libs (always load, no dependencies)
   ops.push({
-    id: "load-tokenizer-libs",
     execute: async () => {
       const libs = await cliListTokenizerLibs();
       return { type: "tokenization/LIBS_LOADED", libs };
@@ -64,7 +62,6 @@ function buildCatalogOps(state: PCEState, includeProviderDetection: boolean): As
   // Sections depend on template (context) - filter by it if available
   if (template) {
     ops.push({
-      id: "load-sections",
       execute: async () => {
         const sections = await cliListSections(template);
         return { type: "section/LOADED", sections };
@@ -75,7 +72,6 @@ function buildCatalogOps(state: PCEState, includeProviderDetection: boolean): As
   // Contexts depend on provider
   if (providerId) {
     ops.push({
-      id: "load-contexts",
       execute: async () => {
         const contexts = await cliListContexts(providerId);
         return { type: "context/LOADED", contexts };
@@ -86,7 +82,6 @@ function buildCatalogOps(state: PCEState, includeProviderDetection: boolean): As
   // Mode-sets depend on provider AND template
   if (providerId && template) {
     ops.push({
-      id: "load-mode-sets",
       execute: async () => {
         const modeSets = await cliListModeSets(template, providerId);
         return { type: "adaptive/MODE_SETS_LOADED", modeSets };
@@ -97,7 +92,6 @@ function buildCatalogOps(state: PCEState, includeProviderDetection: boolean): As
   // Tag-sets depend only on template
   if (template) {
     ops.push({
-      id: "load-tag-sets",
       execute: async () => {
         const tagSets = await cliListTagSets(template);
         return { type: "adaptive/TAG_SETS_LOADED", tagSets };

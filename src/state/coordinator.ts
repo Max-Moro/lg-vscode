@@ -20,7 +20,7 @@ type MetaListener = (meta: UIMeta) => void;
 export class StateCoordinator {
   private rules: BusinessRule[] = [];
   private metaListeners: Set<MetaListener> = new Set();
-  private pendingPromises = new Map<string, Promise<void>>();
+  private pendingPromises: Promise<void>[] = [];
 
   constructor(
     private readonly store: PCEStateStore
@@ -53,7 +53,7 @@ export class StateCoordinator {
       return;
     }
 
-    logDebug(`[StateCoordinator] ${applicableRules.length} rules matched: ${applicableRules.map(r => r.id).join(", ")}`);
+    logDebug(`[StateCoordinator] ${applicableRules.length} rules matched for ${command.type}`);
 
     // 2. Apply rules and collect results
     const allAsyncOps: AsyncOperation[] = [];
@@ -88,7 +88,7 @@ export class StateCoordinator {
           allFollowUps.push(...result.followUp);
         }
       } catch (e) {
-        logError(`[StateCoordinator] Rule ${rule.id} failed`, e);
+        logError(`[StateCoordinator] Rule for ${rule.trigger} failed`, e);
       }
     }
 
@@ -110,26 +110,21 @@ export class StateCoordinator {
    * Start an async operation
    */
   private startAsyncOp(op: AsyncOperation): void {
-    logDebug(`[StateCoordinator] Starting async op: ${op.id}`);
-
-    // Mark as pending
-    this.store.addPendingOp(op.id);
+    this.store.addPendingOp();
     this.emitMeta();
 
-    // Execute and handle result
     const promise = op.execute()
       .then(async (resultCommand) => {
-        this.store.removePendingOp(op.id);
-        logDebug(`[StateCoordinator] Async op completed: ${op.id}`);
+        this.store.removePendingOp();
         await this.dispatch(resultCommand);
       })
       .catch((error) => {
-        this.store.removePendingOp(op.id);
-        logError(`[StateCoordinator] Async op ${op.id} failed`, error);
+        this.store.removePendingOp();
+        logError(`[StateCoordinator] Async op failed`, error);
         this.checkAndEmit();
       });
 
-    this.pendingPromises.set(op.id, promise);
+    this.pendingPromises.push(promise);
   }
 
   /**
@@ -179,8 +174,9 @@ export class StateCoordinator {
    * Wait for all pending operations to complete
    */
   public async waitForStability(): Promise<void> {
-    const promises = Array.from(this.pendingPromises.values());
-    if (promises.length > 0) {
+    while (this.pendingPromises.length > 0) {
+      const promises = this.pendingPromises.slice();
+      this.pendingPromises.length = 0;
       await Promise.all(promises);
     }
   }

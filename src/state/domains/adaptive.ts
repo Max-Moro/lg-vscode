@@ -139,7 +139,6 @@ rule(SelectMode, {
     // Load branches when switching to review mode
     if (modeId === "review") {
       result.asyncOps = [{
-        id: "load-branches",
         execute: async () => {
           const gitService = getGitService();
           const branches = await gitService.getBranchNames();

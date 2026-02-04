@@ -130,40 +130,25 @@ export class PCEStateStore {
   }
 
   /**
-   * Update stability flag and pending operations
+   * Add a pending operation (increment counter)
    */
-  public updateStability(isStable: boolean, pendingOps?: Set<string>): void {
-    this.state = {
-      ...this.state,
-      isStable,
-      pendingOps: pendingOps ?? this.state.pendingOps
-    };
-  }
-
-  /**
-   * Add a pending operation
-   */
-  public addPendingOp(opId: string): void {
-    const newPending = new Set(this.state.pendingOps);
-    newPending.add(opId);
+  public addPendingOp(): void {
     this.state = {
       ...this.state,
       isStable: false,
-      pendingOps: newPending
+      pendingOps: this.state.pendingOps + 1
     };
   }
 
   /**
-   * Remove a pending operation
+   * Remove a pending operation (decrement counter)
    */
-  public removePendingOp(opId: string): void {
-    const newPending = new Set(this.state.pendingOps);
-    newPending.delete(opId);
-    const isStable = newPending.size === 0;
+  public removePendingOp(): void {
+    const newCount = Math.max(0, this.state.pendingOps - 1);
     this.state = {
       ...this.state,
-      isStable,
-      pendingOps: newPending
+      isStable: newCount === 0,
+      pendingOps: newCount
     };
   }
 
