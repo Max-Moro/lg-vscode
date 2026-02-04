@@ -18,22 +18,30 @@ User Action → Renderer → Command → Coordinator → Rules → Store → Vie
 
 ### Ключевые принципы
 
-1. **Единая точка истины** — всё состояние хранится в `PCEStateStore`
+1. **Единая точка истины** — всё бизнес-состояние хранится в `PCEStateStore`
 2. **Декларативные правила** — логика переходов описана в доменных модулях
 3. **Namespace-команды** — все команды имеют формат `domain/ACTION`
 4. **Модульность** — домены и провайдеры самодостаточны
 5. **Тонкие представления** — Views отвечают только за рендеринг
+6. **Разделение слоёв** — универсальный движок (`state-engine`) отделён от бизнес-логики (`state-lg`)
 
 ### Файловая структура
 
 ```
 src/
-├── state/                    # State Layer
-│   ├── types.ts              # Базовые типы (BaseCommand, BusinessRule, PCEState)
-│   ├── store.ts              # PCEStateStore (синглтон)
-│   ├── coordinator.ts        # StateCoordinator (синглтон)
+├── state-engine/             # Универсальный движок координации состояния
+│   ├── types.ts              # BaseCommand, RuleResult, BusinessRule, StateStore
+│   ├── command.ts            # command(), createRuleFactory(), RuleRegistry
+│   ├── coordinator.ts        # StateCoordinator<TState, TResult>
+│   └── index.ts              # Публичный API движка
+│
+├── state-lg/                 # Бизнес-логика LG Extension
+│   ├── types.ts              # PCEState, PersistentState, ConfigurationState, EnvironmentState
+│   ├── store.ts              # PCEStateStore, LGRuleResult
+│   ├── coordinator.ts        # createLGCoordinator(), LGStateCoordinator
+│   ├── rule.ts               # rule() — фабрика правил для LG
 │   ├── domains/              # Доменные модули (бизнес-правила)
-│   │   ├── index.ts          # Регистрация доменов
+│   │   ├── index.ts          # Side-effect импорты для регистрации
 │   │   ├── context.ts        # context/* команды
 │   │   ├── section.ts        # section/* команды
 │   │   ├── adaptive.ts       # adaptive/* команды
@@ -41,13 +49,14 @@ src/
 │   │   ├── tokenization.ts   # tokenization/* команды
 │   │   └── lifecycle.ts      # lifecycle/* команды
 │   └── watchers/             # Слушатели внешних событий
+│       ├── index.ts          # WatcherManager
+│       ├── FileWatcher.ts
+│       └── ThemeWatcher.ts
 │
 ├── services/ai/providers/    # AI Provider Layer
 │   ├── claude-cli/
-│   │   ├── ...
 │   │   └── settings.ts       # provider.claude-cli/* команды
 │   ├── codex-cli/
-│   │   ├── ...
 │   │   └── settings.ts       # provider.codex-cli/* команды
 │   └── ...
 │
@@ -57,8 +66,8 @@ src/
 │
 ├── actions/                  # Actions Layer
 │   ├── index.ts              # ActionDispatcher
-│   ├── ListingActions.ts
-│   ├── ContextActions.ts
+│   ├── GenerationActions.ts
+│   ├── StatsActions.ts
 │   ├── AiActions.ts
 │   └── ToolbarActions.ts
 │
@@ -69,15 +78,121 @@ src/
 
 ---
 
-## 2. State Layer
+## 2. State Engine Layer (`src/state-engine/`)
 
-### 2.1. PCEStateStore (`src/state/store.ts`)
+Универсальный движок координации состояния. Не знает о бизнес-логике LG Extension.
+Может быть переиспользован в других проектах.
 
-Синглтон, хранящий всё состояние приложения. Название PCE отражает три типа состояния:
+### 2.1. Базовые типы (`types.ts`)
 
-- **P (Persistent)** — сохраняется между сессиями в `workspaceState`
-- **C (Configuration)** — загружается из CLI (списки контекстов, режимов, тегов)
-- **E (Environment)** — детектируется при старте (провайдеры)
+```typescript
+// Базовый результат правила — только координационные поля
+interface RuleResult {
+  asyncOps?: AsyncOperation[];
+  followUp?: BaseCommand[];
+}
+
+// Бизнес-правило — generic по состоянию и результату
+interface BusinessRule<TState, TResult extends RuleResult = RuleResult> {
+  trigger: string;
+  condition: (state: TState, cmd: BaseCommand) => boolean;
+  apply: (state: TState, cmd: BaseCommand) => TResult;
+}
+
+// Интерфейс хранилища — generic по состоянию и результату
+interface StateStore<TState, TResult extends RuleResult = RuleResult> {
+  getState(): TState;
+  applyMutations(result: TResult): Promise<void>;
+  emit(): void;
+  subscribe(listener: StateListener<TState>): () => void;
+}
+```
+
+**Важно:** `RuleResult` не содержит поля `mutations` — это деталь реализации конкретного store.
+Движок не знает как применять мутации к состоянию.
+
+### 2.2. Фабрики команд и правил (`command.ts`)
+
+```typescript
+// Фабрика команд
+const SelectContext = command("context/SELECT").payload<{ template: string }>();
+const Initialize = command("lifecycle/INITIALIZE").noPayload();
+
+// Реестр правил — generic по состоянию и результату
+class RuleRegistry<TState, TResult extends RuleResult> {
+  register(rule: BusinessRule<TState, TResult>): void;
+  getAll(): BusinessRule<TState, TResult>[];
+}
+
+// Фабрика rule() — создаётся через createRuleFactory
+const rule = createRuleFactory(registry);
+```
+
+### 2.3. StateCoordinator (`coordinator.ts`)
+
+Оркестрирует обработку команд. Управляет стабильностью внутри себя.
+
+```typescript
+class StateCoordinator<TState, TResult extends RuleResult> {
+  private pendingOps = 0;  // Координационное состояние — внутри координатора
+
+  constructor(store: StateStore<TState, TResult>, logger?: CoordinatorLogger);
+  setRules(rules: BusinessRule<TState, TResult>[]): void;
+  dispatch(command: BaseCommand): Promise<void>;
+  isStable(): boolean;
+  subscribeToMeta(listener: MetaListener): () => void;
+}
+```
+
+**Жизненный цикл команды:**
+1. `dispatch(command)` — приём команды
+2. Поиск правил по `trigger === command.type`
+3. Проверка `condition(state, cmd)` для каждого правила
+4. Вызов `apply(state, cmd)` → получение результата
+5. Вызов `store.applyMutations(result)` — store сам решает как применить
+6. Запуск async-операций (их результат — новые команды)
+7. Обработка follow-up команд
+8. Эмиссия состояния при достижении стабильности
+
+---
+
+## 3. State LG Layer (`src/state-lg/`)
+
+Бизнес-логика LG Extension. Использует движок из `state-engine`.
+
+### 3.1. LGRuleResult и PCEState (`types.ts`, `store.ts`)
+
+```typescript
+// LG-специфичный результат — расширяет базовый
+interface LGRuleResult extends RuleResult {
+  mutations?: Partial<PersistentState>;      // Мутации персистентного состояния
+  configMutations?: Partial<ConfigurationState>;  // Мутации конфигурации
+  envMutations?: Partial<EnvironmentState>;       // Мутации окружения
+}
+
+// PCE = Persistent + Configuration + Environment (только бизнес-данные)
+interface PCEState {
+  persistent: PersistentState;
+  configuration: ConfigurationState;
+  environment: EnvironmentState;
+  // НЕТ isStable, pendingOps — это внутри координатора
+}
+```
+
+### 3.2. PCEStateStore (`store.ts`)
+
+Реализует `StateStore<PCEState, LGRuleResult>`.
+
+```typescript
+class PCEStateStore implements StateStore<PCEState, LGRuleResult> {
+  // Применяет мутации из LGRuleResult
+  async applyMutations(result: LGRuleResult): Promise<void> {
+    if (result.mutations) await this.updatePersistent(result.mutations);
+    if (result.configMutations) this.updateConfiguration(result.configMutations);
+    if (result.envMutations) this.updateEnvironment(result.envMutations);
+  }
+}
+```
 
 **Паттерн доступа:**
 ```typescript
@@ -85,23 +200,29 @@ import { getStore } from "../bootstrap";
 const store = getStore();
 ```
 
-**Основные методы:**
-- `getState()` — полное состояние (для buildViewModel)
-- `getPersistentState()` — только персистентная часть
-- `updatePersistent(partial)` — обновление с сохранением
-- `updateConfiguration(partial)` — обновление конфигурации
-- `subscribe(listener)` — подписка на изменения
+### 3.3. Rule Factory (`rule.ts`)
 
-**Расширяемое хранение настроек провайдеров:**
+Использует `createRuleFactory` из движка:
+
 ```typescript
-// PersistentState содержит:
-providerSettings: Record<string, Record<string, unknown>>
-// Например: providerSettings["claude-cli"] = { model: "sonnet", method: "continue" }
+import { createRuleFactory, RuleRegistry } from "../state-engine";
+
+const lgRuleRegistry = new RuleRegistry<PCEState, LGRuleResult>();
+export const rule = createRuleFactory(lgRuleRegistry);
+export const getAllRules = () => lgRuleRegistry.getAll();
 ```
 
-### 2.2. StateCoordinator (`src/state/coordinator.ts`)
+### 3.4. Coordinator Factory (`coordinator.ts`)
 
-Синглтон, оркестрирующий обработку команд через движок бизнес-правил.
+```typescript
+export type LGStateCoordinator = StateCoordinator<PCEState, LGRuleResult>;
+
+export function createLGCoordinator(store: PCEStateStore): LGStateCoordinator {
+  const coordinator = new StateCoordinator<PCEState, LGRuleResult>(store, lgLogger);
+  coordinator.setRules(getAllRules());  // Автоматическая регистрация правил
+  return coordinator;
+}
+```
 
 **Паттерн доступа:**
 ```typescript
@@ -110,37 +231,20 @@ const coordinator = getCoordinator();
 await coordinator.dispatch({ type: "provider/SELECT", providerId: "..." });
 ```
 
-**Жизненный цикл команды:**
-1. `dispatch(command)` — приём команды
-2. Поиск правил по `trigger === command.type` (string matching)
-3. Проверка `condition(state, cmd)` для каждого правила
-4. Вызов `apply(state, cmd)` → получение мутаций и async-операций
-5. Применение мутаций к Store
-6. Запуск async-операций (их результат — новые команды)
-7. Обработка follow-up команд
-8. Эмиссия состояния при достижении стабильности
+### 3.5. Domain Modules (`domains/`)
 
-**Стабильность:** Состояние считается стабильным когда нет pending async-операций.
-Только стабильное состояние передаётся в ViewModel и рендерится.
+Каждый домен — самодостаточный модуль:
 
-### 2.3. Domain Modules (`src/state/domains/`)
-
-Каждый домен — самодостаточный модуль, содержащий:
-- Команды домена (через фабрику `command()`)
-- Бизнес-правила (через фабрику `rule()` с авто-регистрацией)
-
-**Структура доменного модуля:**
 ```typescript
-// src/state/domains/context.ts
-import { command, rule, type PCEState } from "../types";
+// src/state-lg/domains/context.ts
+import { command } from "../../state-engine";
+import { rule } from "../rule";
+import type { PCEState } from "../types";
 
-// Команды — строка типа указывается ОДИН раз
+// Команды
 export const SelectContext = command("context/SELECT").payload<{ template: string }>();
-export const SetTask = command("context/SET_TASK").payload<{ text: string }>();
-export const ContextsLoaded = command("context/LOADED").payload<{ contexts: string[] }>();
 
 // Правила — авто-регистрация при импорте модуля
-/** When context changes, reload mode-sets and tag-sets */
 rule(SelectContext, {
   condition: (state, cmd) => cmd.template !== state.persistent.template,
   apply: (state, cmd) => ({
@@ -149,13 +253,6 @@ rule(SelectContext, {
   })
 });
 ```
-
-**Ключевые особенности:**
-- `command("type").payload<T>()` — определяет команду, строка типа указывается один раз
-- `command("type").noPayload()` — для команд без payload
-- `rule(cmd, config)` — определяет правило и автоматически регистрирует его
-- `cmd.create(payload)` — создаёт типизированный экземпляр команды для followUp/asyncOps
-- Типизация в `condition`/`apply` выводится автоматически, без ручных кастов
 
 **Доступные домены:**
 
@@ -168,71 +265,39 @@ rule(SelectContext, {
 | tokenization | `tokenization.ts` | `tokenization/SELECT_LIB`, `tokenization/SET_ENCODER`, `tokenization/SET_CTX_LIMIT`, `tokenization/LIBS_LOADED`, `tokenization/ENCODERS_LOADED` |
 | lifecycle | `lifecycle.ts` | `lifecycle/INITIALIZE`, `lifecycle/REFRESH` |
 
-**Регистрация доменов** (`src/state/domains/index.ts`):
+**Регистрация доменов** (`domains/index.ts`):
 
-Правила регистрируются автоматически при импорте доменных модулей:
 ```typescript
-// Импорты для side-effect регистрации правил
+// Side-effect импорты для регистрации правил
 import "./context";
 import "./section";
 import "./adaptive";
-// ...
-
-export { getAllRules } from "../types";
+import "./provider";
+import "./tokenization";
+import "./lifecycle";
 ```
 
-### 2.4. Provider Settings Modules
+### 3.6. Provider Settings Modules
 
-Провайдеры могут регистрировать собственные настройки через `ProviderSettingsModule`.
+Провайдеры регистрируют настройки через `ProviderSettingsModule`:
 
-**Структура модуля настроек:**
 ```typescript
 // src/services/ai/providers/claude-cli/settings.ts
-import { command, rule, type PCEState } from "../../../../state/types";
+import { command } from "../../../../state-engine";
+import { rule } from "../../../../state-lg/rule";
 
-// Команды провайдера
-export const SelectClaudeModel = command("provider.claude-cli/SELECT_MODEL").payload<{ model: ClaudeModel }>();
+export const SelectClaudeModel = command("provider.claude-cli/SELECT_MODEL")
+  .payload<{ model: ClaudeModel }>();
 
-// Правила (авто-регистрация)
 rule(SelectClaudeModel, {
   condition: () => true,
   apply: (state, cmd) => ({
     mutations: { providerSettings: updateClaudeSettings(state, { model: cmd.model }) }
   })
 });
-
-// Экспорт модуля
-export const claudeCliSettings: ProviderSettingsModule = {
-  providerId: "com.anthropic.claude.cli",
-
-  // Дефолты для providerSettings
-  stateDefaults: { model: "sonnet", method: "continue" },
-
-  // UI-вклад (динамические поля)
-  buildContribution: (state) => ({
-    providerId: "com.anthropic.claude.cli",
-    title: "Claude Settings",
-    visible: state.persistent.providerId === "com.anthropic.claude.cli",
-    fields: [
-      {
-        id: "claudeModel",
-        type: "select",
-        label: "Model",
-        options: [...],
-        value: currentModel,
-        command: { type: "provider.claude-cli/SELECT_MODEL", payloadKey: "model" }
-      }
-    ]
-  })
-};
 ```
 
-**Namespace команд провайдеров:** `provider.<provider-id>/<ACTION>`
-- `provider.claude-cli/SELECT_MODEL`
-- `provider.claude-cli/SELECT_METHOD`
-- `provider.codex-cli/SELECT_REASONING`
-
-### 2.5. Watchers (`src/state/watchers/`)
+### 3.7. Watchers (`watchers/`)
 
 Слушатели внешних событий, диспатчащие команды в Coordinator.
 
@@ -244,9 +309,9 @@ export const claudeCliSettings: ProviderSettingsModule = {
 
 ---
 
-## 3. ViewModel Layer
+## 4. ViewModel Layer
 
-### 3.1. buildViewModel (`src/viewmodel/builder.ts`)
+### 4.1. buildViewModel (`src/viewmodel/builder.ts`)
 
 **Чистая функция** без побочных эффектов: `PCEState → ViewModel`.
 
@@ -256,139 +321,34 @@ export const claudeCliSettings: ProviderSettingsModule = {
 - Сбор `ProviderSettingsContribution` от всех провайдеров
 - Вычисление флагов видимости
 
-**Динамические настройки провайдеров:**
-```typescript
-// Collect provider settings contributions
-let providerSettings: ProviderSettingsContribution[] = [];
-try {
-  const aiService = getAiService();
-  providerSettings = aiService.getAllSettingsModules()
-    .map(module => module.buildContribution(state))
-    .filter(contrib => contrib.visible);
-} catch {
-  // During bootstrap, aiService may not be available yet
-}
-```
-
-### 3.2. ViewModel Types (`src/viewmodel/types.ts`)
-
-**Динамические настройки провайдеров:**
-```typescript
-interface ProviderSettingsField {
-  id: string;                    // DOM element id
-  type: "select" | "text";
-  label: string;
-  options?: SelectOption[];
-  value: string;
-  command: {
-    type: string;                // e.g., "provider.claude-cli/SELECT_MODEL"
-    payloadKey: string;          // e.g., "model"
-  };
-}
-
-interface ProviderSettingsContribution {
-  providerId: string;
-  title: string;
-  visible: boolean;
-  fields: ProviderSettingsField[];
-}
-
-interface ViewModel {
-  // ... общие поля ...
-
-  // Динамические настройки провайдеров
-  providerSettings: ProviderSettingsContribution[];
-}
-```
-
 ---
 
-## 4. Actions Layer
+## 5. Actions Layer
 
-### 4.1. ActionDispatcher (`src/actions/index.ts`)
+### 5.1. ActionDispatcher (`src/actions/index.ts`)
 
 Синглтон, маршрутизирующий бизнес-операции к соответствующим модулям.
 
-**Паттерн доступа:**
 ```typescript
 import { getDispatcher } from "../bootstrap";
-const dispatcher = getDispatcher();
-await dispatcher.sendToAI();
+await getDispatcher().sendToAI();
 ```
 
-### 4.2. Action Modules
+### 5.2. Action Modules
 
-**ListingActions:** `generateListing()`, `showIncluded()`, `showSectionStats()`
-
-**ContextActions:** `generateContext()`, `showContextStats()`
-
-**AiActions:** `sendToAI()`
-
-**ToolbarActions:** `refreshCatalogs()`, `doctor()`, `resetCache()`, `updateAiModes()`
+- **GenerationActions:** `generateListing()`, `generateContext()`
+- **StatsActions:** `showSectionStats()`, `showContextStats()`, `showIncluded()`
+- **AiActions:** `sendToAI()`
+- **ToolbarActions:** `refreshCatalogs()`, `doctor()`, `resetCache()`, `updateAiModes()`
 
 ---
 
-## 5. Views Layer
-
-### 5.1. Принцип тонких представлений
+## 6. Views Layer
 
 Views отвечают только за:
 1. Жизненный цикл WebView
 2. Маршрутизацию сообщений к Coordinator/ActionDispatcher
 3. Подписку на Store и передачу ViewModel в рендерер
-
-### 5.2. ControlPanelView
-
-**При resolveWebviewView:**
-1. Подписывается на store → buildViewModel → postMessage
-2. Запускает watchers
-3. Диспатчит `lifecycle/INITIALIZE`
-
----
-
-## 6. Render Layer (JavaScript)
-
-### 6.1. Stateless Renderer (`media/control.js`)
-
-WebView-рендерер без собственного состояния.
-
-**Принцип работы:**
-1. Получает ViewModel через `postMessage({ type: "render", viewModel })`
-2. Сравнивает с предыдущим ViewModel (diff)
-3. Обновляет только изменившиеся части DOM
-4. Пользовательские события конвертирует в Commands с namespace
-5. Отправляет Commands обратно через `postMessage`
-
-**Динамический рендеринг настроек провайдеров:**
-```javascript
-function renderProviderSettings(vm, prev) {
-  const container = DOM.qs("#provider-settings-container");
-  const contributions = vm.providerSettings || [];
-
-  // Rebuild if structure changed
-  if (structureChanged) {
-    container.innerHTML = buildProviderSettingsHtml(contributions);
-  } else {
-    // Just update values
-    for (const contrib of contributions) {
-      for (const field of contrib.fields) {
-        const el = DOM.qs(`#${field.id}`);
-        if (el) el.value = field.value;
-      }
-    }
-  }
-}
-```
-
-**Динамическая генерация команд:**
-```javascript
-// data-attributes на элементах указывают команду
-<select data-command-type="provider.claude-cli/SELECT_MODEL"
-        data-command-key="model">
-
-// При изменении генерируется команда:
-{ type: "provider.claude-cli/SELECT_MODEL", model: value }
-```
 
 ---
 
@@ -428,9 +388,8 @@ provider/DETECTED → provider/SELECT
 ### Порядок инициализации
 
 1. `bootstrap(context)` в `extension.ts`:
-   - Создание синглтонов (store, coordinator, services)
-   - Импорт доменных модулей (side-effect регистрация правил)
-   - `coordinator.setRules(getAllRules())`
+   - Создание синглтонов (store, services)
+   - `createLGCoordinator(store)` — автоматически регистрирует правила
 
 2. `resolveWebviewView()`:
    - Подписка на store → ViewModel → render
@@ -445,20 +404,19 @@ provider/DETECTED → provider/SELECT
 
 ### Добавление нового домена
 
-1. Создать файл `src/state/domains/<domain>.ts`
-2. Определить команды через `command()`
-3. Определить правила через `rule()` (авто-регистрация)
-4. Добавить импорт в `src/state/domains/index.ts`
+1. Создать файл `src/state-lg/domains/<domain>.ts`
+2. Определить команды через `command()` из `state-engine`
+3. Определить правила через `rule()` из `state-lg`
+4. Добавить импорт в `src/state-lg/domains/index.ts`
 
 ```typescript
-// src/state/domains/newdomain.ts
-import { command, rule, type PCEState } from "../types";
+// src/state-lg/domains/newdomain.ts
+import { command } from "../../state-engine";
+import { rule } from "../rule";
+import type { PCEState } from "../types";
 
-// Команды
 export const MyAction = command("newdomain/MY_ACTION").payload<{ value: string }>();
 
-// Правила
-/** Handle my action */
 rule(MyAction, {
   condition: () => true,
   apply: (state, cmd) => ({
@@ -468,25 +426,25 @@ rule(MyAction, {
 ```
 
 ```typescript
-// src/state/domains/index.ts
+// src/state-lg/domains/index.ts
 import "./newdomain";  // добавить импорт для регистрации
 ```
 
 ### Добавление нового AI-провайдера с настройками
 
 1. Создать `src/services/ai/providers/<provider>/settings.ts`
-2. Определить команды и правила через `command()` и `rule()`
-3. Реализовать `ProviderSettingsModule`
-4. Зарегистрировать в `src/services/ai/index.ts`
+2. Определить команды через `command()` из `state-engine`
+3. Определить правила через `rule()` из `state-lg`
+4. Реализовать `ProviderSettingsModule`
+5. Зарегистрировать в `src/services/ai/index.ts`
 
 ```typescript
 // src/services/ai/providers/myprovider/settings.ts
-import { command, rule, type PCEState } from "../../../../state/types";
+import { command } from "../../../../state-engine";
+import { rule } from "../../../../state-lg/rule";
 
-// Команды
 export const SetOption = command("provider.myprovider/SET_OPTION").payload<{ value: string }>();
 
-// Правила (авто-регистрация)
 rule(SetOption, {
   condition: () => true,
   apply: (state, cmd) => ({
@@ -494,43 +452,15 @@ rule(SetOption, {
   })
 });
 
-// Экспорт модуля
 export const myProviderSettings: ProviderSettingsModule = {
   providerId: "com.example.myprovider",
   stateDefaults: { option: "default" },
-  buildContribution: (state) => ({
-    providerId: "com.example.myprovider",
-    title: "My Provider Settings",
-    visible: state.persistent.providerId === "com.example.myprovider",
-    fields: [
-      {
-        id: "myOption",
-        type: "select",
-        label: "Option",
-        options: [...],
-        value: currentValue,
-        command: { type: "provider.myprovider/SET_OPTION", payloadKey: "value" }
-      }
-    ]
-  })
+  buildContribution: (state) => ({ ... })
 };
 ```
 
-```typescript
-// src/services/ai/index.ts
-import { myProviderSettings } from "./providers/myprovider/settings";
-ALL_SETTINGS_MODULES.push(myProviderSettings);
-```
-
-UI появится автоматически — никаких изменений в `control.html` или `control.js` не требуется.
-
-### Добавление нового Action
-
-1. Создать функцию в `src/actions/<Module>Actions.ts`
-2. Добавить метод в `ActionDispatcher`
-
 ### Добавление нового Watcher
 
-1. Создать класс в `src/state/watchers/`
+1. Создать класс в `src/state-lg/watchers/`
 2. Добавить в `WatcherManager`
 3. Вызывать `coordinator.dispatch()` при событиях
