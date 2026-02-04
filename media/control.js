@@ -275,9 +275,14 @@
     const block = DOM.qs("#cli-settings-block");
     if (!block) return;
 
+    // Track visibility change to force repopulate selects
+    const wasVisible = prev?.cliSettingsVisible ?? false;
+    const isVisible = vm.cliSettingsVisible;
+    const justBecameVisible = isVisible && !wasVisible;
+
     // Visibility of entire CLI block
-    block.style.display = vm.cliSettingsVisible ? "flex" : "none";
-    if (!vm.cliSettingsVisible) return;
+    block.style.display = isVisible ? "flex" : "none";
+    if (!isVisible) return;
 
     // CLI Scope
     const scopeInput = DOM.qs("#cliScope");
@@ -285,10 +290,10 @@
       scopeInput.value = vm.cliScope;
     }
 
-    // Shell
+    // Shell - repopulate if data changed OR block just became visible
     const shellSelect = DOM.qs("#cliShell");
     if (shellSelect) {
-      if (!prev || !arraysEqual(prev.cliShells, vm.cliShells)) {
+      if (justBecameVisible || !prev || !arraysEqual(prev.cliShells, vm.cliShells)) {
         LGUI.fillSelect(shellSelect, vm.cliShells, {
           getValue: (s) => s.value,
           getLabel: (s) => s.label
@@ -299,19 +304,19 @@
       }
     }
 
-    // Dynamic provider settings
-    renderProviderSettings(vm, prev);
+    // Dynamic provider settings (also pass justBecameVisible for same reason)
+    renderProviderSettings(vm, prev, justBecameVisible);
   }
 
-  function renderProviderSettings(vm, prev) {
+  function renderProviderSettings(vm, prev, forceRebuild = false) {
     const container = DOM.qs("#provider-settings-container");
     if (!container) return;
 
     const contributions = vm.providerSettings || [];
     const prevContributions = prev?.providerSettings || [];
 
-    // Check if structure changed
-    const structureChanged = !providerSettingsStructureEqual(prevContributions, contributions);
+    // Check if structure changed or forced rebuild (e.g., CLI block just became visible)
+    const structureChanged = forceRebuild || !providerSettingsStructureEqual(prevContributions, contributions);
 
     if (structureChanged) {
       // Full rebuild
