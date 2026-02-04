@@ -239,7 +239,8 @@
     "lint:fix": "eslint src --fix"
   },
   "dependencies": {
-    "@vscode/codicons": "^0.0.44"
+    "@vscode/codicons": "^0.0.44",
+    "yaml": "^2.8.1"
   },
   "devDependencies": {
     "@types/node": "^20.11.30",
