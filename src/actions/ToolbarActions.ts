@@ -5,7 +5,7 @@
 import * as vscode from "vscode";
 import { getCoordinator, getAiService, getStore } from "../bootstrap";
 import { resetCache, runDoctor } from "../services/DoctorService";
-import { openConfigOrInit, runInitWizard } from "../starter/StarterConfig";
+import { runInitWizard } from "../starter/StarterConfig";
 import { EXT_ID } from "../constants";
 import { logError } from "../logging/log";
 import { Refresh, Initialize } from "../state/domains/lifecycle";
@@ -31,13 +31,6 @@ export async function refreshCatalogs(): Promise<void> {
  */
 export async function createStarter(): Promise<void> {
   await runInitWizard();
-}
-
-/**
- * Open config file
- */
-export async function openConfig(): Promise<void> {
-  await openConfigOrInit();
 }
 
 /**

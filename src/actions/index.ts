@@ -54,10 +54,6 @@ export class ActionDispatcher {
     await ToolbarActions.createStarter();
   }
 
-  async openConfig(): Promise<void> {
-    await ToolbarActions.openConfig();
-  }
-
   async doctor(): Promise<void> {
     await ToolbarActions.doctor();
   }

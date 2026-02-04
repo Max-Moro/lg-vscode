@@ -77,11 +77,6 @@
         "icon": "$(new-file)"
       },
       {
-        "command": "lg.openConfig",
-        "title": "Open Config",
-        "icon": "$(file)"
-      },
-      {
         "command": "lg.doctor",
         "title": "Doctor",
         "icon": "$(pulse)"
@@ -140,11 +135,6 @@
           "group": "config@1"
         },
         {
-          "command": "lg.openConfig",
-          "when": "view == lg.control",
-          "group": "config@2"
-        },
-        {
           "command": "lg.doctor",
           "when": "view == lg.control",
           "group": "diagnostics@1"
@@ -181,10 +171,6 @@
         },
         {
           "command": "lg.createStarter",
-          "when": "false"
-        },
-        {
-          "command": "lg.openConfig",
           "when": "false"
         },
         {

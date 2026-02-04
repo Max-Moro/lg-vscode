@@ -31,7 +31,6 @@ export class ControlPanelView implements vscode.WebviewViewProvider {
       switch (command) {
         case "refreshCatalogs": await dispatcher.refreshCatalogs(); break;
         case "createStarter": await dispatcher.createStarter(); break;
-        case "openConfig": await dispatcher.openConfig(); break;
         case "doctor": await dispatcher.doctor(); break;
         case "resetCache": await dispatcher.resetCache(); break;
         case "openSettings": dispatcher.openSettings(); break;

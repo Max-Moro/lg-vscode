@@ -46,7 +46,6 @@ export function activate(context: vscode.ExtensionContext) {
     // Toolbar commands - delegate to dispatcher
     vscode.commands.registerCommand("lg.refreshCatalogs", () => getDispatcher().refreshCatalogs()),
     vscode.commands.registerCommand("lg.createStarter", () => getDispatcher().createStarter()),
-    vscode.commands.registerCommand("lg.openConfig", () => getDispatcher().openConfig()),
     vscode.commands.registerCommand("lg.doctor", () => getDispatcher().doctor()),
     vscode.commands.registerCommand("lg.resetCache", () => getDispatcher().resetCache()),
     vscode.commands.registerCommand("lg.openSettings", () => getDispatcher().openSettings()),
