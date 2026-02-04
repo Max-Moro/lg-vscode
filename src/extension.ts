@@ -4,7 +4,8 @@
  * All initialization delegated to bootstrap().
  */
 import * as vscode from "vscode";
-import { bootstrap, getDispatcher, shutdown } from "./bootstrap";
+import { bootstrap, shutdown } from "./bootstrap";
+import { ToolbarActions } from "./actions";
 import { setVirtualProvider } from "./views/virtualBus";
 import { ControlPanelView } from "./views/ControlPanelView";
 import { locateCliOrOfferInstall } from "./cli/CliResolver";
@@ -43,14 +44,14 @@ export function activate(context: vscode.ExtensionContext) {
       vscode.window.setStatusBarMessage(`LG Included: ${mode === "tree" ? "Tree" : "Flat"} view`, 2000);
     }),
 
-    // Toolbar commands - delegate to dispatcher
-    vscode.commands.registerCommand("lg.refreshCatalogs", () => getDispatcher().refreshCatalogs()),
-    vscode.commands.registerCommand("lg.createStarter", () => getDispatcher().createStarter()),
-    vscode.commands.registerCommand("lg.doctor", () => getDispatcher().doctor()),
-    vscode.commands.registerCommand("lg.resetCache", () => getDispatcher().resetCache()),
-    vscode.commands.registerCommand("lg.openSettings", () => getDispatcher().openSettings()),
-    vscode.commands.registerCommand("lg.updateAiModes", () => getDispatcher().updateAiModes()),
-    vscode.commands.registerCommand("lg.clearState", () => getDispatcher().clearState())
+    // Toolbar commands
+    vscode.commands.registerCommand("lg.refreshCatalogs", () => ToolbarActions.refreshCatalogs()),
+    vscode.commands.registerCommand("lg.createStarter", () => ToolbarActions.createStarter()),
+    vscode.commands.registerCommand("lg.doctor", () => ToolbarActions.doctor()),
+    vscode.commands.registerCommand("lg.resetCache", () => ToolbarActions.resetCacheAction()),
+    vscode.commands.registerCommand("lg.openSettings", () => ToolbarActions.openSettings()),
+    vscode.commands.registerCommand("lg.updateAiModes", () => ToolbarActions.updateAiModes()),
+    vscode.commands.registerCommand("lg.clearState", () => ToolbarActions.clearState())
   );
 
   // 6. Quick CLI presence check

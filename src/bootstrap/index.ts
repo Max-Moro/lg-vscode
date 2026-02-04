@@ -9,7 +9,6 @@ import { setContext, getContext, clearContext } from "./context";
 import { initLogging, logDebug, logInfo } from "../logging/log";
 import { PCEStateStore, createLGCoordinator, WatcherManager } from "../state-lg";
 import type { LGStateCoordinator } from "../state-lg";
-import { ActionDispatcher } from "../actions";
 import { StatsService } from "../services/StatsService";
 import { GenerationService } from "../services/GenerationService";
 import { GitService } from "../services/GitService";
@@ -20,7 +19,6 @@ import { IncludedTree } from "../views/IncludedTree";
 // Singleton registry
 let _store: PCEStateStore | undefined;
 let _coordinator: LGStateCoordinator | undefined;
-let _dispatcher: ActionDispatcher | undefined;
 let _watchers: WatcherManager | undefined;
 let _aiService: AiIntegrationService | undefined;
 let _gitService: GitService | undefined;
@@ -75,9 +73,6 @@ export function bootstrap(context: vscode.ExtensionContext): BootstrapResult {
   _statsService = new StatsService();
   _generationService = new GenerationService();
 
-  // 9. Action dispatcher (no deps needed - actions use getters directly)
-  _dispatcher = new ActionDispatcher();
-
   _bootstrapped = true;
   logDebug("Bootstrap completed");
 
@@ -102,12 +97,6 @@ export function getCoordinator(): LGStateCoordinator {
   assertBootstrapped("LGStateCoordinator");
   // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
   return _coordinator!;
-}
-
-export function getDispatcher(): ActionDispatcher {
-  assertBootstrapped("ActionDispatcher");
-  // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-  return _dispatcher!;
 }
 
 export function getWatchers(): WatcherManager {
@@ -175,7 +164,6 @@ export function shutdown(): void {
   // Reset all singletons
   _store = undefined;
   _coordinator = undefined;
-  _dispatcher = undefined;
   _watchers = undefined;
   _aiService = undefined;
   _gitService = undefined;

@@ -4,7 +4,8 @@
 import * as vscode from "vscode";
 import type {RunResult} from "../models/report";
 import {buildHtml, getExtensionUri, lgUiUri, mediaUri} from "../webview/webviewKit";
-import {getStore, getCoordinator, getDispatcher} from "../bootstrap";
+import { getStore, getCoordinator } from "../bootstrap";
+import { GenerationActions, AiActions } from "../actions";
 import { SetTask } from "../state-lg/domains/context";
 
 export async function showStatsWebview(
@@ -41,7 +42,6 @@ export async function showStatsWebview(
   // Get singletons
   const store = getStore();
   const coordinator = getCoordinator();
-  const actions = getDispatcher();
 
   // Current content (updated after refresh)
   let current: RunResult = data;
@@ -78,9 +78,9 @@ export async function showStatsWebview(
         case "generate":
           panel.dispose();
           if (current.scope === "context") {
-            await actions.generateContext();
+            await GenerationActions.generateContext();
           } else {
-            await actions.generateListing();
+            await GenerationActions.generateListing();
           }
           break;
 
@@ -99,8 +99,7 @@ export async function showStatsWebview(
             vscode.window.showWarningMessage("Section listings cannot be sent to AI. Use contexts instead.");
             return;
           }
-          // Reuse ActionDispatcher's sendToAI - it reads state internally
-          await actions.sendToAI();
+          await AiActions.sendToAI();
           panel.dispose();
           break;
       }

@@ -70,7 +70,6 @@ src:
               - "/state-lg/domains/lifecycle.ts"
               - "/state-lg/watchers/"
               - "/viewmodel/"
-              - "/actions/index.ts"
 
           # CLI Integration
           - condition: "TAGSET:vscode-extension:cli"

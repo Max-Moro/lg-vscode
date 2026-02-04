@@ -3,12 +3,13 @@
  *
  * Responsibilities:
  * - WebView lifecycle (resolve, dispose)
- * - Message routing between WebView and ActionDispatcher
+ * - Message routing between WebView and action modules
  * - ViewModel rendering via store subscription
  */
 
 import * as vscode from "vscode";
-import { getStore, getCoordinator, getDispatcher, getWatchers } from "../bootstrap";
+import { getStore, getCoordinator, getWatchers } from "../bootstrap";
+import { GenerationActions, StatsActions, AiActions } from "../actions";
 import type { BaseCommand, UIMeta } from "../state-engine";
 import { buildViewModel } from "../viewmodel/builder";
 import { logDebug, logError } from "../logging/log";
@@ -21,26 +22,6 @@ export class ControlPanelView implements vscode.WebviewViewProvider {
   private unsubscribeTheme?: () => void;
 
   constructor() {}
-
-  /**
-   * Handle toolbar commands
-   */
-  public async handleCommand(command: string): Promise<void> {
-    const dispatcher = getDispatcher();
-    try {
-      switch (command) {
-        case "refreshCatalogs": await dispatcher.refreshCatalogs(); break;
-        case "createStarter": await dispatcher.createStarter(); break;
-        case "doctor": await dispatcher.doctor(); break;
-        case "resetCache": await dispatcher.resetCache(); break;
-        case "openSettings": dispatcher.openSettings(); break;
-        case "updateAiModes": await dispatcher.updateAiModes(); break;
-      }
-    } catch (e) {
-      const errorMessage = e instanceof Error ? e.message : String(e);
-      vscode.window.showErrorMessage(`LG: ${errorMessage}`);
-    }
-  }
 
   resolveWebviewView(view: vscode.WebviewView): void {
     this.view = view;
@@ -86,7 +67,6 @@ export class ControlPanelView implements vscode.WebviewViewProvider {
     try {
       const type = msg.type as string;
       const coordinator = getCoordinator();
-      const dispatcher = getDispatcher();
 
       // Route commands to coordinator
       if (type === "command") {
@@ -100,14 +80,14 @@ export class ControlPanelView implements vscode.WebviewViewProvider {
         return;
       }
 
-      // Route actions to dispatcher
+      // Route actions to action modules
       switch (type) {
-        case "generateListing": await dispatcher.generateListing(); break;
-        case "generateContext": await dispatcher.generateContext(); break;
-        case "showContextStats": await dispatcher.showContextStats(); break;
-        case "showIncluded": await dispatcher.showIncluded(); break;
-        case "showStats": await dispatcher.showSectionStats(); break;
-        case "sendToAI": await dispatcher.sendToAI(); break;
+        case "generateListing": await GenerationActions.generateListing(); break;
+        case "generateContext": await GenerationActions.generateContext(); break;
+        case "showContextStats": await StatsActions.showContextStats(); break;
+        case "showIncluded": await StatsActions.showIncluded(); break;
+        case "showStats": await StatsActions.showSectionStats(); break;
+        case "sendToAI": await AiActions.sendToAI(); break;
       }
     } catch (e) {
       const errorMessage = e instanceof Error ? e.message : String(e);
