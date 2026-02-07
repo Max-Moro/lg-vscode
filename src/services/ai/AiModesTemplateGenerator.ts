@@ -108,14 +108,31 @@ export class AiModesTemplateGenerator {
       logDebug("[AiModesTemplateGenerator] Read existing file");
     }
 
+    // Detect line ending from existing file or OS default
+    const eol = this.detectEol(existingContent);
+
     // Merge and generate new content
     const newContent = this.mergeAndGenerate(existingContent, allModes);
 
+    // Apply platform-appropriate line endings
+    const finalContent = eol === "\r\n"
+      ? newContent.replace(/\n/g, "\r\n")
+      : newContent;
+
     // Write file
-    fs.writeFileSync(filePath, newContent, "utf-8");
+    fs.writeFileSync(filePath, finalContent, "utf-8");
     logInfo(`[AiModesTemplateGenerator] Written ${filePath}`);
 
     return filePath;
+  }
+
+  /**
+   * Detects line ending from file content or falls back to OS default.
+   */
+  private detectEol(content: string): string {
+    if (content.includes("\r\n")) return "\r\n";
+    if (content.includes("\n")) return "\n";
+    return process.platform === "win32" ? "\r\n" : "\n";
   }
 
   /**
@@ -337,7 +354,7 @@ export class AiModesTemplateGenerator {
     const doc = new Document(rootMap);
     doc.commentBefore = FILE_HEADER_COMMENT;
 
-    return doc.toString({ indent: 2, lineWidth: 0 });
+    return doc.toString({ indent: 2, lineWidth: 0, singleQuote: true, flowCollectionPadding: false });
   }
 
   /**
