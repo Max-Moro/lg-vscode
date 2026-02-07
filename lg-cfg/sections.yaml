@@ -122,7 +122,7 @@ src:
           - condition: "TAGSET:vscode-extension:send-to-ai"
             allow:
               - "/state-lg/domains/provider.ts"
-              - "/services/ai/"
+              - "/ai/"
               - "/models/ShellType.ts"
               - "/actions/AiActions.ts"
 
@@ -146,51 +146,35 @@ src:
               - "/viewmodel/"
               - "/actions/ToolbarActions.ts"
 
-          # ==================== PROVIDER-SPECIFIC ====================
-
-          # Claude CLI provider with settings
-          - condition: "TAGSET:vscode-extension:send-to-ai AND TAGSET:ai-providers:claude-code-cli"
-            allow:
-              - "/models/ClaudeIntegrationMethod.ts"
-              - "/models/ClaudeModel.ts"
-
-          # Codex CLI provider with settings
-          - condition: "TAGSET:vscode-extension:send-to-ai AND TAGSET:ai-providers:codex-cli"
-            allow:
-              - "/models/CodexReasoningEffort.ts"
-
         children:
-          services:
+          ai:
             mode: block
             children:
-              ai:
-                mode: block
-                children:
-                  base:
-                    mode: allow
-                    allow:
-                      - "/BaseAiProvider.ts"
-                      - "/index.ts"
-                    when:
-                      - condition: "TAGSET:ai-providers:github-copilot"
-                        allow: ["/BaseExtensionProvider.ts"]
-                      - condition: "TAGSET:ai-providers:claude-code-cli OR TAGSET:ai-providers:codex-cli"
-                        allow: ["/BaseCliProvider.ts"]
-                      - condition: "TAGSET:ai-providers:cursor"
-                        allow: ["/BaseForkProvider.ts"]
-                  providers:
-                    mode: allow
-                    when:
-                      - condition: "TAGSET:ai-providers:clipboard"
-                        allow: ["/clipboard/"]
-                      - condition: "TAGSET:ai-providers:github-copilot"
-                        allow: ["/copilot/"]
-                      - condition: "TAGSET:ai-providers:cursor"
-                        allow: ["/cursor/"]
-                      - condition: "TAGSET:ai-providers:claude-code-cli"
-                        allow: ["/claude-cli/"]
-                      - condition: "TAGSET:ai-providers:codex-cli"
-                        allow: ["/codex-cli/"]
+              base:
+                mode: allow
+                allow:
+                  - "/BaseAiProvider.ts"
+                  - "/index.ts"
+                when:
+                  - condition: "TAGSET:ai-providers:github-copilot"
+                    allow: ["/BaseExtensionProvider.ts"]
+                  - condition: "TAGSET:ai-providers:claude-code-cli OR TAGSET:ai-providers:codex-cli"
+                    allow: ["/BaseCliProvider.ts"]
+                  - condition: "TAGSET:ai-providers:cursor"
+                    allow: ["/BaseForkProvider.ts"]
+              providers:
+                mode: allow
+                when:
+                  - condition: "TAGSET:ai-providers:clipboard"
+                    allow: ["/clipboard/"]
+                  - condition: "TAGSET:ai-providers:github-copilot"
+                    allow: ["/copilot/"]
+                  - condition: "TAGSET:ai-providers:cursor"
+                    allow: ["/cursor/"]
+                  - condition: "TAGSET:ai-providers:claude-code-cli"
+                    allow: ["/claude-cli/"]
+                  - condition: "TAGSET:ai-providers:codex-cli"
+                    allow: ["/codex-cli/"]
 
 review:
   extensions: [".ts", ".json", ".html", ".css", ".js"]

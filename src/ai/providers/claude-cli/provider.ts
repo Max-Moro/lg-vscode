@@ -1,7 +1,7 @@
 import * as vscode from "vscode";
 import { BaseCliProvider, CliExecutionContext } from "../../base";
 import type { ProviderModeInfo } from "../../types";
-import { ClaudeIntegrationMethod } from "../../../../models/ClaudeIntegrationMethod";
+import { ClaudeIntegrationMethod } from "./ClaudeIntegrationMethod";
 
 // Session-based methods
 import { createSessionManually } from "./method-manual";
@@ -35,7 +35,7 @@ export class ClaudeCliProvider extends BaseCliProvider {
    * Get the preferred integration method from the state
    */
   private async getIntegrationMethod(): Promise<ClaudeIntegrationMethod> {
-    const { getStore } = await import("../../../../bootstrap");
+    const { getStore } = await import("../../../bootstrap");
     const store = getStore();
     const state = store.getPersistentState();
 
@@ -103,7 +103,7 @@ export class ClaudeCliProvider extends BaseCliProvider {
     terminal: vscode.Terminal,
     ctx: CliExecutionContext
   ): Promise<void> {
-    const { logDebug, logWarn } = await import("../../../../logging/log");
+    const { logDebug, logWarn } = await import("../../../logging/log");
     const fs = await import("fs/promises");
 
     logDebug(`[Claude CLI] Using session method`);

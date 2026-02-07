@@ -1,7 +1,7 @@
 import * as path from "path";
 import * as fs from "fs/promises";
-import type { ShellType } from "../../../../models/ShellType";
-import type { CodexReasoningEffort } from "../../../../models/CodexReasoningEffort";
+import type { ShellType } from "../../../models/ShellType";
+import type { CodexReasoningEffort } from "./CodexReasoningEffort";
 import {
   getCodexHome,
   getCodexVersion,
@@ -30,7 +30,7 @@ const DEFAULT_SANDBOX_MODE = "workspace-write";
  * Create a new Codex session with the given content
  */
 export async function createCodexSession(params: CodexSessionParams): Promise<string> {
-  const { logDebug } = await import("../../../../logging/log");
+  const { logDebug } = await import("../../../logging/log");
 
   // 1. Generate session ID (UUID v7)
   const sessionId = generateUuidV7();

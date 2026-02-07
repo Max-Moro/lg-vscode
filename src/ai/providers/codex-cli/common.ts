@@ -2,7 +2,7 @@ import * as path from "path";
 import * as os from "os";
 import * as fs from "fs/promises";
 import * as child_process from "child_process";
-import type { ShellType } from "../../../../models/ShellType";
+import type { ShellType } from "../../../models/ShellType";
 
 /**
  * Lock file for Codex CLI session detection
@@ -22,7 +22,7 @@ export function getCodexHome(): string {
  * Get workspace root from CliResolver
  */
 export async function getWorkspaceRoot(): Promise<string> {
-  const { effectiveWorkspaceRoot } = await import("../../../../cli/CliResolver");
+  const { effectiveWorkspaceRoot } = await import("../../../cli/CliResolver");
   const root = effectiveWorkspaceRoot();
   if (!root) {
     throw new Error("No workspace root available");

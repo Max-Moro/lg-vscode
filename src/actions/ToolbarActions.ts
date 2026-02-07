@@ -63,7 +63,7 @@ export function openSettings(): void {
  */
 export async function updateAiModes(): Promise<void> {
   const aiService = getAiService();
-  const { AiModesTemplateGenerator } = await import("../services/ai/AiModesTemplateGenerator");
+  const { AiModesTemplateGenerator } = await import("../ai/AiModesTemplateGenerator");
   const generator = new AiModesTemplateGenerator(aiService);
 
   try {

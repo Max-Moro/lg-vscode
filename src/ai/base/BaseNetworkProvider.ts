@@ -26,7 +26,7 @@ export abstract class BaseNetworkProvider extends BaseAiProvider {
    * @throws Error if token is not found
    */
   protected async getApiToken(): Promise<string> {
-    const { getContext } = await import("../../../bootstrap");
+    const { getContext } = await import("../../bootstrap");
     const token = await getContext().secrets.get(this.secretKey);
     if (!token) {
       throw new Error(

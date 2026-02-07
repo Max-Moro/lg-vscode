@@ -29,4 +29,3 @@ export function getAvailableClaudeModels(): ClaudeModelDescriptor[] {
     { id: "opus", label: "Opus", description: "Most powerful" }
   ];
 }
-

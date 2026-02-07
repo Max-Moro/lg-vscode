@@ -17,7 +17,7 @@ export async function createSessionFromHeadless(
   content: string,
   scope?: string
 ): Promise<string> {
-  const { logDebug } = await import("../../../../logging/log");
+  const { logDebug } = await import("../../../logging/log");
   const cwd = await getWorkingDirectory(scope);
   const projectDir = await getClaudeProjectDir(scope);
 

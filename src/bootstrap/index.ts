@@ -13,7 +13,7 @@ import { FileWatcher } from "../watchers/FileWatcher";
 import { StatsService } from "../services/StatsService";
 import { GenerationService } from "../services/GenerationService";
 import { GitService } from "../services/GitService";
-import { AiIntegrationService, createAiIntegrationService } from "../services/ai";
+import { AiIntegrationService, createAiIntegrationService } from "../ai";
 import { VirtualDocProvider } from "../views/VirtualDocProvider";
 import { IncludedTree } from "../views/IncludedTree";
 

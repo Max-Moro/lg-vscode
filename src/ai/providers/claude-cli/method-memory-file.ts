@@ -53,7 +53,7 @@ export async function executeMemoryFileMethod(
   terminal: vscode.Terminal,
   ctx: CliExecutionContext
 ): Promise<void> {
-  const { logDebug } = await import("../../../../logging/log");
+  const { logDebug } = await import("../../../logging/log");
 
   logDebug(`[Claude CLI] Using memory-file method`);
 

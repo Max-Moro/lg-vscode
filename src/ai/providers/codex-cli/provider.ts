@@ -1,8 +1,8 @@
 import * as vscode from "vscode";
 import { BaseCliProvider, CliExecutionContext } from "../../base";
 import type { ProviderModeInfo } from "../../types";
-import type { CodexReasoningEffort } from "../../../../models/CodexReasoningEffort";
-import { getDefaultCodexReasoningEffort } from "../../../../models/CodexReasoningEffort";
+import type { CodexReasoningEffort } from "./CodexReasoningEffort";
+import { getDefaultCodexReasoningEffort } from "./CodexReasoningEffort";
 import { createCodexSession } from "./session";
 import { getWorkspacePath, getWorkingDirectory, buildCodexCommand, CODEX_SESSION_LOCK_FILE } from "./common";
 
@@ -21,7 +21,7 @@ export class CodexCliProvider extends BaseCliProvider {
    * Get reasoning effort from state
    */
   private async getReasoningEffort(): Promise<CodexReasoningEffort> {
-    const { getStore } = await import("../../../../bootstrap");
+    const { getStore } = await import("../../../bootstrap");
     const store = getStore();
     const state = store.getPersistentState();
 
@@ -65,7 +65,7 @@ export class CodexCliProvider extends BaseCliProvider {
     terminal: vscode.Terminal,
     ctx: CliExecutionContext
   ): Promise<void> {
-    const { logDebug, logWarn } = await import("../../../../logging/log");
+    const { logDebug, logWarn } = await import("../../../logging/log");
     const fs = await import("fs/promises");
 
     // Get reasoning effort from state

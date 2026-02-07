@@ -8,8 +8,8 @@ import * as fs from "fs";
 import * as path from "path";
 import { Document, parseDocument, YAMLMap, YAMLSeq, Pair, isMap } from "yaml";
 import { AiIntegrationService } from "./AiIntegrationService";
-import { effectiveWorkspaceRoot } from "../../cli/CliResolver";
-import { logInfo, logDebug } from "../../logging/log";
+import { effectiveWorkspaceRoot } from "../cli/CliResolver";
+import { logInfo, logDebug } from "../logging/log";
 
 /**
  * Mode metadata (without runs).

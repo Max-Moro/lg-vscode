@@ -75,5 +75,5 @@ export interface ProviderSettingsModule {
   stateDefaults: Record<string, unknown>;
 
   /** Build UI contribution for this provider */
-  buildContribution: (state: import("../../state-lg").PCEState) => import("../../viewmodel/types").ProviderSettingsContribution;
+  buildContribution: (state: import("../state-lg").PCEState) => import("../viewmodel/types").ProviderSettingsContribution;
 }

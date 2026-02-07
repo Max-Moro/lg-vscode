@@ -2,7 +2,7 @@ import * as vscode from "vscode";
 import * as path from "path";
 import { BaseAiProvider } from "./BaseAiProvider";
 import type { ProviderModeInfo } from "../types";
-import type { ShellType } from "../../../models/ShellType";
+import type { ShellType } from "../../models/ShellType";
 
 /**
  * CLI execution context with scope and shell configuration.
@@ -39,7 +39,7 @@ export abstract class BaseCliProvider extends BaseAiProvider {
    */
   protected async getCliBaseContext(runs: string): Promise<CliExecutionContext> {
     // Import store getter from bootstrap
-    const { getStore } = await import("../../../bootstrap");
+    const { getStore } = await import("../../bootstrap");
     const store = getStore();
     const state = store.getPersistentState();
 
@@ -116,7 +116,7 @@ export abstract class BaseCliProvider extends BaseAiProvider {
     }
 
     // Get effective workspace root from CliResolver
-    const { effectiveWorkspaceRoot } = await import("../../../cli/CliResolver");
+    const { effectiveWorkspaceRoot } = await import("../../cli/CliResolver");
     const workspaceRoot = effectiveWorkspaceRoot();
     if (!workspaceRoot) {
       throw new Error("No workspace root available");

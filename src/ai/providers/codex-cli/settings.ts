@@ -2,12 +2,13 @@
  * Codex CLI Provider Settings Module
  */
 
-import { command } from "../../../../state-engine";
-import { rule } from "../../../../state-lg/rule";
-import type { PCEState } from "../../../../state-lg";
+import { command } from "../../../state-engine";
+import { rule } from "../../../state-lg/rule";
+import type { PCEState } from "../../../state-lg";
 import type { ProviderSettingsModule } from "../../types";
-import type { ProviderSettingsContribution } from "../../../../viewmodel/types";
-import { getAvailableCodexReasoningEfforts, getDefaultCodexReasoningEffort, type CodexReasoningEffort } from "../../../../models/CodexReasoningEffort";
+import type { ProviderSettingsContribution } from "../../../viewmodel/types";
+import type { CommandOf } from "../../../state-engine/types";
+import { getAvailableCodexReasoningEfforts, getDefaultCodexReasoningEffort, type CodexReasoningEffort } from "./CodexReasoningEffort";
 
 // ============================================
 // Commands
@@ -46,7 +47,7 @@ function updateCodexSettings(
 /** When Codex reasoning effort is selected, update provider settings */
 rule(SelectCodexReasoning, {
   condition: () => true,
-  apply: (state: PCEState, cmd) => ({
+  apply: (state: PCEState, cmd: CommandOf<typeof SelectCodexReasoning>) => ({
     mutations: {
       providerSettings: updateCodexSettings(state, {
         reasoning: cmd.effort

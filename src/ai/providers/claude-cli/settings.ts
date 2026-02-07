@@ -2,13 +2,14 @@
  * Claude CLI Provider Settings Module
  */
 
-import { command } from "../../../../state-engine";
-import { rule } from "../../../../state-lg/rule";
-import type { PCEState } from "../../../../state-lg";
+import { command } from "../../../state-engine";
+import { rule } from "../../../state-lg/rule";
+import type { PCEState } from "../../../state-lg";
 import type { ProviderSettingsModule } from "../../types";
-import type { ProviderSettingsContribution } from "../../../../viewmodel/types";
-import { getAvailableClaudeModels, getDefaultClaudeModel, type ClaudeModel } from "../../../../models/ClaudeModel";
-import { getAvailableClaudeMethods, getDefaultClaudeMethod, type ClaudeIntegrationMethod } from "../../../../models/ClaudeIntegrationMethod";
+import type { ProviderSettingsContribution } from "../../../viewmodel/types";
+import type { CommandOf } from "../../../state-engine/types";
+import { getAvailableClaudeModels, getDefaultClaudeModel, type ClaudeModel } from "./ClaudeModel";
+import { getAvailableClaudeMethods, getDefaultClaudeMethod, type ClaudeIntegrationMethod } from "./ClaudeIntegrationMethod";
 
 // ============================================
 // Commands
@@ -49,7 +50,7 @@ function updateClaudeSettings(
 /** When Claude model is selected, update provider settings */
 rule(SelectClaudeModel, {
   condition: () => true,
-  apply: (state: PCEState, cmd) => ({
+  apply: (state: PCEState, cmd: CommandOf<typeof SelectClaudeModel>) => ({
     mutations: {
       providerSettings: updateClaudeSettings(state, {
         model: cmd.model
@@ -61,7 +62,7 @@ rule(SelectClaudeModel, {
 /** When Claude integration method is selected, update provider settings */
 rule(SelectClaudeMethod, {
   condition: () => true,
-  apply: (state: PCEState, cmd) => ({
+  apply: (state: PCEState, cmd: CommandOf<typeof SelectClaudeMethod>) => ({
     mutations: {
       providerSettings: updateClaudeSettings(state, {
         method: cmd.method

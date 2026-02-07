@@ -1,6 +1,6 @@
 import * as vscode from "vscode";
 import type { ProviderModule, ProviderSettingsModule } from "./types";
-import { logInfo, logDebug, logError } from "../../logging/log";
+import { logInfo, logDebug, logError } from "../logging/log";
 
 /**
  * Central service for managing AI providers

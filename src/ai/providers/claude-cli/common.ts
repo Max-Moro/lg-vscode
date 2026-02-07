@@ -1,13 +1,13 @@
 import * as path from "path";
 import * as os from "os";
 import * as fs from "fs/promises";
-import type { ShellType } from "../../../../models/ShellType";
+import type { ShellType } from "../../../models/ShellType";
 
 /**
  * Get workspace root from CliResolver
  */
 export async function getWorkspaceRoot(): Promise<string> {
-  const { effectiveWorkspaceRoot } = await import("../../../../cli/CliResolver");
+  const { effectiveWorkspaceRoot } = await import("../../../cli/CliResolver");
   const root = effectiveWorkspaceRoot();
   if (!root) {
     throw new Error("No workspace root available");

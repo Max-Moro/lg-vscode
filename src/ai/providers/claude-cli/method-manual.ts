@@ -18,7 +18,7 @@ export async function createSessionManually(
   content: string,
   scope?: string
 ): Promise<string> {
-  const { logDebug } = await import("../../../../logging/log");
+  const { logDebug } = await import("../../../logging/log");
   const cwd = await getWorkingDirectory(scope);
 
   // 1. Generate session ID
