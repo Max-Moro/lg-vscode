@@ -13,14 +13,6 @@ import { DEFAULT_TOKENIZER_LIB, DEFAULT_ENCODER } from "./domains/tokenization";
 // Re-export engine types for convenience
 export type { BaseCommand, RuleResult, AsyncOperation } from "../state-engine";
 
-/**
- * Encoder entry with optional cached flag.
- */
-export interface EncoderEntry {
-  name: string;
-  cached?: boolean;
-}
-
 // ============================================
 // Provider Info
 // ============================================
@@ -71,7 +63,7 @@ export interface ConfigurationState {
   modeSets: ModeSetsList;
   tagSets: TagSetsList;
   tokenizerLibs: string[];
-  encoders: EncoderEntry[];
+  encoders: string[];
 }
 
 // ============================================

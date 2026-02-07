@@ -186,26 +186,11 @@ export async function cliListTokenizerLibs(): Promise<string[]> {
 }
 
 /**
- * Encoder entry with optional cached flag.
- */
-export interface EncoderEntry {
-  name: string;
-  cached?: boolean;
-}
-
-/**
  * List encoders for a specific tokenizer library.
  * @param lib - Tokenizer library name
  */
-export async function cliListEncoders(lib: string): Promise<EncoderEntry[]> {
+export async function cliListEncoders(lib: string): Promise<string[]> {
   const out = await runCli(["list", "encoders", "--lib", lib], { timeoutMs: 20_000 });
   const data = JSON.parse(out);
-
-  if (!data || !Array.isArray(data.encoders)) {
-    return [];
-  }
-
-  return data.encoders.map((e: string | { name: string; cached?: boolean }) =>
-    typeof e === "string" ? { name: e } : e
-  );
+  return Array.isArray(data?.encoders) ? data.encoders : [];
 }

@@ -6,7 +6,6 @@ import type { PCEState } from "../state-lg";
 import type {
   ViewModel,
   SelectOption,
-  EncoderOption,
   ModeSetViewModel,
   TagSetViewModel,
   ProviderSettingsContribution
@@ -107,13 +106,6 @@ export function buildViewModel(state: PCEState): ViewModel {
     label: lib
   }));
 
-  // Build encoders options
-  const encoders: EncoderOption[] = c.encoders.map(enc => ({
-    value: enc.name,
-    label: enc.name,
-    cached: enc.cached ?? false
-  }));
-
   // Build CLI shells options (static, platform-dependent)
   const cliShells: SelectOption[] = getAvailableShells().map(s => ({
     value: s.id,
@@ -147,7 +139,7 @@ export function buildViewModel(state: PCEState): ViewModel {
     selectedBranch: p.targetBranch,
     tokenizerLibs,
     selectedTokenizerLib: p.tokenizerLib,
-    encoders,
+    encoders: c.encoders,
     selectedEncoder: p.encoder,
     ctxLimit: p.ctxLimit,
     cliSettingsVisible: isCliProvider,

@@ -12,10 +12,6 @@ export interface SelectOption {
   description?: string;
 }
 
-export interface EncoderOption extends SelectOption {
-  cached: boolean;
-}
-
 // ============================================
 // Mode-Sets ViewModel
 // ============================================
@@ -117,7 +113,7 @@ export interface ViewModel {
   // Tokenization settings
   tokenizerLibs: SelectOption[];
   selectedTokenizerLib: string;
-  encoders: EncoderOption[];
+  encoders: string[];
   selectedEncoder: string;
   ctxLimit: number;
 

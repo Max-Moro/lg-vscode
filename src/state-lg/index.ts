@@ -8,8 +8,7 @@ export type {
   PersistentState,
   ConfigurationState,
   EnvironmentState,
-  ProviderInfo,
-  EncoderEntry
+  ProviderInfo
 } from "./types";
 
 export {

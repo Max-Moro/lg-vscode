@@ -5,7 +5,7 @@
 import { command } from "../../state-engine";
 import { rule } from "../rule";
 import type { PCEState } from "../types";
-import { cliListEncoders, type EncoderEntry } from "../../cli/CliClient";
+import { cliListEncoders } from "../../cli/CliClient";
 
 // ============================================
 // Commands
@@ -15,7 +15,7 @@ export const SelectLib = command("tokenization/SELECT_LIB").payload<{ lib: strin
 export const SetEncoder = command("tokenization/SET_ENCODER").payload<{ encoder: string }>();
 export const SetCtxLimit = command("tokenization/SET_CTX_LIMIT").payload<{ limit: number }>();
 export const LibsLoaded = command("tokenization/LIBS_LOADED").payload<{ libs: string[] }>();
-export const EncodersLoaded = command("tokenization/ENCODERS_LOADED").payload<{ encoders: EncoderEntry[] }>();
+export const EncodersLoaded = command("tokenization/ENCODERS_LOADED").payload<{ encoders: string[] }>();
 
 // ============================================
 // Tokenization Defaults
@@ -116,15 +116,14 @@ rule(EncodersLoaded, {
     const configMutations = { encoders };
 
     // Check if current encoder exists in new list
-    const encoderNames = encoders.map(e => e.name);
-    const isValid = currentEncoder && encoderNames.includes(currentEncoder);
+    const isValid = currentEncoder && encoders.includes(currentEncoder);
 
     if (isValid) {
       return { configMutations };
     }
 
     // Select best encoder for current library
-    const newEncoder = selectBestEncoder(currentLib, encoderNames);
+    const newEncoder = selectBestEncoder(currentLib, encoders);
     return {
       configMutations,
       followUp: newEncoder ? [SetEncoder.create({ encoder: newEncoder })] : []

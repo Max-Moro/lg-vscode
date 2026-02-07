@@ -403,16 +403,9 @@
       encoderAutosuggest.destroy();
     }
 
-    // Normalize encoders
-    const items = (encoders || []).map(e =>
-      typeof e === "string" ? { name: e, cached: false } : { name: e.value, cached: e.cached }
-    );
-
     // Create new autosuggest using LGUI component
     encoderAutosuggest = LGUI.createAutosuggest(input, {
-      items: items,
-      getValue: (item) => item.name,
-      isItemCached: (item) => item.cached,
+      items: encoders || [],
       onSelect: (value) => {
         emitCommand({ type: "tokenization/SET_ENCODER", encoder: value });
       }
