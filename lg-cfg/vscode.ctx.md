@@ -1,3 +1,6 @@
+---
+include: ["/ai-interaction", "/dev-stage"]
+---
 {% if scope:local %}{% if tag:agent %}
 ${tpl:/agent/index}
 
@@ -25,7 +28,7 @@ ${src}
 
 ${md:media/ui/README, if:TAGSET:vscode-extension:ui-components}
 
-${md@self:/control-panel-state-architecture, if:(TAGSET:vscode-extension:state-viewmodel OR TAGSET:vscode-extension:state-engine)}
+${md@self:/control-panel-state-architecture, if:(TAGSET:vscode-extension:state-engine OR TAGSET:vscode-extension:state-lg)}
 {% if task AND scope:local %}
 ---
 

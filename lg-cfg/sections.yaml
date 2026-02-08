@@ -61,11 +61,7 @@ src:
           # State LG - LG-specific state management
           - condition: "TAGSET:vscode-extension:state-lg"
             allow:
-              - "/state-lg/types.ts"
-              - "/state-lg/store.ts"
-              - "/state-lg/coordinator.ts"
-              - "/state-lg/rule.ts"
-              - "/state-lg/index.ts"
+              - "/state-lg/*.ts"
               - "/state-lg/domains/index.ts"
               - "/state-lg/domains/lifecycle.ts"
               - "/watchers/"
@@ -175,6 +171,75 @@ src:
                     allow: ["/claude-cli/"]
                   - condition: "TAGSET:ai-providers:codex-cli"
                     allow: ["/codex-cli/"]
+  tag-sets:
+    vscode-extension:
+      title: "Listing Generator extension for VS Code"
+      tags:
+        # Infrastructure
+        core:
+          title: "Core Infrastructure"
+          description: "Bootstrap, extension entry, logging, constants"
+        state-engine:
+          title: "State Engine"
+          description: "Universal state coordination engine (state-engine/)"
+        state-lg:
+          title: "State LG & ViewModel"
+          description: "LG-specific state management and ViewModel layer (state-lg/)"
+        cli:
+          title: "CLI Integration"
+          description: "CLI resolver, client, runner"
+        ui-core:
+          title: "UI Core"
+          description: "Base styles, utilities, core components"
+        ui-components:
+          title: "UI Components"
+          description: "Reusable UI component library"
+
+        # Business domains
+        context:
+          title: "Context Domain"
+          description: "Context selection state, task text"
+        section:
+          title: "Section Domain"
+          description: "Section selection state, included files tree"
+        adaptive:
+          title: "Adaptive Domain"
+          description: "Mode-sets, tag-sets, target branch selection"
+        send-to-ai:
+          title: "Provider Domain"
+          description: "AI providers, sending content, provider settings"
+        stats:
+          title: "Stats Domain"
+          description: "Statistics service, actions, tokenization, reports webview"
+        generate:
+          title: "Generate Domain"
+          description: "Generation service, actions, virtual document provider"
+        diag:
+          title: "Diagnostics Domain"
+          description: "Doctor, cache reset, self-diagnostics"
+        starter:
+          title: "Starter Domain"
+          description: "Initial configuration wizard"
+
+        # Views (for focused UI work)
+        control:
+          title: "Control Panel View"
+          description: "Main control panel webview"
+
+    ai-providers:
+      title: "AI Providers"
+      tags:
+        clipboard:
+          title: "Clipboard"
+        github-copilot:
+          title: "GitHub Copilot"
+        cursor:
+          title: "Cursor"
+        claude-code-cli:
+          title: "Claude Code (CLI)"
+        codex-cli:
+          title: "OpenAI Codex (CLI)"
+
 
 review:
   extensions: [".ts", ".json", ".html", ".css", ".js"]

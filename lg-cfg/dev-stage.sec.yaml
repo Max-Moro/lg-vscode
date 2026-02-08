@@ -1,0 +1,25 @@
+dev-stage:
+  mode-sets:
+    dev-stage:
+      title: "Task Development Stage"
+      modes:
+        common:
+          title: "Main Development"
+
+        review:
+          title: "Code Review"
+          tags: [review]
+          default_task: "Conduct a code review of the changes and provide improvement recommendations"
+          vcs_mode: "branch-changes"
+
+    pipeline-instructions:
+      title: "Pipeline instructions"
+      modes:
+        none:
+          title: "None"
+          description: "No special pipeline is used"
+
+        all:
+          title: "Full subagents pipeline"
+          tags: [agents-pipeline]
+          description: "A complete set of instructions for working with subagents"
