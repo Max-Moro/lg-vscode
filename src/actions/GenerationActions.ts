@@ -4,6 +4,7 @@
 
 import * as vscode from "vscode";
 import { getStore, getGenerationService, getVdocs } from "../bootstrap";
+import { buildCliTarget } from "../cli/CliTarget";
 import type { PersistentState } from "../state-lg";
 
 type TargetType = "section" | "context";
@@ -17,10 +18,10 @@ interface TargetInfo {
 function resolveTarget(type: TargetType, state: PersistentState): TargetInfo | null {
   if (type === "section") {
     if (!state.section) return null;
-    return { target: `sec:${state.section}`, name: state.section, docType: "listing" };
+    return { target: buildCliTarget("sec", state.section), name: state.section, docType: "listing" };
   }
   if (!state.template) return null;
-  return { target: `ctx:${state.template}`, name: state.template, docType: "context" };
+  return { target: buildCliTarget("ctx", state.template), name: state.template, docType: "context" };
 }
 
 async function generate(type: TargetType): Promise<void> {

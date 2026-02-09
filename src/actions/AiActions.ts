@@ -4,6 +4,7 @@
 
 import * as vscode from "vscode";
 import { getStore, getGenerationService, getAiService } from "../bootstrap";
+import { buildCliTarget } from "../cli/CliTarget";
 
 /**
  * Send context to AI provider
@@ -38,7 +39,7 @@ export async function sendToAI(): Promise<void> {
       return;
     }
 
-    const target = `ctx:${template}`;
+    const target = buildCliTarget("ctx", template);
     await aiService.generateAndSend(
       () => generationService.generate(target),
       providerId,

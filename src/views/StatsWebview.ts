@@ -5,6 +5,7 @@ import * as vscode from "vscode";
 import type {RunResult} from "../models/report";
 import {buildHtml, getExtensionUri, lgUiUri, mediaUri} from "../webview/webviewKit";
 import { getStore, getCoordinator } from "../bootstrap";
+import { extractTargetName } from "../cli/CliTarget";
 import { GenerationActions, AiActions } from "../actions";
 import { SetTask } from "../state-lg/domains/context";
 
@@ -13,11 +14,7 @@ export async function showStatsWebview(
   refetch: () => Promise<RunResult>
 ) {
   const scope = data.scope === "context" ? "Context" : "Section";
-  const name = data.target.startsWith("ctx:")
-    ? data.target.slice(4)
-    : data.target.startsWith("sec:")
-    ? data.target.slice(4)
-    : data.target;
+  const name = extractTargetName(data.target);
 
   const panel = vscode.window.createWebviewPanel(
     "lg.stats",

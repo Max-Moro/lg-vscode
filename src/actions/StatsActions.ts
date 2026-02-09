@@ -4,6 +4,7 @@
 
 import * as vscode from "vscode";
 import { getStore, getStatsService, getIncludedTree } from "../bootstrap";
+import { buildCliTarget } from "../cli/CliTarget";
 import { showStatsWebview } from "../views/StatsWebview";
 import type { PersistentState } from "../state-lg";
 
@@ -17,10 +18,10 @@ interface TargetInfo {
 function resolveTarget(type: TargetType, state: PersistentState): TargetInfo | null {
   if (type === "section") {
     if (!state.section) return null;
-    return { target: `sec:${state.section}`, name: state.section };
+    return { target: buildCliTarget("sec", state.section), name: state.section };
   }
   if (!state.template) return null;
-  return { target: `ctx:${state.template}`, name: state.template };
+  return { target: buildCliTarget("ctx", state.template), name: state.template };
 }
 
 async function showStats(type: TargetType): Promise<void> {
